@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
+      # Porta esterna:interna - Accesso dall'host su http://localhost:3001
       - "3001:3001"
     volumes:
       - ./src:/app/src

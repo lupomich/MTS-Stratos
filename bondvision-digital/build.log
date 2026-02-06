@@ -1,0 +1,34 @@
+--progress is a global compose flag, better use `docker compose --progress xx build ...
+time="2026-02-06T13:01:23+01:00" level=warning msg="/home/malupo/Github/Test2/bondvision-mockup/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image bondvision-mockup-bondvision-dev Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 618B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile.dev
+#2 transferring dockerfile: 206B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:18-alpine
+#3 DONE 0.9s
+
+#4 [1/5] FROM docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e
+#4 resolve docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e 0.0s done
+#4 DONE 0.0s
+
+#5 [2/5] WORKDIR /app
+#5 CACHED
+
+#6 [internal] load .dockerignore
+#6 transferring context: 73B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 1.93kB done
+#7 DONE 0.0s
+
+#8 [3/5] COPY package.json ./
+#8 DONE 0.0s
+
+#9 [4/5] RUN npm install
+

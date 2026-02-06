@@ -1,0 +1,172 @@
+/* Stratos Design System - Foundation */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&family=IBM+Plex+Serif:wght@400&display=swap');
+
+:root {
+  /* Primary Brand Colors */
+  --color-primary: #008D7F;
+  --color-primary-dark: #006865;
+  --color-primary-light: #A0DDD7;
+  
+  /* Teal Scale */
+  --color-teal-60: #004F4D;
+  --color-teal-50: #006865;
+  --color-teal-40: #008D7F;
+  --color-teal-30: #A0DDD7;
+  --color-teal-20: #D0EEEB;
+  --color-teal-10: #E9F7F5;
+  
+  /* Secondary Colors */
+  --color-secondary-kelly: #009639;
+  --color-secondary-spring: #79D100;
+  --color-secondary-blue: #41B6E6;
+  
+  /* Semantic Colors */
+  --color-success: #79D100;
+  --color-success-bg: #E9F7CC;
+  --color-info: #41B6E6;
+  --color-info-bg: #D9F1FA;
+  --color-error: #CF1D43;
+  --color-error-bg: #FFE1E8;
+  --color-warning: #E26310;
+  --color-warning-bg: #FFF0E7;
+  
+  /* Neutral Colors */
+  --color-text-primary: #27272D;
+  --color-text-secondary: #54545C;
+  --color-border: #CACACE;
+  --color-divider: #E5E5E7;
+  --color-bg-subtle: #F2F2F3;
+  --color-bg-white: #FFFFFF;
+  
+  /* Grey Scale */
+  --color-grey-60: #27272D;
+  --color-grey-50: #54545C;
+  --color-grey-40: #98989F;
+  --color-grey-30: #CACACE;
+  --color-grey-20: #E5E5E7;
+  --color-grey-10: #F2F2F3;
+  
+  /* Dark Theme Colors (for BondVision) */
+  --dark-bg: #0a1f1f;
+  --dark-bg-secondary: #07272D;
+  --dark-border: #2a5a5a;
+  --dark-hover: #1a3a3a;
+  --text-light: #E6E9EA;
+  
+  /* Font Families */
+  --font-family-serif: 'IBM Plex Serif', Georgia, serif;
+  --font-family-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  
+  /* Typography Sizes - Desktop */
+  --heading-xl-size: 72px;
+  --heading-xl-line-height: 80px;
+  --heading-l-size: 48px;
+  --heading-l-line-height: 56px;
+  --heading-m-size: 32px;
+  --heading-m-line-height: 40px;
+  --heading-s-size: 24px;
+  --heading-s-line-height: 32px;
+  --body-l-size: 20px;
+  --body-l-line-height: 28px;
+  --body-m-size: 16px;
+  --body-m-line-height: 24px;
+  --body-s-size: 14px;
+  --body-s-line-height: 20px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--body-m-size);
+  line-height: var(--body-m-line-height);
+  background-color: var(--dark-bg-secondary);
+  color: var(--text-light);
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a3a3a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a5a5a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a7a7a;
+}
+
+/* Typography Classes */
+.heading-xl {
+  font-family: var(--font-family-serif);
+  font-size: var(--heading-xl-size);
+  line-height: var(--heading-xl-line-height);
+  font-weight: var(--font-weight-regular);
+}
+
+.heading-l {
+  font-family: var(--font-family-serif);
+  font-size: var(--heading-l-size);
+  line-height: var(--heading-l-line-height);
+  font-weight: var(--font-weight-regular);
+}
+
+.heading-m {
+  font-family: var(--font-family-serif);
+  font-size: var(--heading-m-size);
+  line-height: var(--heading-m-line-height);
+  font-weight: var(--font-weight-regular);
+}
+
+.heading-s {
+  font-family: var(--font-family-serif);
+  font-size: var(--heading-s-size);
+  line-height: var(--heading-s-line-height);
+  font-weight: var(--font-weight-regular);
+}
+
+.body-l-bold { font-size: var(--body-l-size); line-height: var(--body-l-line-height); font-weight: var(--font-weight-bold); }
+.body-l-medium { font-size: var(--body-l-size); line-height: var(--body-l-line-height); font-weight: var(--font-weight-medium); }
+.body-l-regular { font-size: var(--body-l-size); line-height: var(--body-l-line-height); font-weight: var(--font-weight-regular); }
+.body-m-bold { font-size: var(--body-m-size); line-height: var(--body-m-line-height); font-weight: var(--font-weight-bold); }
+.body-m-medium { font-size: var(--body-m-size); line-height: var(--body-m-line-height); font-weight: var(--font-weight-medium); }
+.body-m-regular { font-size: var(--body-m-size); line-height: var(--body-m-line-height); font-weight: var(--font-weight-regular); }
+.body-s-bold { font-size: var(--body-s-size); line-height: var(--body-s-line-height); font-weight: var(--font-weight-bold); }
+.body-s-medium { font-size: var(--body-s-size); line-height: var(--body-s-line-height); font-weight: var(--font-weight-medium); }
+.body-s-regular { font-size: var(--body-s-size); line-height: var(--body-s-line-height); font-weight: var(--font-weight-regular); }
+
+/* Focus styling for keyboard navigation */
+input:focus, button:focus, textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Text selection color */
+::selection {
+  background-color: var(--color-primary);
+  color: var(--dark-bg);
+}

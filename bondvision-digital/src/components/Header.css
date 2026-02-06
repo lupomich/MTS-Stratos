@@ -1,0 +1,157 @@
+.header {
+  background-color: var(--dark-bg);
+  border-bottom: 1px solid var(--dark-border);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.logo-mts {
+  font-family: var(--font-family-sans);
+  font-size: 24px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-bg-white);
+}
+
+.logo-bondvision {
+  font-family: var(--font-family-sans);
+  font-size: 18px;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.market-selector {
+  padding: 4px 12px;
+  background-color: var(--dark-hover);
+  border: 1px solid var(--dark-border);
+  border-radius: 4px;
+}
+
+.market-label {
+  color: var(--text-light);
+  font-size: 12px;
+  font-family: var(--font-family-sans);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.market-btn {
+  padding: 6px 16px;
+  background-color: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 3px;
+}
+
+.market-btn:hover {
+  background-color: var(--dark-hover);
+}
+
+.market-btn.active {
+  background-color: var(--color-primary);
+  color: var(--dark-bg);
+  border-color: var(--color-primary);
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 20px;
+  border-left: 1px solid var(--dark-border);
+  font-size: 11px;
+  font-family: var(--font-family-sans);
+}
+
+.user-id {
+  color: var(--text-light);
+  font-size: 9px;
+  margin-right: 8px;
+}
+
+.transaction-label {
+  color: var(--color-primary);
+  font-size: 9px;
+  font-weight: var(--font-weight-bold);
+  margin-right: 12px;
+}
+
+.market-status, .member-status, .dealer-status, .autoex-status {
+  color: var(--text-light);
+  font-size: 10px;
+}
+
+.status-test {
+  background-color: var(--color-success);
+  color: var(--color-grey-60);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: var(--font-weight-bold);
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+.status-off {
+  background-color: var(--color-error);
+  color: var(--color-bg-white);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: var(--font-weight-bold);
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+.header-icons {
+  display: flex;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--dark-border);
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  background-color: transparent;
+  border: 1px solid var(--color-teal-50);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.icon-btn svg {
+  display: block;
+}
+
+.icon-btn:hover {
+  background-color: var(--dark-hover);
+  border-color: var(--color-primary);
+}
