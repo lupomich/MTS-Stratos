@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTS BondVision</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-mts">MTS</span>
+                <span class="logo-bondvision">BondVision</span>
+            </div>
+            <div class="market-selector">
+                <span class="market-label">IT Italian (Italy)</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="market-btn active">BV</button>
+            <button class="market-btn">BV REPO</button>
+            <button class="market-btn">CASH</button>
+            <div class="header-info">
+                <span class="user-id">MICK005:00005MTS</span>
+                <span class="market-status">Market <span class="status-test">TEST</span></span>
+                <span class="member-status">Member <span class="status-off">OFF</span></span>
+                <span class="dealer-status">Dealer <span class="status-off">OFF</span></span>
+                <span class="autoex-status">AutoEx <span class="status-off">OFF</span></span>
+            </div>
+            <div class="header-icons">
+                <button class="icon-btn">⚙</button>
+                <button class="icon-btn">👤</button>
+                <button class="icon-btn">🌐</button>
+                <button class="icon-btn">⚙</button>
+                <button class="icon-btn">✕</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="app-body">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-item">
+                <div class="sidebar-icon">☰</div>
+                <div class="sidebar-label">MENU</div>
+            </div>
+            <div class="sidebar-item">
+                <div class="sidebar-icon">📋</div>
+                <div class="sidebar-label">ORDERS</div>
+            </div>
+            <div class="sidebar-item active">
+                <div class="sidebar-icon">📊</div>
+                <div class="sidebar-label">TRADING</div>
+            </div>
+            <div class="sidebar-item">
+                <div class="sidebar-icon">📝</div>
+                <div class="sidebar-label">BLOTTER</div>
+            </div>
+            <div class="sidebar-item">
+                <div class="sidebar-icon">📈</div>
+                <div class="sidebar-label">DATA</div>
+            </div>
+            <div class="sidebar-item">
+                <div class="sidebar-icon">🔔</div>
+                <div class="sidebar-label">ALERTS</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-header">
+                <span class="rfq-label">RFQ TOOLBAR</span>
+            </div>
+            <div class="content-body">
+                <!-- Trading Area -->
+                <div class="trading-area">
+                    <div class="table-header">
+                        <div class="table-title">OPEN RFQ</div>
+                        <div class="table-filters">
+                            <span class="filter-label">ALL</span>
+                            <span class="filter-label">AXED ☑</span>
+                            <span class="filter-label">BV ☑</span>
+                        </div>
+                    </div>
+                    <div class="bond-table-wrapper">
+                        <table class="bond-table" id="bondTable">
+                            <thead>
+                                <tr>
+                                    <th>DESCRIPTION</th>
+                                    <th>ISIN</th>
+                                    <th>RES</th>
+                                    <th>MATURITY</th>
+                                    <th>RES. MATURITY DAYS</th>
+                                    <th>CCY</th>
+                                    <th class="bid-header">BID YIELD</th>
+                                    <th class="bid-header">BID PRICE</th>
+                                    <th>MID PRICE</th>
+                                    <th>MID YIELD</th>
+                                    <th class="ask-header">ASK PRICE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bondTableBody">
+                                <!-- Data will be inserted by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Market Depth -->
+                <div class="market-info">
+                    <div class="market-depth">
+                        <div class="depth-section">
+                            <div class="section-header">
+                                <div class="bond-info">
+                                    <span class="bond-isin">BTPSi 0.650 15/05/26</span>
+                                    <span class="bond-details">IT0005415416</span>
+                                </div>
+                            </div>
+                            
+                            <div class="order-book-section">
+                                <div class="order-book-title">MTS Cash Order Book</div>
+                                <div class="order-book-label">FAS ORDER</div>
+                            </div>
+
+                            <div class="order-book-section">
+                                <div class="order-book-title">EBM Order Book</div>
+                                <div class="order-book-label">FAS ORDER</div>
+                            </div>
+
+                            <div class="composite-section">
+                                <div class="composite-header">
+                                    <span class="composite-title">BondVision Composite</span>
+                                </div>
+                                <div class="composite-grid">
+                                    <div class="composite-row composite-header-row">
+                                        <div class="comp-label">MARKET</div>
+                                        <div class="comp-label">BID AXE</div>
+                                        <div class="comp-label">BID YIELD</div>
+                                        <div class="comp-label">BID PRICE</div>
+                                        <div class="comp-label">ASK PRICE</div>
+                                        <div class="comp-label">ASK YIELD</div>
+                                        <div class="comp-label">ASK AXE</div>
+                                    </div>
+                                    <div class="composite-row">
+                                        <div class="comp-value market-label">BVS</div>
+                                        <div class="comp-value bid-axe">Axed</div>
+                                        <div class="comp-value bid-val">2.2565</div>
+                                        <div class="comp-value bid-val">99.58435</div>
+                                        <div class="comp-value ask-val">99.59601</div>
+                                        <div class="comp-value ask-val">2.2113</div>
+                                        <div class="comp-value ask-axe">99.59018</div>
+                                    </div>
+                                    <div class="composite-row">
+                                        <div class="comp-value market-label"></div>
+                                        <div class="comp-value"></div>
+                                        <div class="comp-value"></div>
+                                        <div class="comp-value"></div>
+                                        <div class="comp-value"></div>
+                                        <div class="comp-value"></div>
+                                        <div class="comp-value">2.2339</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dealer-pricing-section">
+                                <div class="dealer-header">
+                                    <span class="dealer-title">BondVision Dealer Pricing</span>
+                                </div>
+                                <div class="dealer-table-wrapper">
+                                    <table class="dealer-table">
+                                        <thead>
+                                            <tr>
+                                                <th>BID TIME</th>
+                                                <th>DEALER</th>
+                                                <th>BID AXE</th>
+                                                <th>SIZE</th>
+                                                <th class="bid-col">BID YIELD</th>
+                                                <th class="bid-col">BID PRICE</th>
+                                                <th class="ask-col">ASK YIELD</th>
+                                                <th class="ask-col">ASK PRICE</th>
+                                                <th>SIZE</th>
+                                                <th>ASK AXE</th>
+                                                <th>DEALER</th>
+                                                <th>ASK TIME</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dealerTableBody">
+                                            <!-- Data will be inserted by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

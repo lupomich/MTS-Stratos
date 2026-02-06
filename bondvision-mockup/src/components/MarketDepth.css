@@ -1,0 +1,273 @@
+.market-depth {
+  padding: 8px;
+  background-color: var(--header-bg);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.depth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-header {
+  padding: 8px;
+  background-color: var(--hover-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+}
+
+.bond-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bond-isin {
+  color: var(--primary-teal);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.bond-details {
+  color: var(--text-light);
+  font-size: 10px;
+}
+
+.order-book-section {
+  padding: 8px;
+  background-color: var(--dark-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+}
+
+.order-book-title {
+  color: var(--primary-teal);
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.order-book-label {
+  color: var(--ask-green);
+  font-size: 10px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.order-book-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  background-color: var(--hover-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.order-book-header:hover {
+  background-color: #1a4a4a;
+}
+
+.collapse-arrow {
+  color: var(--primary-teal);
+  font-weight: bold;
+  font-size: 10px;
+  min-width: 12px;
+  display: inline-block;
+}
+
+.order-book-title-text {
+  color: var(--primary-teal);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.order-book-table {
+  width: 100%;
+  padding-top: 8px;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.order-book-table thead {
+  background-color: var(--hover-bg);
+  border: 1px solid var(--border-color);
+}
+
+.order-book-table th {
+  padding: 4px;
+  color: var(--primary-teal);
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  font-size: 8px;
+}
+
+.order-book-table td {
+  padding: 4px;
+  color: var(--text-light);
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.order-book-table .size-cell {
+  text-align: right;
+}
+
+.order-book-table .bid-val {
+  color: var(--bid-red);
+  font-weight: 600;
+}
+
+.order-book-table .ask-val {
+  color: var(--ask-green);
+  font-weight: 600;
+}
+
+.order-book-table .bid-cells {
+  color: var(--bid-red);
+  font-weight: 600;
+}
+
+.order-book-table .ask-cells {
+  color: var(--ask-green);
+  font-weight: 600;
+}
+
+.order-book-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border-color);
+  margin-top: 6px;
+  font-size: 8px;
+  color: var(--text-light);
+}
+
+.composite-section {
+  padding: 8px;
+  background-color: var(--dark-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+}
+
+.composite-header {
+  margin-bottom: 8px;
+}
+
+.composite-title {
+  color: var(--primary-teal);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.composite-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.composite-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.composite-header-row {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+.comp-label {
+  font-size: 9px;
+  color: var(--primary-teal);
+  font-weight: 600;
+  text-align: center;
+}
+
+.comp-value {
+  font-size: 10px;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.comp-value.market-label {
+  color: var(--primary-teal);
+  font-weight: 600;
+}
+
+.comp-value.bid-axe {
+  color: var(--bid-red);
+  font-weight: 600;
+}
+
+.comp-value.bid-val {
+  color: var(--bid-red);
+}
+
+.comp-value.ask-val {
+  color: var(--ask-green);
+}
+
+.comp-value.ask-axe {
+  color: var(--ask-green);
+}
+
+.dealer-pricing-section {
+  padding: 8px;
+  background-color: var(--dark-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+}
+
+.dealer-header {
+  margin-bottom: 8px;
+}
+
+.dealer-title {
+  color: var(--primary-teal);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.dealer-grid {
+  width: 100%;
+  font-size: 9px;
+}
+
+.dealer-grid .ag-header-cell-text {
+  font-size: 8px;
+}
+
+.dealer-grid .time-cell {
+  color: var(--primary-teal);
+}
+
+.dealer-grid .dealer-cell {
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.dealer-grid .bid-cell {
+  color: var(--bid-red);
+  font-weight: 600;
+}
+
+.dealer-grid .ask-cell {
+  color: var(--ask-green);
+  font-weight: 600;
+}
+
+.dealer-grid .ag-root-wrapper {
+  border: none;
+}
+
+.dealer-grid .ag-row {
+  font-size: 9px;
+}

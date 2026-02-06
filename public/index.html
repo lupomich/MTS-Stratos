@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saluto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            width: 250px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 30px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #greeting {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #333;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Inserisci il tuo nome</h1>
+        <input type="text" id="nameInput" placeholder="Nome" />
+        <br>
+        <button onclick="showGreeting()">OK</button>
+        <div id="greeting"></div>
+    </div>
+
+    <script>
+        async function showGreeting() {
+            const name = document.getElementById('nameInput').value;
+            const greetingDiv = document.getElementById('greeting');
+            
+            if (name.trim() === '') {
+                greetingDiv.textContent = 'Per favore inserisci un nome!';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/greet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: name })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    greetingDiv.textContent = data.message;
+                } else {
+                    greetingDiv.textContent = 'Errore: ' + data.error;
+                }
+            } catch (error) {
+                greetingDiv.textContent = 'Errore di connessione al server!';
+                console.error('Error:', error);
+            }
+        }
+
+        // Permette di premere Enter per inviare
+        document.getElementById('nameInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                showGreeting();
+            }
+        });
+    </script>
+</body>
+</html>

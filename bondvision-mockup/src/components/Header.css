@@ -1,0 +1,140 @@
+.header {
+  background-color: #0a1f1f;
+  border-bottom: 1px solid #2a5a5a;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.logo-mts {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.logo-bondvision {
+  font-size: 18px;
+  color: var(--primary-teal);
+  font-weight: 500;
+}
+
+.market-selector {
+  padding: 4px 12px;
+  background-color: #1a3a3a;
+  border: 1px solid #2a5a5a;
+  border-radius: 4px;
+}
+
+.market-label {
+  color: #e0f0f0;
+  font-size: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.market-btn {
+  padding: 6px 16px;
+  background-color: transparent;
+  border: 1px solid var(--primary-teal);
+  color: var(--primary-teal);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 3px;
+}
+
+.market-btn:hover {
+  background-color: var(--hover-bg);
+}
+
+.market-btn.active {
+  background-color: var(--primary-teal);
+  color: var(--header-bg);
+  border-color: var(--primary-teal);
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 20px;
+  border-left: 1px solid #2a5a5a;
+  font-size: 11px;
+}
+
+.user-id {
+  color: var(--text-light);
+  font-size: 9px;
+  margin-right: 8px;
+}
+
+.transaction-label {
+  color: var(--primary-teal);
+  font-size: 9px;
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.market-status, .member-status, .dealer-status, .autoex-status {
+  color: #e0f0f0;
+}
+
+.status-test {
+  background-color: #00cc00;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.status-off {
+  background-color: #cc0000;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.header-icons {
+  display: flex;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid #2a5a5a;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--primary-teal);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.icon-btn:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--primary-teal);
+}

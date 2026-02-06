@@ -1,0 +1,60 @@
+:root {
+  --primary-teal: #00bcd4;
+  --dark-bg: #0d2828;
+  --header-bg: #0a1f1f;
+  --text-light: #e0f0f0;
+  --border-color: #2a5a5a;
+  --hover-bg: #1a3a3a;
+  --bid-red: #ff6666;
+  --ask-green: #66dd88;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a3a3a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a5a5a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a7a7a;
+}
+
+/* Focus styling for keyboard navigation */
+input:focus, button:focus, textarea:focus {
+  outline: 2px solid var(--primary-teal);
+  outline-offset: 1px;
+}
+
+/* Text selection color */
+::selection {
+  background-color: var(--primary-teal);
+  color: var(--header-bg);
+}

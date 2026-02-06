@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  bondvision-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
