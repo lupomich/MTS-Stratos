@@ -9,9 +9,6 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           <span className="logo-mts">MTS</span>
           <span className="logo-bondvision">BondVision</span>
         </div>
-        <div className="market-selector">
-          <span className="market-label">IT Italian (Italy)</span>
-        </div>
       </div>
       <div className="header-right">
         <button 
