@@ -45,7 +45,7 @@
   --ag-selected-row-background-color: #2a4a4a;
   --ag-foreground-color: var(--text-light);
   --ag-border-color: var(--border-color);
-  --ag-header-foreground-color: var(--primary-teal);
+  --ag-header-foreground-color: #ffffff;
   --ag-font-size: 11px;
   --ag-header-height: 32px;
   --ag-row-height: 28px;

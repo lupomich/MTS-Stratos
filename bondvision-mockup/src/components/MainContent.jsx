@@ -132,13 +132,14 @@ const dataTableRows = [
 
 const MainContent = () => {
   const [selectedBond, setSelectedBond] = useState(null)
+  const [selectedTopTab, setSelectedTopTab] = useState('ALL')
   const [selectedCountry, setSelectedCountry] = useState('IT')
   const [expandedRFQ, setExpandedRFQ] = useState(false)
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
   
   // State per il resize dinamico
   const [tradingWidth, setTradingWidth] = useState(60) // percentage
-  const [marketWidth, setMarketWidth] = useState(30) // percentage
+  const [marketWidth, setMarketWidth] = useState(40) // percentage
   const [dataHeight, setDataHeight] = useState(35) // percentage
   const [isDraggingVertical, setIsDraggingVertical] = useState(false)
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
@@ -209,7 +210,7 @@ const MainContent = () => {
       <div className="rfq-toolbar">
         <div className="toolbar-left">
           <div className="rfq-dropdown">
-            <button className="rfq-button" onClick={() => setExpandedRFQ(!expandedRFQ)}>
+            <button className={`rfq-button ${expandedRFQ ? 'expanded' : ''}`} onClick={() => setExpandedRFQ(!expandedRFQ)}>
               {expandedRFQ ? selectedRFQ : 'OPEN RFQ'} ▼
             </button>
             {expandedRFQ && (
@@ -240,8 +241,8 @@ const MainContent = () => {
         {topTabs.map((t, i) => (
           <button
             key={`top-${t.code}-${i}`}
-            className={`country-tab ${selectedCountry === t.code ? 'active' : ''}`}
-            onClick={() => setSelectedCountry(t.code)}
+            className={`country-tab ${selectedTopTab === t.code ? 'active' : ''}`}
+            onClick={() => setSelectedTopTab(t.code)}
             title={t.name}
           >
             <span className="flag">{t.flag}</span>

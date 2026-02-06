@@ -25,7 +25,7 @@
 }
 
 .bond-isin {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   font-size: 12px;
 }
@@ -43,7 +43,7 @@
 }
 
 .order-book-title {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   font-size: 11px;
   margin-bottom: 4px;
@@ -73,7 +73,7 @@
 }
 
 .collapse-arrow {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: bold;
   font-size: 10px;
   min-width: 12px;
@@ -81,7 +81,7 @@
 }
 
 .order-book-title-text {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   font-size: 11px;
 }
@@ -100,7 +100,7 @@
 
 .order-book-table th {
   padding: 4px;
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   text-align: center;
   border: 1px solid var(--border-color);
@@ -161,7 +161,7 @@
 }
 
 .composite-title {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   font-size: 11px;
 }
@@ -186,7 +186,7 @@
 
 .comp-label {
   font-size: 9px;
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   text-align: center;
 }
@@ -198,7 +198,7 @@
 }
 
 .comp-value.market-label {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -231,7 +231,7 @@
 }
 
 .dealer-title {
-  color: var(--primary-teal);
+  color: #ffffff;
   font-weight: 600;
   font-size: 11px;
 }
@@ -246,7 +246,7 @@
 }
 
 .dealer-grid .time-cell {
-  color: var(--primary-teal);
+  color: #ffffff;
 }
 
 .dealer-grid .dealer-cell {
