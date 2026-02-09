@@ -369,3 +369,110 @@
 .dealer-grid .ag-row {
   font-size: 12px;
 }
+
+/* Order Book Grid - 5 righe fisse */
+.order-book-grid {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: var(--font-family-sans);
+  height: 144px;
+  --ag-row-height: 20px;
+  --ag-header-height: 24px;
+  --ag-cell-horizontal-padding: 4px;
+}
+
+.order-book-grid .ag-root-wrapper {
+  border: none;
+  height: 100%;
+}
+
+.order-book-grid .ag-root {
+  border: none;
+  height: 100%;
+}
+
+.order-book-grid .ag-body-viewport {
+  overflow-y: auto !important;
+}
+
+.order-book-grid .ag-header-cell-text {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+}
+
+.order-book-grid .ag-cell {
+  font-size: 12px !important;
+  line-height: 20px;
+}
+
+.order-book-grid .bid-cell {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.order-book-grid .ask-cell {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+/* Dealer Pricing Grid - 30 righe fisse */
+.dealer-pricing-grid {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: var(--font-family-sans);
+  height: 624px;
+  --ag-row-height: 20px;
+  --ag-header-height: 24px;
+  --ag-cell-horizontal-padding: 4px;
+}
+
+.dealer-pricing-grid .ag-root-wrapper {
+  border: none;
+  height: 100%;
+}
+
+.dealer-pricing-grid .ag-root {
+  border: none;
+  height: 100%;
+}
+
+.dealer-pricing-grid .ag-body-viewport {
+  overflow-y: auto !important;
+}
+
+.dealer-pricing-grid .ag-header-cell-text {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+}
+
+.dealer-pricing-grid .ag-cell {
+  font-size: 12px !important;
+  line-height: 20px;
+}
+
+.dealer-pricing-grid .time-cell {
+  color: var(--color-bg-white);
+  text-align: center;
+}
+
+.dealer-pricing-grid .dealer-cell {
+  color: var(--text-light);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.dealer-pricing-grid .bid-cell {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.dealer-pricing-grid .ask-cell {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}

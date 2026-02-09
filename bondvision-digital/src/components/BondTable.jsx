@@ -58,6 +58,10 @@ class CustomHeaderWithMenu {
         <span class="menu-icon">🔍</span>
         <span>${t('columnMenu.filter')}</span>
       </div>
+      <div class="menu-item" data-action="clearFilters">
+        <span class="menu-icon">✕</span>
+        <span>${t('bondTable.clearFilters')}</span>
+      </div>
       <div class="menu-separator"></div>
       <div class="menu-item" data-action="sortAsc">
         <span class="menu-icon">↑</span>
@@ -130,6 +134,10 @@ class CustomHeaderWithMenu {
     switch(action) {
       case 'filter':
         this.params.showColumnMenu(this.eMenuIcon)
+        break
+      case 'clearFilters':
+        api.setFilterModel(null)
+        api.onFilterChanged()
         break
       case 'sortAsc':
         columnApi.applyColumnState({

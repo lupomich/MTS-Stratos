@@ -21,6 +21,10 @@ export const translations = {
       data: 'DATA',
       alerts: 'ALERTS'
     },
+    // Bond Table
+    bondTable: {
+      clearFilters: 'Clear Filters'
+    },
     // Custom Menu Grid
     columnMenu: {
       filter: 'Filter',
@@ -45,6 +49,10 @@ export const translations = {
       blotter: 'BLOTTER',
       data: 'DATI',
       alerts: 'AVVISI'
+    },
+    // Bond Table
+    bondTable: {
+      clearFilters: 'Azzera Filtri'
     },
     // Custom Menu Grid
     columnMenu: {

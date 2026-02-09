@@ -213,6 +213,12 @@ const MarketDepth = ({ selectedBond }) => {
     mainMenuItems: ['sortAscending', 'sortDescending', 'sortUnSort', 'separator', 'columnFilter', 'separator', 'autoSizeThis', 'autoSizeAll', 'resetColumns', 'separator', 'columnChooser']
   }), [])
 
+  const compositeDefaultColDef = useMemo(() => ({
+    sortable: false,
+    resizable: true,
+    filter: false
+  }), [])
+
   return (
     <div className="market-depth">
       <div className="depth-section">
@@ -239,12 +245,12 @@ const MarketDepth = ({ selectedBond }) => {
             <div className="order-book-title">MTS Cash Order Book</div>
           </div>
           {!collapsedSections.mtsOrderBook && (
-            <div className="ag-theme-alpine-dark dealer-grid">
+            <div className="ag-theme-alpine-dark order-book-grid">
               <AgGridReact
                 rowData={orderBookData}
                 columnDefs={mtsColumnDefs}
                 defaultColDef={defaultColDef}
-                domLayout='autoHeight'
+                domLayout='normal'
                 suppressCellFocus={true}
               />
             </div>
@@ -267,12 +273,12 @@ const MarketDepth = ({ selectedBond }) => {
             <div className="order-book-title">EBM Order Book</div>
           </div>
           {!collapsedSections.ebmOrderBook && (
-            <div className="ag-theme-alpine-dark dealer-grid">
+            <div className="ag-theme-alpine-dark order-book-grid">
               <AgGridReact
                 rowData={ebmOrderBookData}
                 columnDefs={ebmColumnDefs}
                 defaultColDef={defaultColDef}
-                domLayout='autoHeight'
+                domLayout='normal'
                 suppressCellFocus={true}
               />
             </div>
@@ -308,7 +314,7 @@ const MarketDepth = ({ selectedBond }) => {
                   askAxe: displayBond.askAxe || ''
                 }]}
                 columnDefs={compositeColumnDefs}
-                defaultColDef={defaultColDef}
+                defaultColDef={compositeDefaultColDef}
                 domLayout='autoHeight'
                 suppressCellFocus={true}
               />
@@ -332,13 +338,13 @@ const MarketDepth = ({ selectedBond }) => {
             <span className="dealer-title">BondVision Dealer Pricing</span>
           </div>
           {!collapsedSections.dealerPricing && (
-            <div className="ag-theme-alpine-dark dealer-grid">
+            <div className="ag-theme-alpine-dark dealer-pricing-grid">
               <AgGridReact
                 ref={gridRef}
                 rowData={rowData}
                 columnDefs={dealerPricingColumnDefs}
                 defaultColDef={defaultColDef}
-                domLayout='autoHeight'
+                domLayout='normal'
                 suppressCellFocus={true}
               />
             </div>
