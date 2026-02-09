@@ -111,6 +111,21 @@
   min-width: 0;
 }
 
+.header-filter-icon {
+  color: var(--color-primary);
+  opacity: 0.9;
+  margin-right: 2px;
+  flex-shrink: 0;
+  display: none;
+  line-height: 1;
+  height: 9px;
+}
+
+.header-filter-icon svg {
+  vertical-align: middle;
+  display: block;
+}
+
 .header-menu-icon {
   cursor: pointer;
   font-size: 11px;

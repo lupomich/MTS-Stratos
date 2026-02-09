@@ -15,10 +15,19 @@ class CustomHeaderWithMenu {
     this.eGui.className = 'custom-header-wrapper'
     this.eGui.innerHTML = `
       <span class="header-text">${params.displayName}</span>
+      <span class="header-filter-icon" title="Filtro attivo">
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
+          <path d="M0 0 L10 0 L10 1 L6.5 5 L6.5 10 L3.5 10 L3.5 5 L0 1 Z"/>
+        </svg>
+      </span>
       <span class="header-menu-icon" title="Menu colonna">☰</span>
     `
+    this.eFilterIcon = this.eGui.querySelector('.header-filter-icon')
     this.eMenuIcon = this.eGui.querySelector('.header-menu-icon')
     this.eMenuIcon.addEventListener('click', (e) => this.onMenuClicked(e))
+    
+    // Controlla lo stato del filtro iniziale
+    this.updateFilterIcon()
     
     // Chiudi menu quando si clicca altrove
     this.documentClickListener = (e) => {
@@ -26,6 +35,21 @@ class CustomHeaderWithMenu {
         this.destroyMenu()
       }
     }
+  }
+  
+  updateFilterIcon() {
+    if (!this.params || !this.params.api) return
+    const filterModel = this.params.api.getFilterModel()
+    const isFiltered = filterModel && filterModel[this.colId]
+    if (this.eFilterIcon) {
+      this.eFilterIcon.style.display = isFiltered ? 'inline' : 'none'
+    }
+  }
+  
+  refresh(params) {
+    this.params = params
+    this.updateFilterIcon()
+    return true
   }
   
   getGui() {
@@ -138,6 +162,8 @@ class CustomHeaderWithMenu {
       case 'clearFilters':
         api.setFilterModel(null)
         api.onFilterChanged()
+        // Forza refresh degli header per aggiornare icone filtro
+        api.refreshHeader()
         break
       case 'sortAsc':
         columnApi.applyColumnState({
@@ -178,10 +204,12 @@ class CustomHeaderWithMenu {
         })
         columnApi.setColumnPinned(this.colId, null)
         api.destroyFilter(this.colId)
+        api.refreshHeader()
         break
       case 'resetAll':
         columnApi.resetColumnState()
         api.setFilterModel(null)
+        api.refreshHeader()
         break
     }
   }
@@ -409,6 +437,11 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
           defaultColDef={defaultColDef}
           rowSelection="single"
           onRowClicked={onRowClicked}
+          onFilterChanged={() => {
+            if (gridRef.current?.api) {
+              gridRef.current.api.refreshHeader()
+            }
+          }}
           animateRows={true}
           suppressCellFocus={true}
           context={{ t, language }}

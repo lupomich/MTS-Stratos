@@ -135,15 +135,16 @@ const MarketDepth = ({ selectedBond }) => {
 
   // Dealer Pricing column definitions
   const dealerPricingColumnDefs = useMemo(() => [
-    { field: 'bidTime', headerName: 'BID TIME', width: 80, cellClass: 'time-cell' },
-    { field: 'dealer', headerName: 'DEALER', width: 80, cellClass: 'dealer-cell' },
-    { field: 'bidAxe', headerName: 'BID AXE', width: 70 },
-    { field: 'bidSize', headerName: 'SIZE', width: 60 },
+    { field: 'bidTime', headerName: 'BID TIME', width: 80, cellClass: 'time-cell', filter: 'agTextColumnFilter' },
+    { field: 'dealer', headerName: 'DEALER', width: 80, cellClass: 'dealer-cell', filter: 'agTextColumnFilter' },
+    { field: 'bidAxe', headerName: 'BID AXE', width: 70, filter: 'agTextColumnFilter' },
+    { field: 'bidSize', headerName: 'SIZE', width: 60, filter: 'agNumberColumnFilter' },
     { 
       field: 'bidYield', 
       headerName: 'BID YIELD', 
       width: 90,
       cellClass: 'bid-cell',
+      filter: 'agNumberColumnFilter',
       valueFormatter: params => params.value?.toFixed(4) || ''
     },
     { 
@@ -151,6 +152,7 @@ const MarketDepth = ({ selectedBond }) => {
       headerName: 'BID PRICE', 
       width: 90,
       cellClass: 'bid-cell',
+      filter: 'agNumberColumnFilter',
       valueFormatter: params => params.value?.toFixed(5) || ''
     },
     { 
@@ -158,6 +160,7 @@ const MarketDepth = ({ selectedBond }) => {
       headerName: 'ASK YIELD', 
       width: 90,
       cellClass: 'ask-cell',
+      filter: 'agNumberColumnFilter',
       valueFormatter: params => params.value?.toFixed(4) || ''
     },
     { 
@@ -165,45 +168,46 @@ const MarketDepth = ({ selectedBond }) => {
       headerName: 'ASK PRICE', 
       width: 90,
       cellClass: 'ask-cell',
+      filter: 'agNumberColumnFilter',
       valueFormatter: params => params.value?.toFixed(5) || ''
     },
-    { field: 'askSize', headerName: 'SIZE', width: 60 },
-    { field: 'askAxe', headerName: 'ASK AXE', width: 70 },
-    { field: 'dealerAsk', headerName: 'DEALER', width: 80, cellClass: 'dealer-cell' },
-    { field: 'askTime', headerName: 'ASK TIME', width: 80, cellClass: 'time-cell' }
+    { field: 'askSize', headerName: 'SIZE', width: 60, filter: 'agNumberColumnFilter' },
+    { field: 'askAxe', headerName: 'ASK AXE', width: 70, filter: 'agTextColumnFilter' },
+    { field: 'dealerAsk', headerName: 'DEALER', width: 80, cellClass: 'dealer-cell', filter: 'agTextColumnFilter' },
+    { field: 'askTime', headerName: 'ASK TIME', width: 80, cellClass: 'time-cell', filter: 'agTextColumnFilter' }
   ], [])
 
   // MTS Order Book column definitions
   const mtsColumnDefs = useMemo(() => [
-    { field: 'market', headerName: 'MARKET', width: 80 },
-    { field: 'size', headerName: 'SIZE', width: 70, valueFormatter: params => params.value?.toFixed(1) || '' },
-    { field: 'bidYield', headerName: 'BID YIELD', width: 90, cellClass: 'bid-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'bidPrice', headerName: 'BID PRICE', width: 90, cellClass: 'bid-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'askPrice', headerName: 'ASK PRICE', width: 90, cellClass: 'ask-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'askYield', headerName: 'ASK YIELD', width: 90, cellClass: 'ask-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'askSize', headerName: 'SIZE', width: 70 }
+    { field: 'market', headerName: 'MARKET', width: 80, filter: 'agTextColumnFilter' },
+    { field: 'size', headerName: 'SIZE', width: 70, filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(1) || '' },
+    { field: 'bidYield', headerName: 'BID YIELD', width: 90, cellClass: 'bid-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'bidPrice', headerName: 'BID PRICE', width: 90, cellClass: 'bid-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'askPrice', headerName: 'ASK PRICE', width: 90, cellClass: 'ask-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'askYield', headerName: 'ASK YIELD', width: 90, cellClass: 'ask-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'askSize', headerName: 'SIZE', width: 70, filter: 'agNumberColumnFilter' }
   ], [])
 
   // EBM Order Book column definitions
   const ebmColumnDefs = useMemo(() => [
-    { field: 'size', headerName: 'SIZE', width: 70, valueFormatter: params => params.value?.toFixed(1) || '' },
-    { field: 'bidYield', headerName: 'BID YIELD', width: 90, cellClass: 'bid-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'bidPrice', headerName: 'BID PRICE', width: 90, cellClass: 'bid-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'askPrice', headerName: 'ASK PRICE', width: 90, cellClass: 'ask-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'askYield', headerName: 'ASK YIELD', width: 90, cellClass: 'ask-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'askSize', headerName: 'SIZE', width: 70 }
+    { field: 'size', headerName: 'SIZE', width: 70, filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(1) || '' },
+    { field: 'bidYield', headerName: 'BID YIELD', width: 90, cellClass: 'bid-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'bidPrice', headerName: 'BID PRICE', width: 90, cellClass: 'bid-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'askPrice', headerName: 'ASK PRICE', width: 90, cellClass: 'ask-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'askYield', headerName: 'ASK YIELD', width: 90, cellClass: 'ask-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'askSize', headerName: 'SIZE', width: 70, filter: 'agNumberColumnFilter' }
   ], [])
 
   // Composite column definitions
   const compositeColumnDefs = useMemo(() => [
-    { field: 'market', headerName: 'MARKET', width: 80 },
-    { field: 'bidAxe', headerName: 'BID AXE', width: 80, cellClass: 'bid-cell' },
-    { field: 'bidYield', headerName: 'BID YIELD', width: 90, cellClass: 'bid-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'bidPrice', headerName: 'BID PRICE', width: 90, cellClass: 'bid-cell', valueFormatter: params => params.value?.toFixed(5) || '' },
-    { field: 'askPrice', headerName: 'ASK PRICE', width: 90, cellClass: 'ask-cell', valueFormatter: params => params.value?.toFixed(5) || '' },
-    { field: 'askYield', headerName: 'ASK YIELD', width: 90, cellClass: 'ask-cell', valueFormatter: params => params.value?.toFixed(4) || '' },
-    { field: 'midPrice', headerName: 'MID PRICE', width: 90, valueFormatter: params => params.value?.toFixed(5) || '' },
-    { field: 'askAxe', headerName: 'ASK AXE', width: 80, cellClass: 'ask-cell' }
+    { field: 'market', headerName: 'MARKET', width: 80, filter: 'agTextColumnFilter' },
+    { field: 'bidAxe', headerName: 'BID AXE', width: 80, cellClass: 'bid-cell', filter: 'agTextColumnFilter' },
+    { field: 'bidYield', headerName: 'BID YIELD', width: 90, cellClass: 'bid-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'bidPrice', headerName: 'BID PRICE', width: 90, cellClass: 'bid-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'askPrice', headerName: 'ASK PRICE', width: 90, cellClass: 'ask-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'askYield', headerName: 'ASK YIELD', width: 90, cellClass: 'ask-cell', filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(4) || '' },
+    { field: 'midPrice', headerName: 'MID PRICE', width: 90, filter: 'agNumberColumnFilter', valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'askAxe', headerName: 'ASK AXE', width: 80, cellClass: 'ask-cell', filter: 'agTextColumnFilter' }
   ], [])
 
   const defaultColDef = useMemo(() => ({

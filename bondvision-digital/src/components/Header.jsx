@@ -53,7 +53,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           CASH
         </button>
         <div className="header-info">
-          <span className="transaction-label">MICRO05.0000SMTS</span>
+          <span className="transaction-label">MICK005.0000SMTS</span>
           <span className="user-id">12:34:16</span>
           <span className="market-status">Market <span className="status-test">TEST</span></span>
           <span className="member-status">Member <span className="status-off">OFF</span></span>
@@ -61,24 +61,18 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           <span className="autoex-status">AutoEx <span className="status-off">OFF</span></span>
         </div>
         <div className="header-icons">
-          <button className="icon-btn" title="User Profile">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </button>
-          <button className="icon-btn" title="Language" onClick={toggleLanguage}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button className="icon-btn language-btn" title="Language" onClick={toggleLanguage}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <circle cx="12" cy="12" r="10"/>
               <line x1="2" y1="12" x2="22" y2="12"/>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
             </svg>
-            <span style={{ fontSize: '10px', marginLeft: '4px' }}>{language.toUpperCase()}</span>
+            <span className="language-text">{language.toUpperCase()}</span>
           </button>
-          <button className="icon-btn" title="Close">
+          <button className="icon-btn" title="User Profile">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
             </svg>
           </button>
         </div>
