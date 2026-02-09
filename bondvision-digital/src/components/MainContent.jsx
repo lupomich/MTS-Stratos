@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
-import { getRandomBonds, generatePriceData } from '../data/governmentBonds'
+import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
 import './MainContent.css'
 
 const checkIcon = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -18,15 +18,16 @@ const countries = [
   { code: 'BE', name: 'Belgium', countryCode: 'be', flag: `https://flagcdn.com/16x12/be.png` },
   { code: 'ES', name: 'Spain', countryCode: 'es', flag: `https://flagcdn.com/16x12/es.png` },
   { code: 'FR', name: 'France', countryCode: 'fr', flag: `https://flagcdn.com/16x12/fr.png` },
+  { code: 'DE', name: 'Germany', countryCode: 'de', flag: `https://flagcdn.com/16x12/de.png` },
   { code: 'GR', name: 'Greece', countryCode: 'gr', flag: `https://flagcdn.com/16x12/gr.png` },
-  { code: 'IRL', name: 'Ireland', countryCode: 'ie', flag: `https://flagcdn.com/16x12/ie.png` },
-  { code: 'ISR', name: 'Israel', countryCode: 'il', flag: `https://flagcdn.com/16x12/il.png` },
+  { code: 'IE', name: 'Ireland', countryCode: 'ie', flag: `https://flagcdn.com/16x12/ie.png` },
   { code: 'IT', name: 'Italy', countryCode: 'it', flag: `https://flagcdn.com/16x12/it.png` },
-  { code: 'LT', name: 'Lithuania', countryCode: 'lt', flag: `https://flagcdn.com/16x12/lt.png` },
   { code: 'LU', name: 'Luxembourg', countryCode: 'lu', flag: `https://flagcdn.com/16x12/lu.png` },
-  { code: 'LV', name: 'Latvia', countryCode: 'lv', flag: `https://flagcdn.com/16x12/lv.png` },
   { code: 'NL', name: 'Netherlands', countryCode: 'nl', flag: `https://flagcdn.com/16x12/nl.png` },
-  { code: 'NO', name: 'Norway', countryCode: 'no', flag: `https://flagcdn.com/16x12/no.png` },
+  { code: 'PT', name: 'Portugal', countryCode: 'pt', flag: `https://flagcdn.com/16x12/pt.png` },
+  { code: 'GB', name: 'UK', countryCode: 'gb', flag: `https://flagcdn.com/16x12/gb.png` },
+  { code: 'US', name: 'USA', countryCode: 'us', flag: `https://flagcdn.com/16x12/us.png` },
+  { code: 'CA', name: 'Canada', countryCode: 'ca', flag: `https://flagcdn.com/16x12/ca.png` },
   { code: '+', name: 'More', countryCode: '', flag: '' }
 ]
 
@@ -154,7 +155,8 @@ const MainContent = () => {
   // Carica bond casuali quando cambia il paese
   useEffect(() => {
     const randomCount = Math.floor(Math.random() * (30 - 10 + 1)) + 10
-    const bonds = getRandomBonds(selectedCountry, randomCount)
+    const countryName = getCountryName(selectedCountry)
+    const bonds = getRandomBonds(countryName, randomCount)
     const dataBonds = bonds.map(bond => generatePriceData(bond))
     setDataTableRows(dataBonds)
   }, [selectedCountry])
