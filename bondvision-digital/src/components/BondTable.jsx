@@ -41,10 +41,11 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
       field: 'description', 
       headerName: 'DESCRIPTION',
       width: 150,
-      cellClass: 'description-cell'
+      cellClass: 'description-cell',
+      filter: 'agTextColumnFilter'
     },
-    { field: 'isin', headerName: 'ISIN', width: 100 },
-    { field: 'ccy', headerName: 'CCY', width: 50 },
+    { field: 'isin', headerName: 'ISIN', width: 100, filter: 'agTextColumnFilter' },
+    { field: 'ccy', headerName: 'CCY', width: 50, filter: 'agTextColumnFilter' },
     { 
       field: 'bidSprd', 
       headerName: 'BID SPRD',
@@ -110,8 +111,9 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
 
   const defaultColDef = useMemo(() => ({
     sortable: true,
-    filter: true,
-    resizable: true
+    resizable: true,
+    filter: 'agTextColumnFilter',
+    mainMenuItems: ['sortAscending', 'sortDescending', 'sortUnSort', 'separator', 'columnFilter', 'separator', 'autoSizeThis', 'autoSizeAll', 'resetColumns', 'separator', 'columnChooser']
   }), [])
 
   const onRowClicked = useCallback((event) => {

@@ -366,7 +366,36 @@
 
 .data-grid {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.data-grid.ag-theme-alpine-dark {
+  --ag-background-color: var(--dark-bg);
+  --ag-header-background-color: var(--dark-hover);
+  --ag-odd-row-background-color: var(--dark-bg);
+  --ag-row-hover-color: var(--dark-hover);
+  --ag-selected-row-background-color: #2a4a4a;
+  --ag-foreground-color: var(--text-light);
+  --ag-border-color: var(--dark-border);
+  --ag-header-foreground-color: var(--color-bg-white);
+  --ag-font-size: 12px;
+  --ag-header-height: 28px;
+  --ag-row-height: 22px;
+  --ag-cell-horizontal-padding: 6px;
+}
+
+.data-grid .ag-header-cell-text {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-bold);
+  font-size: 12px;
+}
+
+.data-grid .ag-cell {
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  line-height: 22px;
 }
 
 .data-column {

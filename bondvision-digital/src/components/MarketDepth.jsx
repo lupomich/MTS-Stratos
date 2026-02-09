@@ -208,7 +208,9 @@ const MarketDepth = ({ selectedBond }) => {
 
   const defaultColDef = useMemo(() => ({
     sortable: true,
-    resizable: true
+    resizable: true,
+    filter: 'agTextColumnFilter',
+    mainMenuItems: ['sortAscending', 'sortDescending', 'sortUnSort', 'separator', 'columnFilter', 'separator', 'autoSizeThis', 'autoSizeAll', 'resetColumns', 'separator', 'columnChooser']
   }), [])
 
   return (
@@ -237,37 +239,15 @@ const MarketDepth = ({ selectedBond }) => {
             <div className="order-book-title">MTS Cash Order Book</div>
           </div>
           {!collapsedSections.mtsOrderBook && (
-            <>
-              <table className="order-book-table">
-                <thead>
-                  <tr>
-                    <th>MARKET</th>
-                    <th>SIZE</th>
-                    <th>BID YIELD</th>
-                    <th>BID PRICE</th>
-                    <th>ASK PRICE</th>
-                    <th>ASK YIELD</th>
-                    <th>SIZE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderBookData.map((row, idx) => (
-                    <tr key={idx}>
-                      <td>{row.market}</td>
-                      <td>{row.size.toFixed(1)}</td>
-                      <td className="bid-val">{row.bidYield.toFixed(4)}</td>
-                      <td className="bid-val">{row.bidPrice.toFixed(4)}</td>
-                      <td className="ask-val">{row.askPrice.toFixed(4)}</td>
-                      <td className="ask-val">{row.askYield.toFixed(4)}</td>
-                      <td>{row.askSize}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="order-book-footer">
-                <div className="footer-row">LAST TIME (LOCAL) <span>LAST SIZE</span> <span>TOTAL SIZE</span> <span>LAST YIELD</span> <span>LAST PRICE</span> <span>TREND</span></div>
-              </div>
-            </>
+            <div className="ag-theme-alpine-dark dealer-grid">
+              <AgGridReact
+                rowData={orderBookData}
+                columnDefs={mtsColumnDefs}
+                defaultColDef={defaultColDef}
+                domLayout='autoHeight'
+                suppressCellFocus={true}
+              />
+            </div>
           )}
         </div>
 
@@ -287,35 +267,15 @@ const MarketDepth = ({ selectedBond }) => {
             <div className="order-book-title">EBM Order Book</div>
           </div>
           {!collapsedSections.ebmOrderBook && (
-            <>
-              <table className="order-book-table">
-                <thead>
-                  <tr>
-                    <th>SIZE</th>
-                    <th>BID YIELD</th>
-                    <th>BID PRICE</th>
-                    <th>ASK PRICE</th>
-                    <th>ASK YIELD</th>
-                    <th>SIZE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ebmOrderBookData.map((row, idx) => (
-                    <tr key={idx}>
-                      <td>{row.size.toFixed(1)}</td>
-                      <td className="bid-val">{row.bidYield.toFixed(4)}</td>
-                      <td className="bid-val">{row.bidPrice.toFixed(4)}</td>
-                      <td className="ask-val">{row.askPrice.toFixed(4)}</td>
-                      <td className="ask-val">{row.askYield.toFixed(4)}</td>
-                      <td>{row.askSize}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="order-book-footer">
-                <div className="footer-row">LAST TIME (LOCAL) <span>LAST SIZE</span> <span>TOTAL SIZE</span> <span>LAST YIELD</span> <span>LAST PRICE</span> <span>TREND</span></div>
-              </div>
-            </>
+            <div className="ag-theme-alpine-dark dealer-grid">
+              <AgGridReact
+                rowData={ebmOrderBookData}
+                columnDefs={ebmColumnDefs}
+                defaultColDef={defaultColDef}
+                domLayout='autoHeight'
+                suppressCellFocus={true}
+              />
+            </div>
           )}
         </div>
 
@@ -335,27 +295,23 @@ const MarketDepth = ({ selectedBond }) => {
             <span className="composite-title">BondVision Composite</span>
           </div>
           {!collapsedSections.composite && (
-            <div className="composite-grid">
-              <div className="composite-row composite-header-row">
-                <div className="comp-label">MARKET</div>
-                <div className="comp-label">BID AXE</div>
-                <div className="comp-label">BID YIELD</div>
-                <div className="comp-label">BID PRICE</div>
-                <div className="comp-label">ASK PRICE</div>
-                <div className="comp-label">ASK YIELD</div>
-                <div className="comp-label">MID PRICE</div>
-                <div className="comp-label">ASK AXE</div>
-              </div>
-              <div className="composite-row">
-                <div className="comp-value market-label">BVS</div>
-                <div className="comp-value bid-axe">{displayBond.bidAxe || ''}</div>
-                <div className="comp-value bid-val">{displayBond.bidYield?.toFixed(4) || '2.2565'}</div>
-                <div className="comp-value bid-val">{displayBond.bidPrice?.toFixed(5) || '99.58435'}</div>
-                <div className="comp-value ask-val">{displayBond.askPrice?.toFixed(5) || '99.59601'}</div>
-                <div className="comp-value ask-val">{displayBond.midYield?.toFixed(4) || '2.2113'}</div>
-                <div className="comp-value">{displayBond.midPrice?.toFixed(5) || '99.59018'}</div>
-                <div className="comp-value ask-axe">{displayBond.askAxe || ''}</div>
-              </div>
+            <div className="ag-theme-alpine-dark dealer-grid">
+              <AgGridReact
+                rowData={[{
+                  market: 'BVS',
+                  bidAxe: displayBond.bidAxe || '',
+                  bidYield: displayBond.bidYield || 2.2565,
+                  bidPrice: displayBond.bidPrice || 99.58435,
+                  askPrice: displayBond.askPrice || 99.59601,
+                  askYield: displayBond.midYield || 2.2113,
+                  midPrice: displayBond.midPrice || 99.59018,
+                  askAxe: displayBond.askAxe || ''
+                }]}
+                columnDefs={compositeColumnDefs}
+                defaultColDef={defaultColDef}
+                domLayout='autoHeight'
+                suppressCellFocus={true}
+              />
             </div>
           )}
         </div>

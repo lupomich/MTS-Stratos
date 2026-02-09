@@ -38,7 +38,7 @@
 }
 
 .order-book-section {
-  padding: 8px;
+  padding: 8px 8px 4px 8px;
   background-color: var(--dark-bg);
   border: 1px solid var(--dark-border);
   border-radius: 3px;
@@ -179,7 +179,7 @@
 }
 
 .composite-section {
-  padding: 8px;
+  padding: 8px 8px 4px 8px;
   background-color: var(--dark-bg);
   border: 1px solid var(--dark-border);
   border-radius: 3px;
@@ -265,7 +265,7 @@
 }
 
 .dealer-pricing-section {
-  padding: 8px;
+  padding: 8px 8px 4px 8px;
   background-color: var(--dark-bg);
   border: 1px solid var(--dark-border);
   border-radius: 3px;
@@ -296,7 +296,7 @@
 
 .dealer-grid {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 4px;
   font-size: 12px;
   font-family: var(--font-family-sans);
   --ag-row-height: 20px;
@@ -306,16 +306,23 @@
 
 .dealer-grid .ag-root-wrapper {
   border: none;
-  margin: 0;
-  padding: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
 }
 
 .dealer-grid .ag-root {
   border: none;
+  min-height: 0 !important;
 }
 
 .dealer-grid .ag-body-viewport {
   overflow-y: hidden !important;
+  min-height: 0 !important;
+}
+
+.dealer-grid .ag-center-cols-viewport {
+  min-height: 0 !important;
 }
 
 .dealer-grid .ag-header-cell-text {

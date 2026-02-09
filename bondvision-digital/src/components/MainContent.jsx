@@ -1,4 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { AgGridReact } from 'ag-grid-react'
+import 'ag-grid-community/styles/ag-grid.css'
+import 'ag-grid-community/styles/ag-theme-alpine.css'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
 import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
@@ -25,9 +28,9 @@ const countries = [
   { code: 'LU', name: 'Luxembourg', countryCode: 'lu', flag: `https://flagcdn.com/16x12/lu.png` },
   { code: 'NL', name: 'Netherlands', countryCode: 'nl', flag: `https://flagcdn.com/16x12/nl.png` },
   { code: 'PT', name: 'Portugal', countryCode: 'pt', flag: `https://flagcdn.com/16x12/pt.png` },
+  { code: 'RO', name: 'Romania', countryCode: 'ro', flag: `https://flagcdn.com/16x12/ro.png` },
+  { code: 'SE', name: 'Sweden', countryCode: 'se', flag: `https://flagcdn.com/16x12/se.png` },
   { code: 'GB', name: 'UK', countryCode: 'gb', flag: `https://flagcdn.com/16x12/gb.png` },
-  { code: 'US', name: 'USA', countryCode: 'us', flag: `https://flagcdn.com/16x12/us.png` },
-  { code: 'CA', name: 'Canada', countryCode: 'ca', flag: `https://flagcdn.com/16x12/ca.png` },
   { code: '+', name: 'More', countryCode: '', flag: '' }
 ]
 
@@ -235,6 +238,38 @@ const MainContent = () => {
     }
   }, [isDraggingVertical, isDraggingHorizontal])
 
+  // Column definitions for DATA table
+  const dataColumnDefs = useMemo(() => [
+    { field: 'isin', headerName: 'ISIN', width: 120 },
+    { field: 'description', headerName: 'DESCRIPTION', width: 180 },
+    { field: 'class', headerName: 'CLASS', width: 80 },
+    { field: 'market', headerName: 'MARKET', width: 100 },
+    { field: 'ccy', headerName: 'CCY', width: 60 },
+    { field: 'minPrice', headerName: 'MIN PRICE', width: 100, valueFormatter: params => params.value?.toFixed(6) || '' },
+    { field: 'maxPrice', headerName: 'MAX PRICE', width: 100, valueFormatter: params => params.value?.toFixed(6) || '' },
+    { field: 'avePrice', headerName: 'AVE. PRICE', width: 100, valueFormatter: params => params.value?.toFixed(6) || '' },
+    { field: 'minYield', headerName: 'MIN YIELD', width: 100, valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'maxYield', headerName: 'MAX YIELD', width: 100, valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'aveYield', headerName: 'AVE. YIELD', width: 100, valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'sizeMM', headerName: 'SIZE (MM)', width: 100, valueFormatter: params => params.value?.toFixed(1) || '' },
+    { field: 'nominalValue', headerName: 'NOMINAL VALUE', width: 130, valueFormatter: params => params.value?.toFixed(2) || '' },
+    { field: 'numTrades', headerName: 'NUM. TRADES', width: 110 },
+    { field: 'firstPrice', headerName: 'FIRST PRICE', width: 100, valueFormatter: params => params.value?.toFixed(6) || '' },
+    { field: 'firstYield', headerName: 'FIRST YIELD', width: 100, valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'lastPrice', headerName: 'LAST PRICE', width: 100, valueFormatter: params => params.value?.toFixed(6) || '' },
+    { field: 'lastYield', headerName: 'LAST YIELD', width: 100, valueFormatter: params => params.value?.toFixed(5) || '' },
+    { field: 'tradeType', headerName: 'TRADE TYPE', width: 100 },
+    { field: 'maturity', headerName: 'MATURITY', width: 100 },
+    { field: 'resMaturity', headerName: 'RES. MATURITY', width: 120 }
+  ], [])
+
+  const dataDefaultColDef = useMemo(() => ({
+    sortable: true,
+    resizable: true,
+    filter: 'agTextColumnFilter',
+    mainMenuItems: ['sortAscending', 'sortDescending', 'sortUnSort', 'separator', 'columnFilter', 'separator', 'autoSizeThis', 'autoSizeAll', 'resetColumns', 'separator', 'columnChooser']
+  }), [])
+
   return (
     <div className="main-content" ref={mainContentRef}>
       <div className="rfq-toolbar">
@@ -334,61 +369,14 @@ const MainContent = () => {
             <div className="data-header">
               <span className="data-title">DATA</span>
             </div>
-            <div className="data-grid">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>ISIN</th>
-                    <th>DESCRIPTION</th>
-                    <th>CLASS</th>
-                    <th>MARKET</th>
-                    <th>CCY</th>
-                    <th>MIN PRICE</th>
-                    <th>MAX PRICE</th>
-                    <th>AVE. PRICE</th>
-                    <th>MIN YIELD</th>
-                    <th>MAX YIELD</th>
-                    <th>AVE. YIELD</th>
-                    <th>SIZE (MM)</th>
-                    <th>NOMINAL VALUE</th>
-                    <th>NUM. TRADES</th>
-                    <th>FIRST PRICE</th>
-                    <th>FIRST YIELD</th>
-                    <th>LAST PRICE</th>
-                    <th>LAST YIELD</th>
-                    <th>TRADE TYPE</th>
-                    <th>MATURITY</th>
-                    <th>RES. MATURITY</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataTableRows.map((row, idx) => (
-                    <tr key={idx}>
-                      <td className="isin-cell">{row.isin}</td>
-                      <td className="desc-cell">{row.description}</td>
-                      <td>{row.class}</td>
-                      <td>{row.market}</td>
-                      <td>{row.ccy}</td>
-                      <td className="price-cell">{row.minPrice.toFixed(6)}</td>
-                      <td className="price-cell">{row.maxPrice.toFixed(6)}</td>
-                      <td className="price-cell">{row.avePrice.toFixed(6)}</td>
-                      <td className="yield-cell">{row.minYield.toFixed(5)}</td>
-                      <td className="yield-cell">{row.maxYield.toFixed(5)}</td>
-                      <td className="yield-cell">{row.aveYield.toFixed(5)}</td>
-                      <td className="number-cell">{row.sizeMM.toFixed(1)}</td>
-                      <td className="number-cell">{row.nominalValue.toFixed(2)}</td>
-                      <td className="number-cell">{row.numTrades}</td>
-                      <td className="price-cell">{row.firstPrice.toFixed(6)}</td>
-                      <td className="yield-cell">{row.firstYield.toFixed(5)}</td>
-                      <td className="price-cell">{row.lastPrice.toFixed(6)}</td>
-                      <td className="yield-cell">{row.lastYield.toFixed(5)}</td>
-                      <td>{row.tradeType}</td>
-                      <td>{row.maturity}</td>
-                      <td>{row.resMaturity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="ag-theme-alpine-dark data-grid">
+              <AgGridReact
+                rowData={dataTableRows}
+                columnDefs={dataColumnDefs}
+                defaultColDef={dataDefaultColDef}
+                domLayout='normal'
+                suppressCellFocus={true}
+              />
             </div>
           </div>
         </div>
