@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { LanguageProvider } from './context/LanguageContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
@@ -8,13 +9,15 @@ function App() {
   const [activeMarket, setActiveMarket] = useState('BV')
 
   return (
-    <div className="app">
-      <Header activeMarket={activeMarket} setActiveMarket={setActiveMarket} />
-      <div className="app-body">
-        <Sidebar />
-        <MainContent />
+    <LanguageProvider>
+      <div className="app">
+        <Header activeMarket={activeMarket} setActiveMarket={setActiveMarket} />
+        <div className="app-body">
+          <Sidebar />
+          <MainContent />
+        </div>
       </div>
-    </div>
+    </LanguageProvider>
   )
 }
 
