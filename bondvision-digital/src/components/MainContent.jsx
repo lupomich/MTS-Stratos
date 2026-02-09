@@ -1,6 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
+import { getRandomBonds, generatePriceData } from '../data/governmentBonds'
 import './MainContent.css'
 
 const checkIcon = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -138,6 +139,8 @@ const MainContent = () => {
   const [selectedCountry, setSelectedCountry] = useState('IT')
   const [expandedRFQ, setExpandedRFQ] = useState(false)
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
+  const [dataTableRows, setDataTableRows] = useState([])
+  const priceUpdateIntervalRef = useRef(null)
   
   // State per il resize dinamico
   const [tradingWidth, setTradingWidth] = useState(60) // percentage
@@ -147,6 +150,14 @@ const MainContent = () => {
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const contentBodyRef = useRef(null)
   const mainContentRef = useRef(null)
+
+  // Carica bond casuali quando cambia il paese
+  useEffect(() => {
+    const randomCount = Math.floor(Math.random() * (30 - 10 + 1)) + 10
+    const bonds = getRandomBonds(selectedCountry, randomCount)
+    const dataBonds = bonds.map(bond => generatePriceData(bond))
+    setDataTableRows(dataBonds)
+  }, [selectedCountry])
 
   // Handle resize verticale (trading area vs market depth)
   const handleMouseDownVertical = useCallback(() => {
@@ -298,7 +309,7 @@ const MainContent = () => {
             </div>
           )}
 
-          <BondTable onSelectBond={setSelectedBond} />
+          <BondTable onSelectBond={setSelectedBond} countryBonds={dataTableRows} />
 
           <div className="resize-handle-horizontal" onMouseDown={handleMouseDownHorizontal} />
 

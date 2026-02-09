@@ -48,7 +48,7 @@
   color: var(--color-bg-white);
   font-family: var(--font-family-sans);
   font-weight: var(--font-weight-bold);
-  font-size: 11px;
+  font-size: 12px;
   margin-bottom: 4px;
 }
 
@@ -100,31 +100,46 @@
 
 .order-book-table {
   width: 100%;
-  padding-top: 8px;
+  padding-top: 4px;
   border-collapse: collapse;
-  font-size: 9px;
+  font-size: 12px;
   font-family: var(--font-family-sans);
+  background-color: var(--dark-bg);
 }
 
 .order-book-table thead {
   background-color: var(--dark-hover);
-  border: 1px solid var(--dark-border);
+  border-bottom: 1px solid var(--dark-border);
 }
 
 .order-book-table th {
-  padding: 4px;
+  padding: 6px 8px;
   color: var(--color-bg-white);
   font-weight: var(--font-weight-bold);
   text-align: center;
-  border: 1px solid var(--dark-border);
-  font-size: 8px;
+  border: none;
+  font-size: 12px;
+}
+
+.order-book-table th:last-child {
+  border: none;
 }
 
 .order-book-table td {
-  padding: 4px;
+  padding: 6px 8px;
   color: var(--text-light);
   text-align: center;
-  border: 1px solid var(--dark-border);
+  border: none;
+  font-size: 12px;
+  background-color: var(--dark-bg);
+}
+
+.order-book-table td:last-child {
+  border: none;
+}
+
+.order-book-table tbody tr:hover {
+  background-color: var(--dark-hover);
 }
 
 .order-book-table .size-cell {
@@ -178,7 +193,7 @@
   color: var(--color-bg-white);
   font-family: var(--font-family-sans);
   font-weight: var(--font-weight-bold);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .composite-grid {
@@ -189,7 +204,7 @@
 
 .composite-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 4px;
   padding: 4px 0;
 }
@@ -200,7 +215,7 @@
 }
 
 .comp-label {
-  font-size: 9px;
+  font-size: 12px;
   font-family: var(--font-family-sans);
   color: var(--color-bg-white);
   font-weight: var(--font-weight-bold);
@@ -208,7 +223,7 @@
 }
 
 .comp-value {
-  font-size: 10px;
+  font-size: 12px;
   font-family: var(--font-family-sans);
   color: var(--text-light);
   text-align: center;
@@ -251,17 +266,21 @@
   color: var(--color-bg-white);
   font-family: var(--font-family-sans);
   font-weight: var(--font-weight-bold);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .dealer-grid {
   width: 100%;
-  font-size: 9px;
+  font-size: 12px;
   font-family: var(--font-family-sans);
 }
 
 .dealer-grid .ag-header-cell-text {
-  font-size: 8px;
+  font-size: 12px;
+}
+
+.dealer-grid .ag-cell {
+  font-size: 12px !important;
 }
 
 .dealer-grid .time-cell {
@@ -288,5 +307,5 @@
 }
 
 .dealer-grid .ag-row {
-  font-size: 9px;
+  font-size: 12px;
 }

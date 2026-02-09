@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
@@ -16,9 +16,30 @@ const mockDealerPricing = [
   { bidTime: '11:48:53', dealer: '_D11', bidAxe: '15', bidSize: '', bidYield: 2.2603, bidPrice: 99.58338, askYield: 0.6528, askPrice: 99.9979, askSize: '2.5', askAxe: 'MS', dealerAsk: 'MS', askTime: '12:31:22' }
 ]
 
+const getRandomTime = () => {
+  const h = String(Math.floor(Math.random() * 24)).padStart(2, '0')
+  const m = String(Math.floor(Math.random() * 60)).padStart(2, '0')
+  const s = String(Math.floor(Math.random() * 60)).padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
+
 const MarketDepth = ({ selectedBond }) => {
   const gridRef = useRef()
-  const [rowData] = useState(mockDealerPricing)
+  const [rowData, setRowData] = useState(mockDealerPricing)
+  const [orderBookData, setOrderBookData] = useState([
+    { market: 'MTS', size: 12.5, bidYield: 2.1110, bidPrice: 99.6189, askPrice: 99.6203, askYield: 2.0550, askSize: 12 },
+    { market: 'MTS', size: 15.0, bidYield: 2.1142, bidPrice: 99.6146, askPrice: 99.6236, askYield: 2.0820, askSize: 14 },
+    { market: 'MTS', size: 8.3, bidYield: 2.1165, bidPrice: 99.6125, askPrice: 99.6255, askYield: 2.0780, askSize: 9 },
+    { market: 'MTS', size: 11.2, bidYield: 2.1088, bidPrice: 99.6207, askPrice: 99.6218, askYield: 2.0890, askSize: 10 },
+    { market: 'MTS', size: 6.7, bidYield: 2.1205, bidPrice: 99.6095, askPrice: 99.6270, askYield: 2.0650, askSize: 8 }
+  ])
+  const [ebmOrderBookData, setEbmOrderBookData] = useState([
+    { size: 11.0, bidYield: 2.1420, bidPrice: 99.6146, askPrice: 99.6236, askYield: 2.0820, askSize: 14 },
+    { size: 9.5, bidYield: 2.1395, bidPrice: 99.6165, askPrice: 99.6225, askYield: 2.0850, askSize: 11 },
+    { size: 13.2, bidYield: 2.1450, bidPrice: 99.6132, askPrice: 99.6245, askYield: 2.0780, askSize: 15 },
+    { size: 7.8, bidYield: 2.1365, bidPrice: 99.6185, askPrice: 99.6215, askYield: 2.0910, askSize: 10 },
+    { size: 10.4, bidYield: 2.1478, bidPrice: 99.6115, askPrice: 99.6260, askYield: 2.0720, askSize: 12 }
+  ])
   
   // Collapse/expand states
   const [collapsedSections, setCollapsedSections] = useState({
@@ -27,6 +48,60 @@ const MarketDepth = ({ selectedBond }) => {
     composite: false,
     dealerPricing: false
   })
+
+  // Aggiorna i dati degli order book ogni 3 secondi
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOrderBookData(prevData =>
+        prevData.map(row => ({
+          ...row,
+          bidPrice: row.bidPrice + (Math.random() - 0.5) * 0.01,
+          askPrice: row.askPrice + (Math.random() - 0.5) * 0.01,
+          bidYield: row.bidYield + (Math.random() - 0.5) * 0.005,
+          askYield: row.askYield + (Math.random() - 0.5) * 0.005,
+          size: Math.max(1, row.size + (Math.random() - 0.5) * 3)
+        }))
+      )
+      setEbmOrderBookData(prevData =>
+        prevData.map(row => ({
+          ...row,
+          bidPrice: row.bidPrice + (Math.random() - 0.5) * 0.01,
+          askPrice: row.askPrice + (Math.random() - 0.5) * 0.01,
+          bidYield: row.bidYield + (Math.random() - 0.5) * 0.005,
+          askYield: row.askYield + (Math.random() - 0.5) * 0.005,
+          size: Math.max(1, row.size + (Math.random() - 0.5) * 3)
+        }))
+      )
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Aggiorna i dati dei dealer pricing ogni 3 secondi
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRowData(prevData =>
+        prevData.map(row => {
+          if (Math.random() > 0.6) {
+            return {
+              ...row,
+              bidPrice: row.bidPrice + (Math.random() - 0.5) * 0.02,
+              askPrice: row.askPrice + (Math.random() - 0.5) * 0.02,
+              bidYield: row.bidYield + (Math.random() - 0.5) * 0.01,
+              askYield: row.askYield + (Math.random() - 0.5) * 0.01,
+              bidTime: getRandomTime(),
+              askTime: getRandomTime(),
+              bidSize: String((Math.random() * 30).toFixed(1)),
+              askSize: String((Math.random() * 30).toFixed(1))
+            }
+          }
+          return row
+        }).sort(() => Math.random() - 0.5) // Shuffle dealers
+      )
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Display selected bond or default
   const displayBond = selectedBond || {
@@ -137,51 +212,17 @@ const MarketDepth = ({ selectedBond }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>MTS</td>
-                    <td>12.5</td>
-                    <td className="bid-val">2.1110</td>
-                    <td className="bid-val">99.6189</td>
-                    <td className="ask-val">99.6203</td>
-                    <td className="ask-val">2.0550</td>
-                    <td>12</td>
-                  </tr>
-                  <tr>
-                    <td>MTS</td>
-                    <td>15.0</td>
-                    <td className="bid-val">2.1142</td>
-                    <td className="bid-val">99.6146</td>
-                    <td className="ask-val">99.6236</td>
-                    <td className="ask-val">2.0820</td>
-                    <td>14</td>
-                  </tr>
-                  <tr>
-                    <td>MTS</td>
-                    <td>8.3</td>
-                    <td className="bid-val">2.1165</td>
-                    <td className="bid-val">99.6125</td>
-                    <td className="ask-val">99.6255</td>
-                    <td className="ask-val">2.0780</td>
-                    <td>9</td>
-                  </tr>
-                  <tr>
-                    <td>MTS</td>
-                    <td>11.2</td>
-                    <td className="bid-val">2.1088</td>
-                    <td className="bid-val">99.6207</td>
-                    <td className="ask-val">99.6218</td>
-                    <td className="ask-val">2.0890</td>
-                    <td>10</td>
-                  </tr>
-                  <tr>
-                    <td>MTS</td>
-                    <td>6.7</td>
-                    <td className="bid-val">2.1205</td>
-                    <td className="bid-val">99.6095</td>
-                    <td className="ask-val">99.6270</td>
-                    <td className="ask-val">2.0650</td>
-                    <td>8</td>
-                  </tr>
+                  {orderBookData.map((row, idx) => (
+                    <tr key={idx}>
+                      <td>{row.market}</td>
+                      <td>{row.size.toFixed(1)}</td>
+                      <td className="bid-val">{row.bidYield.toFixed(4)}</td>
+                      <td className="bid-val">{row.bidPrice.toFixed(4)}</td>
+                      <td className="ask-val">{row.askPrice.toFixed(4)}</td>
+                      <td className="ask-val">{row.askYield.toFixed(4)}</td>
+                      <td>{row.askSize}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               <div className="order-book-footer">
@@ -220,46 +261,16 @@ const MarketDepth = ({ selectedBond }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>11.0</td>
-                    <td className="bid-val">2.1420</td>
-                    <td className="bid-val">99.6146</td>
-                    <td className="ask-val">99.6236</td>
-                    <td className="ask-val">2.0820</td>
-                    <td>14</td>
-                  </tr>
-                  <tr>
-                    <td>9.5</td>
-                    <td className="bid-val">2.1395</td>
-                    <td className="bid-val">99.6165</td>
-                    <td className="ask-val">99.6225</td>
-                    <td className="ask-val">2.0850</td>
-                    <td>11</td>
-                  </tr>
-                  <tr>
-                    <td>13.2</td>
-                    <td className="bid-val">2.1450</td>
-                    <td className="bid-val">99.6132</td>
-                    <td className="ask-val">99.6245</td>
-                    <td className="ask-val">2.0780</td>
-                    <td>15</td>
-                  </tr>
-                  <tr>
-                    <td>7.8</td>
-                    <td className="bid-val">2.1365</td>
-                    <td className="bid-val">99.6185</td>
-                    <td className="ask-val">99.6215</td>
-                    <td className="ask-val">2.0910</td>
-                    <td>10</td>
-                  </tr>
-                  <tr>
-                    <td>10.4</td>
-                    <td className="bid-val">2.1478</td>
-                    <td className="bid-val">99.6115</td>
-                    <td className="ask-val">99.6260</td>
-                    <td className="ask-val">2.0720</td>
-                    <td>12</td>
-                  </tr>
+                  {ebmOrderBookData.map((row, idx) => (
+                    <tr key={idx}>
+                      <td>{row.size.toFixed(1)}</td>
+                      <td className="bid-val">{row.bidYield.toFixed(4)}</td>
+                      <td className="bid-val">{row.bidPrice.toFixed(4)}</td>
+                      <td className="ask-val">{row.askPrice.toFixed(4)}</td>
+                      <td className="ask-val">{row.askYield.toFixed(4)}</td>
+                      <td>{row.askSize}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               <div className="order-book-footer">

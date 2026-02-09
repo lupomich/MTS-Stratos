@@ -358,7 +358,7 @@
 }
 
 .data-title {
-  font-size: 11px;
+  font-size: 12px;
   font-family: var(--font-family-sans);
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
@@ -376,7 +376,7 @@
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 9px;
+  font-size: 12px;
   font-family: var(--font-family-sans);
 }
 
@@ -394,7 +394,7 @@
   color: var(--color-bg-white);
   border-bottom: 1px solid var(--dark-border);
   white-space: nowrap;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .data-table td {
@@ -402,6 +402,7 @@
   color: var(--text-light);
   border-bottom: 1px solid var(--dark-hover);
   white-space: nowrap;
+  font-size: 12px;
 }
 
 .data-table tbody tr:hover {

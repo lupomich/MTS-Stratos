@@ -48,9 +48,10 @@
   --ag-foreground-color: var(--text-light);
   --ag-border-color: var(--dark-border);
   --ag-header-foreground-color: var(--color-bg-white);
-  --ag-font-size: 11px;
-  --ag-header-height: 32px;
-  --ag-row-height: 28px;
+  --ag-font-size: 12px;
+  --ag-header-height: 24px;
+  --ag-row-height: 20px;
+  --ag-cell-horizontal-padding: 4px;
 }
 
 .ag-theme-alpine-dark .ag-header-cell-text {
@@ -84,5 +85,5 @@
 
 .ag-theme-alpine-dark .ag-cell {
   font-family: var(--font-family-sans);
-  line-height: 28px;
+  line-height: 20px;
 }
