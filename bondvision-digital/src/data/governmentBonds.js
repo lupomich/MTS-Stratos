@@ -2348,7 +2348,6 @@ export const countryCodeMap = {
   'GB': 'UNITED KINGDOM',
   'IS': 'ICELAND',
   'US': 'UNITED STATES',
-  'CA': 'CANADA',
   'AU': 'AUSTRALIA',
   'JP': 'JAPAN',
   'NZ': 'NEW ZEALAND',

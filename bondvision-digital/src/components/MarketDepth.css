@@ -100,7 +100,7 @@
 
 .order-book-table {
   width: 100%;
-  padding-top: 4px;
+  padding-top: 8px;
   border-collapse: collapse;
   font-size: 12px;
   font-family: var(--font-family-sans);
@@ -113,12 +113,12 @@
 }
 
 .order-book-table th {
-  padding: 6px 8px;
+  padding: 4px 8px;
   color: var(--color-bg-white);
   font-weight: var(--font-weight-bold);
   text-align: center;
   border: none;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .order-book-table th:last-child {
@@ -126,11 +126,11 @@
 }
 
 .order-book-table td {
-  padding: 6px 8px;
+  padding: 4px 8px;
   color: var(--text-light);
   text-align: center;
   border: none;
-  font-size: 12px;
+  font-size: 11px;
   background-color: var(--dark-bg);
 }
 
@@ -186,7 +186,19 @@
 }
 
 .composite-header {
-  margin-bottom: 8px;
+  padding: 6px 4px;
+  background-color: var(--dark-hover);
+  border: 1px solid var(--dark-border);
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.composite-header:hover {
+  background-color: #1a4a4a;
 }
 
 .composite-title {
@@ -200,18 +212,19 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-top: 8px;
 }
 
 .composite-row {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 4px;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .composite-header-row {
   border-bottom: 1px solid var(--dark-border);
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .comp-label {
@@ -259,7 +272,19 @@
 }
 
 .dealer-header {
-  margin-bottom: 8px;
+  padding: 6px 4px;
+  background-color: var(--dark-hover);
+  border: 1px solid var(--dark-border);
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dealer-header:hover {
+  background-color: #1a4a4a;
 }
 
 .dealer-title {
@@ -271,35 +296,63 @@
 
 .dealer-grid {
   width: 100%;
+  margin-top: 8px;
   font-size: 12px;
   font-family: var(--font-family-sans);
+  --ag-row-height: 20px;
+  --ag-header-height: 24px;
+  --ag-cell-horizontal-padding: 4px;
+}
+
+.dealer-grid .ag-root-wrapper {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dealer-grid .ag-root {
+  border: none;
+}
+
+.dealer-grid .ag-body-viewport {
+  overflow-y: hidden !important;
 }
 
 .dealer-grid .ag-header-cell-text {
-  font-size: 12px;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
 }
 
 .dealer-grid .ag-cell {
   font-size: 12px !important;
+  line-height: 20px;
+}
+
+.dealer-grid .ag-header-cell {
+  line-height: 24px;
 }
 
 .dealer-grid .time-cell {
   color: var(--color-bg-white);
+  text-align: center;
 }
 
 .dealer-grid .dealer-cell {
   color: var(--text-light);
   font-weight: var(--font-weight-bold);
+  text-align: center;
 }
 
 .dealer-grid .bid-cell {
   color: var(--color-error);
   font-weight: var(--font-weight-bold);
+  text-align: center;
 }
 
 .dealer-grid .ask-cell {
   color: var(--color-success);
   font-weight: var(--font-weight-bold);
+  text-align: center;
 }
 
 .dealer-grid .ag-root-wrapper {

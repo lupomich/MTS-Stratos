@@ -162,7 +162,8 @@ const MainContent = () => {
   }, [selectedCountry])
 
   // Handle resize verticale (trading area vs market depth)
-  const handleMouseDownVertical = useCallback(() => {
+  const handleMouseDownVertical = useCallback((e) => {
+    e.preventDefault()
     setIsDraggingVertical(true)
   }, [])
 
@@ -172,6 +173,7 @@ const MainContent = () => {
 
   const handleMouseMoveVertical = useCallback((e) => {
     if (!isDraggingVertical || !contentBodyRef.current) return
+    e.preventDefault()
 
     const rect = contentBodyRef.current.getBoundingClientRect()
     const newWidth = ((e.clientX - rect.left) / rect.width) * 100
@@ -183,7 +185,8 @@ const MainContent = () => {
   }, [isDraggingVertical])
 
   // Handle resize orizzontale (content vs data)
-  const handleMouseDownHorizontal = useCallback(() => {
+  const handleMouseDownHorizontal = useCallback((e) => {
+    e.preventDefault()
     setIsDraggingHorizontal(true)
   }, [])
 
@@ -193,6 +196,7 @@ const MainContent = () => {
 
   const handleMouseMoveHorizontal = useCallback((e) => {
     if (!isDraggingHorizontal || !mainContentRef.current) return
+    e.preventDefault()
 
     const rect = mainContentRef.current.getBoundingClientRect()
     const newHeight = ((rect.bottom - e.clientY) / rect.height) * 100
@@ -219,6 +223,17 @@ const MainContent = () => {
       document.removeEventListener('mouseup', handleMouseUpHorizontal)
     }
   }, [handleMouseMoveHorizontal, handleMouseUpHorizontal])
+
+  // Previeni selezione testo durante drag
+  React.useEffect(() => {
+    if (isDraggingVertical || isDraggingHorizontal) {
+      document.body.style.userSelect = 'none'
+      document.body.style.cursor = isDraggingVertical ? 'col-resize' : 'row-resize'
+    } else {
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+  }, [isDraggingVertical, isDraggingHorizontal])
 
   return (
     <div className="main-content" ref={mainContentRef}>
