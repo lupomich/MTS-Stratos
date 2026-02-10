@@ -5,6 +5,13 @@ import './Header.css'
 const Header = ({ activeMarket, setActiveMarket }) => {
   const { language, toggleLanguage } = useLanguage()
   const [currentTime, setCurrentTime] = useState('')
+  const [memberStatus, setMemberStatus] = useState('OFF')
+  const [traderStatus, setTraderStatus] = useState('OFF')
+  const [autoexStatus, setAutoexStatus] = useState('OFF')
+
+  const toggleStatus = (status, setStatus) => {
+    setStatus(status === 'OFF' ? 'ON' : 'OFF')
+  }
 
   useEffect(() => {
     const updateTime = () => {
@@ -70,9 +77,33 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           <span className="transaction-label">MICK005.0000SMTS</span>
           <span className="user-id">{currentTime}</span>
           <span className="market-status">Market <span className="status-test">TEST</span></span>
-          <span className="member-status">Member <span className="status-off">OFF</span></span>
-          <span className="dealer-status">Trader <span className="status-off">OFF</span></span>
-          <span className="autoex-status">AutoEx <span className="status-off">OFF</span></span>
+          <span className="member-status">
+            Member <button 
+              className={`status-badge ${memberStatus === 'ON' ? 'status-on' : 'status-off'}`}
+              onClick={() => toggleStatus(memberStatus, setMemberStatus)}
+              title="Click to toggle"
+            >
+              {memberStatus}
+            </button>
+          </span>
+          <span className="dealer-status">
+            Trader <button 
+              className={`status-badge ${traderStatus === 'ON' ? 'status-on' : 'status-off'}`}
+              onClick={() => toggleStatus(traderStatus, setTraderStatus)}
+              title="Click to toggle"
+            >
+              {traderStatus}
+            </button>
+          </span>
+          <span className="autoex-status">
+            AutoEx <button 
+              className={`status-badge ${autoexStatus === 'ON' ? 'status-on' : 'status-off'}`}
+              onClick={() => toggleStatus(autoexStatus, setAutoexStatus)}
+              title="Click to toggle"
+            >
+              {autoexStatus}
+            </button>
+          </span>
         </div>
         <div className="header-icons">
           <button className="icon-btn language-btn" title="Language" onClick={toggleLanguage}>
