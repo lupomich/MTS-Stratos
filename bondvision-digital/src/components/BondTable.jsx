@@ -79,52 +79,74 @@ class CustomHeaderWithMenu {
     
     this.menu.innerHTML = `
       <div class="menu-item" data-action="filter">
-        <span class="menu-icon">🔍</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.586a1 1 0 0 1-.293.707l-6.414 6.414a1 1 0 0 0-.293.707V17l-4 4v-6.586a1 1 0 0 0-.293-.707L3.293 7.293A1 1 0 0 1 3 6.586V4z"/>
+        </svg>
         <span>${t('columnMenu.filter')}</span>
       </div>
       <div class="menu-item" data-action="clearFilters">
-        <span class="menu-icon">✕</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
         <span>${t('bondTable.clearFilters')}</span>
       </div>
       <div class="menu-separator"></div>
       <div class="menu-item" data-action="sortAsc">
-        <span class="menu-icon">↑</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="12 5 19 12 5 12"/><line x1="12" y1="19" x2="12" y2="9"/>
+        </svg>
         <span>${t('columnMenu.sortAsc')}</span>
       </div>
       <div class="menu-item" data-action="sortDesc">
-        <span class="menu-icon">↓</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="12 19 5 12 19 12"/><line x1="12" y1="5" x2="12" y2="15"/>
+        </svg>
         <span>${t('columnMenu.sortDesc')}</span>
       </div>
       <div class="menu-item" data-action="sortNone">
-        <span class="menu-icon">⊗</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>
+        </svg>
         <span>${t('columnMenu.sortNone')}</span>
       </div>
       <div class="menu-separator"></div>
       <div class="menu-item" data-action="autosizeThis">
-        <span class="menu-icon">↔</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="5 12 3 12 3 3 12 3"/><polyline points="19 12 21 12 21 21 12 21"/>
+        </svg>
         <span>${t('columnMenu.autosizeThis')}</span>
       </div>
       <div class="menu-item" data-action="autosizeAll">
-        <span class="menu-icon">⇔</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
         <span>${t('columnMenu.autosizeAll')}</span>
       </div>
       <div class="menu-separator"></div>
       <div class="menu-item" data-action="pinLeft">
-        <span class="menu-icon">📌</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="3"/><path d="M12 8v8"/><path d="M5 20h14"/><line x1="5" y1="12" x2="9" y2="12"/>
+        </svg>
         <span>${t('columnMenu.pinLeft')}</span>
       </div>
       <div class="menu-item" data-action="pinRight">
-        <span class="menu-icon">📌</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="3"/><path d="M12 8v8"/><path d="M5 20h14"/><line x1="15" y1="12" x2="19" y2="12"/>
+        </svg>
         <span>${t('columnMenu.pinRight')}</span>
       </div>
-      ${isPinned ? `<div class="menu-item" data-action="unpin"><span class="menu-icon">📍</span><span>${t('columnMenu.unpin')}</span></div>` : ''}
+      ${isPinned ? `<div class="menu-item" data-action="unpin"><svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M12 8v8"/><path d="M5 20h14"/><line x1="3" y1="3" x2="21" y2="21"/></svg><span>${t('columnMenu.unpin')}</span></div>` : ''}
       <div class="menu-separator"></div>
       <div class="menu-item" data-action="resetColumn">
-        <span class="menu-icon">↺</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36M20.49 15a9 9 0 01-14.85 3.36"/>
+        </svg>
         <span>${t('columnMenu.resetColumn')}</span>
       </div>
       <div class="menu-item" data-action="resetAll">
-        <span class="menu-icon">⟲</span>
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
         <span>${t('columnMenu.resetAll')}</span>
       </div>
     `
@@ -231,7 +253,7 @@ class CustomHeaderWithMenu {
   }
 }
 
-const BondTable = ({ onSelectBond, countryBonds = [] }) => {
+const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
   const gridRef = useRef()
   const { t, language } = useLanguage()
   const [rowData, setRowData] = useState(countryBonds.length > 0 ? countryBonds : [])
@@ -268,29 +290,29 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'description', 
       headerName: 'DESCRIPTION',
-      width: 150,
+      width: 180,
       cellClass: 'description-cell',
       filter: 'agTextColumnFilter',
       headerComponent: CustomHeaderWithMenu
     },
     { 
       field: 'isin', 
-      headerName: 'ISIN', 
-      width: 100, 
+      headerName: 'ISIN',
+      width: 130,
       filter: 'agTextColumnFilter',
       headerComponent: CustomHeaderWithMenu
     },
     { 
       field: 'ccy', 
-      headerName: 'CCY', 
-      width: 50, 
+      headerName: 'CCY',
+      width: 60,
       filter: 'agTextColumnFilter',
       headerComponent: CustomHeaderWithMenu
     },
     { 
       field: 'bidSprd', 
       headerName: 'BID SPRD',
-      width: 80,
+      width: 95,
       cellClass: 'bid-cell',
       valueFormatter: params => params.value?.toFixed(5) || '',
       filter: 'agNumberColumnFilter',
@@ -299,7 +321,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'bidYield', 
       headerName: 'BID YIELD',
-      width: 80,
+      width: 95,
       cellClass: 'bid-cell',
       valueFormatter: params => params.value?.toFixed(4) || '',
       filter: 'agNumberColumnFilter',
@@ -308,7 +330,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'bidPrice', 
       headerName: 'BID PRICE',
-      width: 80,
+      width: 95,
       cellClass: 'bid-cell',
       valueFormatter: params => params.value?.toFixed(5) || '',
       filter: 'agNumberColumnFilter',
@@ -317,7 +339,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'askPrice', 
       headerName: 'ASK PRICE',
-      width: 80,
+      width: 95,
       cellClass: 'ask-cell',
       valueFormatter: params => params.value?.toFixed(5) || '',
       filter: 'agNumberColumnFilter',
@@ -326,7 +348,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'askYield', 
       headerName: 'ASK YIELD',
-      width: 80,
+      width: 95,
       cellClass: 'ask-cell',
       valueFormatter: params => params.value?.toFixed(4) || '',
       filter: 'agNumberColumnFilter',
@@ -335,7 +357,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'askSprd', 
       headerName: 'ASK SPRD',
-      width: 80,
+      width: 95,
       cellClass: 'ask-cell',
       valueFormatter: params => params.value?.toFixed(5) || '',
       filter: 'agNumberColumnFilter',
@@ -344,7 +366,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'midPrice', 
       headerName: 'MID PRICE',
-      width: 80,
+      width: 95,
       valueFormatter: params => params.value?.toFixed(5) || '',
       filter: 'agNumberColumnFilter',
       headerComponent: CustomHeaderWithMenu
@@ -352,7 +374,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'midYield', 
       headerName: 'MID YIELD',
-      width: 80,
+      width: 95,
       valueFormatter: params => params.value?.toFixed(4) || '',
       filter: 'agNumberColumnFilter',
       headerComponent: CustomHeaderWithMenu
@@ -360,15 +382,15 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     { 
       field: 'coupon', 
       headerName: 'COUPON',
-      width: 70,
+      width: 85,
       valueFormatter: params => params.value?.toFixed(3) || '',
       filter: 'agNumberColumnFilter',
       headerComponent: CustomHeaderWithMenu
     },
     { 
       field: 'maturity', 
-      headerName: 'MATURITY', 
-      width: 100,
+      headerName: 'MATURITY',
+      width: 105,
       filter: 'agTextColumnFilter',
       headerComponent: CustomHeaderWithMenu
     }
@@ -385,12 +407,44 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
     onSelectBond(event.data)
   }, [onSelectBond])
 
+  // Evidenzia la riga che matcha la ricerca
+  const getRowStyle = useCallback((params) => {
+    if (searchTerm && params.data.description) {
+      const description = params.data.description.toLowerCase()
+      const search = searchTerm.toLowerCase()
+      if (description.includes(search)) {
+        return { backgroundColor: 'rgba(77, 184, 184, 0.25)', fontWeight: 'bold' }
+      }
+    }
+    return null
+  }, [searchTerm])
+
   // Force grid refresh when language changes
   useEffect(() => {
     if (gridRef.current?.api) {
       gridRef.current.api.refreshHeader()
     }
   }, [language])
+
+  // Auto-scroll alla riga evidenziata quando c'è una sola corrispondenza
+  useEffect(() => {
+    if (searchTerm && gridRef.current?.api) {
+      const matches = []
+      gridRef.current.api.forEachNode((node) => {
+        if (node.data.description) {
+          const description = node.data.description.toLowerCase()
+          const search = searchTerm.toLowerCase()
+          if (description.includes(search)) {
+            matches.push(node)
+          }
+        }
+      })
+      
+      if (matches.length === 1) {
+        gridRef.current.api.ensureIndexVisible(matches[0].rowIndex, 'middle')
+      }
+    }
+  }, [searchTerm])
 
   // Update ONLY price fields every 3 seconds (no description updates)
   useEffect(() => {
@@ -442,6 +496,7 @@ const BondTable = ({ onSelectBond, countryBonds = [] }) => {
               gridRef.current.api.refreshHeader()
             }
           }}
+          getRowStyle={getRowStyle}
           animateRows={true}
           suppressCellFocus={true}
           context={{ t, language }}

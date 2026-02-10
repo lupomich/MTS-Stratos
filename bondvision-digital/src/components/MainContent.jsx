@@ -6,8 +6,14 @@ import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
 import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
 import './MainContent.css'
+import sortAscendingIcon from '../icons/sortAscending.svg'
+import sortDescendingIcon from '../icons/sortDescending.svg'
 
 const checkIcon = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+
+// Sort icons for context menu
+const sortAscendingIconSvg = <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2V14M8 2L5 5M8 2L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+const sortDescendingIconSvg = <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14V2M8 14L5 11M8 14L11 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
 const topTabs = [
   { code: 'ALL', name: 'All', flag: null },
@@ -30,7 +36,7 @@ const countries = [
   { code: 'PT', name: 'Portugal', countryCode: 'pt', flag: `https://flagcdn.com/16x12/pt.png` },
   { code: 'RO', name: 'Romania', countryCode: 'ro', flag: `https://flagcdn.com/16x12/ro.png` },
   { code: 'SE', name: 'Sweden', countryCode: 'se', flag: `https://flagcdn.com/16x12/se.png` },
-  { code: 'GB', name: 'UK', countryCode: 'gb', flag: `https://flagcdn.com/16x12/gb.png` },
+  { code: 'UK', name: 'UK', countryCode: 'gb', flag: `https://flagcdn.com/16x12/gb.png` },
   { code: '+', name: 'More', countryCode: '', flag: '' }
 ]
 
@@ -143,6 +149,7 @@ const MainContent = () => {
   const [selectedCountry, setSelectedCountry] = useState('IT')
   const [expandedRFQ, setExpandedRFQ] = useState(false)
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
+  const [searchTerm, setSearchTerm] = useState('')
   const [dataTableRows, setDataTableRows] = useState([])
   const priceUpdateIntervalRef = useRef(null)
   
@@ -263,12 +270,51 @@ const MainContent = () => {
     { field: 'resMaturity', headerName: 'RES. MATURITY', width: 120 }
   ], [])
 
+  const getMainMenuItems = useCallback((params) => {
+    const defaultItems = params.defaultItems || [
+      'sortAscending',
+      'sortDescending',
+      'sortUnSort',
+      'separator',
+      'columnFilter',
+      'separator',
+      'autoSizeThis',
+      'autoSizeAll',
+      'resetColumns',
+      'separator',
+      'columnChooser'
+    ]
+
+    // Customize menu items with icons
+    return defaultItems.map(item => {
+      if (item === 'sortAscending') {
+        return {
+          name: 'Sort Ascending',
+          icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline-block;">
+            <path d="M8 2V14M8 2L5 5M8 2L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`,
+          action: () => params.api.applySortModel([{ colId: params.column?.colId || '', sort: 'asc' }])
+        }
+      }
+      if (item === 'sortDescending') {
+        return {
+          name: 'Sort Descending',
+          icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline-block;">
+            <path d="M8 14V2M8 14L5 11M8 14L11 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`,
+          action: () => params.api.applySortModel([{ colId: params.column?.colId || '', sort: 'desc' }])
+        }
+      }
+      return item
+    })
+  }, [])
+
   const dataDefaultColDef = useMemo(() => ({
     sortable: true,
     resizable: true,
     filter: 'agTextColumnFilter',
-    mainMenuItems: ['sortAscending', 'sortDescending', 'sortUnSort', 'separator', 'columnFilter', 'separator', 'autoSizeThis', 'autoSizeAll', 'resetColumns', 'separator', 'columnChooser']
-  }), [])
+    getMainMenuItems: getMainMenuItems
+  }), [getMainMenuItems])
 
   return (
     <div className="main-content" ref={mainContentRef}>
@@ -295,7 +341,13 @@ const MainContent = () => {
               </div>
             )}
           </div>
-          <input type="text" placeholder="Search Bonds..." className="search-input" />
+          <input 
+            type="text" 
+            placeholder="Search Bonds..." 
+            className="search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)} 
+          />
         </div>
         <div className="toolbar-right">
           <button className="rfq-toolbar-button">RFQ TOOLBAR</button>
@@ -333,14 +385,14 @@ const MainContent = () => {
         {countries.map((country, idx) => (
           <button
             key={`${country.code}-${idx}`}
-            className={`country-tab ${selectedCountry === country.code ? 'active' : ''}`}
+            className={`country-tab ${country.code === '+' ? 'country-add' : ''} ${selectedCountry === country.code ? 'active' : ''}`}
             onClick={() => setSelectedCountry(country.code)}
             title={country.name}
           >
             {country.flag && (
               <img src={country.flag} alt={country.code} className="country-flag-img" />
             )}
-            {!country.flag && (
+            {!country.flag && country.code !== '+' && (
               <span className="flag-placeholder">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"/>
@@ -361,7 +413,7 @@ const MainContent = () => {
             </div>
           )}
 
-          <BondTable onSelectBond={setSelectedBond} countryBonds={dataTableRows} />
+          <BondTable onSelectBond={setSelectedBond} countryBonds={dataTableRows} searchTerm={searchTerm} />
 
           <div className="resize-handle-horizontal" onMouseDown={handleMouseDownHorizontal} />
 

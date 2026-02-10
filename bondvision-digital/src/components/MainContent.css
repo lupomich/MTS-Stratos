@@ -281,6 +281,14 @@
   border-color: var(--color-primary);
 }
 
+.country-add {
+  font-size: 10px !important;
+  font-weight: bold !important;
+  justify-content: center !important;
+  padding: 6px 10px !important;
+  min-width: 54px;
+}
+
 .country-tab .flag {
   font-size: 14px;
   display: inline-flex;

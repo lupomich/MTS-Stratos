@@ -1,9 +1,29 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import './Header.css'
 
 const Header = ({ activeMarket, setActiveMarket }) => {
   const { language, toggleLanguage } = useLanguage()
+  const [currentTime, setCurrentTime] = useState('')
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      const cetTime = now.toLocaleTimeString('it-IT', {
+        timeZone: 'Europe/Rome',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      })
+      setCurrentTime(cetTime)
+    }
+
+    updateTime() // Imposta subito l'ora
+    const interval = setInterval(updateTime, 1000) // Aggiorna ogni secondo
+
+    return () => clearInterval(interval)
+  }, [])
   
   return (
     <header className="header">
@@ -41,12 +61,6 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           BV
         </button>
         <button 
-          className={`market-btn ${activeMarket === 'BV REPO' ? 'active' : ''}`}
-          onClick={() => setActiveMarket('BV REPO')}
-        >
-          BV REPO
-        </button>
-        <button 
           className={`market-btn ${activeMarket === 'CASH' ? 'active' : ''}`}
           onClick={() => setActiveMarket('CASH')}
         >
@@ -54,7 +68,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
         </button>
         <div className="header-info">
           <span className="transaction-label">MICK005.0000SMTS</span>
-          <span className="user-id">12:34:16</span>
+          <span className="user-id">{currentTime}</span>
           <span className="market-status">Market <span className="status-test">TEST</span></span>
           <span className="member-status">Member <span className="status-off">OFF</span></span>
           <span className="dealer-status">Trader <span className="status-off">OFF</span></span>
