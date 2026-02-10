@@ -1,0 +1,193 @@
+/* Stratos Design System - Badge Utilities */
+
+/* Status Badges - Pill Shaped */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-family: var(--font-family-sans);
+  font-weight: 700;
+  font-size: 12pt;
+  height: 24px;
+  white-space: nowrap;
+}
+
+.badge-status.success {
+  background-color: #009639;
+  color: #FFFFFF;
+}
+
+.badge-status.warning {
+  background-color: #FF9500;
+  color: #FFFFFF;
+}
+
+.badge-status.error {
+  background-color: #E74C3C;
+  color: #FFFFFF;
+}
+
+.badge-status.info {
+  background-color: #41B6E6;
+  color: #FFFFFF;
+}
+
+.badge-status.disabled {
+  background-color: #D9D9D9;
+  color: #333333;
+}
+
+/* Category Badges - Rounded */
+.badge-category {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-family-sans);
+  font-weight: 500;
+  font-size: 12pt;
+  height: 24px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.badge-category.primary {
+  background-color: #E0F5F3;
+  color: #008D7F;
+  border-color: #008D7F;
+}
+
+.badge-category.secondary {
+  background-color: #F5F5F5;
+  color: #333333;
+  border-color: #EBEBEB;
+}
+
+.badge-category.success {
+  background-color: #E8F7E8;
+  color: #008000;
+  border-color: #008000;
+}
+
+.badge-category.warning {
+  background-color: #FFE8CC;
+  color: #FF9500;
+  border-color: #FF9500;
+}
+
+/* Count Badges - Circular */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  background-color: #008D7F;
+  color: #FFFFFF;
+  font-family: var(--font-family-sans);
+  font-weight: 700;
+  font-size: 10pt;
+  line-height: 1;
+}
+
+.badge-count.danger {
+  background-color: #E74C3C;
+}
+
+/* Badge Sizes */
+.badge-large {
+  height: 28px;
+  padding: 6px 14px;
+  font-size: 14pt;
+}
+
+.badge-medium {
+  height: 24px;
+  padding: 4px 12px;
+  font-size: 12pt;
+}
+
+.badge-small {
+  height: 20px;
+  padding: 2px 8px;
+  font-size: 10pt;
+}
+
+.badge-xsmall {
+  height: 16px;
+  padding: 2px 6px;
+  font-size: 8pt;
+}
+
+/* Badge with Icon */
+.badge-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-with-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.badge-large.badge-with-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.badge-small.badge-with-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Icon Only Badge */
+.badge-icon-only {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-icon-only svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Interactive Badges */
+.badge-interactive {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.badge-interactive:hover {
+  opacity: 0.9;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.badge-interactive:active {
+  opacity: 0.95;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .badge-interactive {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: more) {
+  .badge-status,
+  .badge-category,
+  .badge-count {
+    border: 1px solid currentColor;
+  }
+}

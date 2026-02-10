@@ -370,7 +370,6 @@ const MainContent = () => {
 
       <div className="country-tabs">
         <div className="gov-selector-container">
-          <label className="toolbar-label" htmlFor="gov-selector">Gov /</label>
           <select id="gov-selector" className="gov-selector">
             <option>Gov / Country</option>
             <option>Gov / Maturity</option>

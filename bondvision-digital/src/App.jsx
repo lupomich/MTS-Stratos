@@ -4,6 +4,7 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
 import './App.css'
+import './components/Badge.css'
 
 function App() {
   const [activeMarket, setActiveMarket] = useState('BV')
