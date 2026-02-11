@@ -9,6 +9,22 @@ const Header = ({ activeMarket, setActiveMarket }) => {
   const [traderStatus, setTraderStatus] = useState('OFF')
   const [autoexStatus, setAutoexStatus] = useState('OFF')
 
+  const handleMemberToggle = () => {
+    const newMemberStatus = memberStatus === 'OFF' ? 'ON' : 'OFF'
+    setMemberStatus(newMemberStatus)
+    // Se metto Member OFF e Trader è ON, metto Trader OFF
+    if (newMemberStatus === 'OFF' && traderStatus === 'ON') {
+      setTraderStatus('OFF')
+    }
+  }
+
+  const handleTraderToggle = () => {
+    // Trader può stare ON solo se Member è ON
+    if (memberStatus === 'ON') {
+      setTraderStatus(traderStatus === 'OFF' ? 'ON' : 'OFF')
+    }
+  }
+
   const toggleStatus = (status, setStatus) => {
     setStatus(status === 'OFF' ? 'ON' : 'OFF')
   }
@@ -68,6 +84,12 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           BV
         </button>
         <button 
+          className={`market-btn ${activeMarket === 'BV REPO' ? 'active' : ''}`}
+          onClick={() => setActiveMarket('BV REPO')}
+        >
+          BV REPO
+        </button>
+        <button 
           className={`market-btn ${activeMarket === 'CASH' ? 'active' : ''}`}
           onClick={() => setActiveMarket('CASH')}
         >
@@ -80,7 +102,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           <span className="member-status">
             Member <button 
               className={`status-badge ${memberStatus === 'ON' ? 'status-on' : 'status-off'}`}
-              onClick={() => toggleStatus(memberStatus, setMemberStatus)}
+              onClick={handleMemberToggle}
               title="Click to toggle"
             >
               {memberStatus}
@@ -89,8 +111,10 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           <span className="dealer-status">
             Trader <button 
               className={`status-badge ${traderStatus === 'ON' ? 'status-on' : 'status-off'}`}
-              onClick={() => toggleStatus(traderStatus, setTraderStatus)}
-              title="Click to toggle"
+              onClick={handleTraderToggle}
+              disabled={memberStatus === 'OFF'}
+              title={memberStatus === 'OFF' ? 'Enable Member first' : 'Click to toggle'}
+              style={{ opacity: memberStatus === 'OFF' ? 0.5 : 1, cursor: memberStatus === 'OFF' ? 'not-allowed' : 'pointer' }}
             >
               {traderStatus}
             </button>
