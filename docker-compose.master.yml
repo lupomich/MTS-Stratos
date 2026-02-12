@@ -1,0 +1,58 @@
+# Docker Compose Master - Gestione di tutte le applicazioni MTS-Stratos
+# Uso: docker-compose -f docker-compose.master.yml up --build -d
+
+services:
+  # Hello App - Server Express (porta 3000)
+  hello-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mts-stratos-hello-app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - mts-network
+
+  # BondVision Mockup - React + Vite (porta 3001)
+  bondvision-mockup:
+    build:
+      context: ./bondvision-mockup
+      dockerfile: Dockerfile.dev
+    container_name: mts-stratos-bondvision-mockup
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./bondvision-mockup/src:/app/src
+      - ./bondvision-mockup/public:/app/public
+      - ./bondvision-mockup/index.html:/app/index.html
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+    networks:
+      - mts-network
+
+  # BondVision Digital - React + Vite (porta 3002)
+  bondvision-digital:
+    build:
+      context: ./bondvision-digital
+      dockerfile: Dockerfile.dev
+    container_name: mts-stratos-bondvision-digital
+    ports:
+      - "3002:3001"
+    volumes:
+      - ./bondvision-digital/src:/app/src
+      - ./bondvision-digital/public:/app/public
+      - ./bondvision-digital/index.html:/app/index.html
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+    networks:
+      - mts-network
+
+networks:
+  mts-network:
+    driver: bridge
