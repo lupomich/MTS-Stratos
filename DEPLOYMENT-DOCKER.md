@@ -14,7 +14,8 @@ Tutti i container sono stati testati e sono completamente funzionanti su Windows
 
 ## 🎯 Comandi Principali
 
-### Avviare tutti i servizi (raccomandato)
+### ✅ Avviare tutti i servizi insieme (raccomandato)
+Usa il **docker-compose.master.yml** per gestire tutti i servizi con un unico comando:
 ```bash
 docker-compose -f docker-compose.master.yml up -d
 ```
@@ -23,6 +24,9 @@ docker-compose -f docker-compose.master.yml up -d
 ```bash
 docker-compose -f docker-compose.master.yml up --build -d
 ```
+
+### 🎨 Avviare un singolo servizio
+Ogni servizio ha il suo docker-compose.yml per lavorare in modo isolato:
 
 ### Visualizzare lo stato dei container
 ```bash
@@ -57,18 +61,27 @@ docker-compose -f docker-compose.master.yml down -v
 docker-compose -f docker-compose.master.yml restart bondvision-digital
 ```
 
-## 🔧 Deployment dei Singoli Servizi
+## 🔧 Lavorare su un Singolo Servizio
+
+Ogni servizio mantiene il proprio `docker-compose.yml` per massima flessibilità.
+Utile quando lavori solo su una specifica applicazione senza avviare le altre.
 
 ### Hello App (porta 3000)
 ```bash
 # Dalla root del progetto
 docker-compose up -d
+
+# Fermare
+docker-compose down
 ```
 
 ### BondVision Mockup (porta 3001)
 ```bash
 cd bondvision-mockup
 docker-compose up -d
+
+# Fermare
+docker-compose down
 cd ..
 ```
 
@@ -76,8 +89,16 @@ cd ..
 ```bash
 cd bondvision-digital
 docker-compose up -d
+
+# Fermare
+docker-compose down
 cd ..
 ```
+
+**💡 Nota**: Puoi avere contemporaneamente:
+- Tutti i servizi via master: `docker-compose -f docker-compose.master.yml up -d`
+- OPPURE i singoli servizi: `cd bondvision-digital && docker-compose up -d`
+- Ma non mescolare! Usa sempre o il master o i singoli per evitare conflitti di rete.
 
 ## 🛠️ Troubleshooting
 
