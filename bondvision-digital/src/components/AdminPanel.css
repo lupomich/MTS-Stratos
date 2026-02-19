@@ -31,6 +31,120 @@
     align-items: center;
 }
 
+.btn-create-user {
+    background: var(--color-primary);
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-family: var(--font-family-sans);
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-create-user:hover {
+    background: var(--color-primary-dark, #00796b);
+}
+.btn-create-icon {
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 4px;
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal {
+    background: var(--dark-bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    padding: 32px 36px 28px 36px;
+    min-width: 340px;
+    max-width: 95vw;
+    width: 400px;
+    position: relative;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 20px;
+    font-family: var(--font-family-sans);
+}
+.modal-form label {
+    display: block;
+    margin-bottom: 14px;
+    color: var(--text-light);
+    font-family: var(--font-family-sans);
+    font-size: 14px;
+}
+.modal-form input,
+.modal-form select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--dark-border);
+    border-radius: 5px;
+    background: var(--dark-bg);
+    color: var(--text-light);
+    font-size: 15px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+    font-family: var(--font-family-sans);
+}
+.modal-form input:focus,
+.modal-form select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0, 141, 127, 0.15);
+}
+.modal-form .error-message {
+    color: var(--color-error);
+    background: rgba(207, 29, 67, 0.10);
+    border: 1px solid var(--color-error);
+    border-radius: 6px;
+    padding: 7px 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+.btn-submit {
+    background: var(--color-primary);
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 0;
+    width: 100%;
+    font-family: var(--font-family-sans);
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-submit:disabled {
+    background: var(--color-primary-dark, #00796b);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 .admin-header h2 {
     margin: 0;
     font-family: var(--font-family-sans);

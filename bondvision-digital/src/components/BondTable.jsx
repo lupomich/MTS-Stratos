@@ -400,7 +400,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
     sortable: true,
     resizable: true,
     filter: true,
-    suppressMenu: false
+    suppressHeaderMenuButton: false
   }), [])
 
   const onRowClicked = useCallback((event) => {

@@ -38,13 +38,23 @@ export const PreferencesProvider = ({ children }) => {
     const loadPreferences = async () => {
         try {
             const response = await axios.get('/preferences');
-            const prefs = response.data.preferences;
+            // Handle both response formats
+            let uiSettings = defaultPreferences;
             
-            // Merge with defaults and extract ui_settings
-            const uiSettings = prefs.ui_settings || defaultPreferences;
+            if (response.data?.preferences?.ui_settings) {
+                uiSettings = response.data.preferences.ui_settings;
+            } else if (response.data?.ui_settings) {
+                uiSettings = response.data.ui_settings;
+            } else if (response.data && Object.keys(response.data).length > 0) {
+                // If response.data is the preferences object itself
+                uiSettings = response.data?.ui_settings || response.data;
+            }
+            
             setPreferences(uiSettings);
         } catch (error) {
             console.error('Failed to load preferences:', error);
+            // Use defaults on error
+            setPreferences(defaultPreferences);
         } finally {
             setLoading(false);
         }

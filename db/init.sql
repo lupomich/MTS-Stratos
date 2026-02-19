@@ -80,12 +80,12 @@ CREATE TRIGGER update_preferences_updated_at BEFORE UPDATE ON user_preferences
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert default admin user (password: admin123 - CHANGE IN PRODUCTION!)
--- Password hash is bcrypt of 'admin123' with salt rounds 10
+-- Password hash is bcryptjs of 'admin123' with salt rounds 10
 INSERT INTO users (username, email, password_hash, role) 
 VALUES (
     'admin',
     'admin@stratos.local',
-    '$2b$10$rKZG8V8BYxJ3KQYqXqZ0V.xqYJ4K8tVGj3kYHZqXXN5L6F4HhN4W2',
+    '$2a$10$E6H4Pr8w4EN1cGh6tNAQ.e3.x8AAviATEzEsa4YzPTNJvO9mEJ/7K',
     'admin'
 ) ON CONFLICT (username) DO NOTHING;
 

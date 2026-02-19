@@ -2,6 +2,27 @@
 # Uso: docker-compose -f docker-compose.master.yml up --build -d
 
 services:
+  # BondVision Backend API (porta 3000)
+  bondvision-backend:
+    build:
+      context: ./bondvision-backend
+      dockerfile: Dockerfile
+    container_name: mts-stratos-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://stratos:stratos2026@postgres:5432/stratos_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=stratos-secret-key-2026
+      - CORS_ORIGIN=http://localhost:3002
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - mts-network
   # BondVision Digital - React + Vite (porta 3002)
   bondvision-digital:
     build:
