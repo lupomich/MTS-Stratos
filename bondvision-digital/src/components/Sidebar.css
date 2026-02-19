@@ -47,3 +47,63 @@
   text-align: center;
   letter-spacing: 0.5px;
 }
+
+/* Spacer to push user info to bottom */
+.sidebar-spacer {
+  flex: 1;
+}
+
+/* User section at the bottom */
+.sidebar-user-section {
+  border-top: 1px solid var(--dark-border);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.sidebar-admin {
+  cursor: pointer;
+}
+
+.sidebar-admin:hover {
+  background-color: rgba(65, 182, 230, 0.15);
+}
+
+.sidebar-admin .sidebar-icon {
+  color: #41b6e6;
+}
+
+.sidebar-admin .sidebar-label {
+  color: #41b6e6;
+  font-weight: 700;
+}
+
+.sidebar-user-info {
+  cursor: default;
+  border-left-color: transparent !important;
+}
+
+.sidebar-user-info:hover {
+  background-color: transparent;
+}
+
+.sidebar-user-info .sidebar-label {
+  font-size: 8px;
+  opacity: 0.8;
+  word-break: break-word;
+}
+
+.sidebar-logout {
+  position: relative;
+}
+
+.sidebar-logout:hover {
+  background-color: rgba(255, 82, 82, 0.1);
+}
+
+.sidebar-logout .sidebar-icon {
+  color: #ff5252;
+}
+
+.sidebar-logout .sidebar-label {
+  color: #ff5252;
+}

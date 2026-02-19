@@ -13,7 +13,13 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://stratos:stratos2026@postgres:5432/stratos_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=stratos-secret-key-2026-change-in-production
     restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
     networks:
       - mts-network
 
@@ -50,9 +56,61 @@ services:
     environment:
       - NODE_ENV=development
     restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - mts-network
+
+  # PostgreSQL Database (porta 5432)
+  postgres:
+    image: postgres:15-alpine
+    container_name: mts-stratos-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=stratos
+      - POSTGRES_PASSWORD=stratos2026
+      - POSTGRES_DB=stratos_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - mts-network
+
+  # Redis Cache (porta 6379)
+  redis:
+    image: redis:7-alpine
+    container_name: mts-stratos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - mts-network
+
+  # pgAdmin - Database UI (porta 5050)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mts-stratos-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@stratos.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    restart: unless-stopped
     networks:
       - mts-network
 
 networks:
   mts-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  pgadmin-data:

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useLanguage } from '../context/LanguageContext'
+import { useAuth } from '../context/AuthContext'
 import './Header.css'
 
 const Header = ({ activeMarket, setActiveMarket }) => {
   const { language, toggleLanguage } = useLanguage()
+  const { user } = useAuth()
   const [currentTime, setCurrentTime] = useState('')
   const [memberStatus, setMemberStatus] = useState('OFF')
   const [traderStatus, setTraderStatus] = useState('OFF')
@@ -96,7 +98,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           CASH
         </button>
         <div className="header-info">
-          <span className="transaction-label">MICK005.0000SMTS</span>
+          <span className="transaction-label">{user?.username || 'Guest'}</span>
           <span className="user-id">{currentTime}</span>
           <span className="market-status">Market <span className="status-test">TEST</span></span>
           <span className="member-status">
@@ -137,12 +139,6 @@ const Header = ({ activeMarket, setActiveMarket }) => {
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
             </svg>
             <span className="language-text">{language.toUpperCase()}</span>
-          </button>
-          <button className="icon-btn" title="User Profile">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
           </button>
         </div>
       </div>

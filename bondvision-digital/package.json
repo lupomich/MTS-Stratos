@@ -1,5 +1,5 @@
 {
-  "name": "bondvision-mockup",
+  "name": "bondvision-digital",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -11,6 +11,8 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
+    "axios": "^1.6.5",
     "ag-grid-react": "^31.0.0",
     "ag-grid-community": "^31.0.0"
   },

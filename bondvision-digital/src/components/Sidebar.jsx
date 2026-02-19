@@ -1,9 +1,17 @@
 import React from 'react'
 import { useLanguage } from '../context/LanguageContext'
+import { useAuth } from '../context/AuthContext'
 import './Sidebar.css'
 
-const Sidebar = () => {
+const Sidebar = ({ onAdminClick }) => {
   const { t } = useLanguage()
+  const { logout, user } = useAuth()
+  
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      await logout()
+    }
+  }
   
   const menuItems = [
     { 
@@ -46,6 +54,52 @@ const Sidebar = () => {
           <div className="sidebar-label">{item.label}</div>
         </div>
       ))}
+      
+      {/* User info and logout at the bottom */}
+      <div className="sidebar-spacer"></div>
+      
+      {user && (
+        <div className="sidebar-user-section">
+          {/* Admin panel button - only for admin role */}
+          {user.role === 'admin' && (
+            <div className="sidebar-item sidebar-admin" onClick={onAdminClick}>
+              <div className="sidebar-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 15v2"/>
+                  <path d="M12 7v2"/>
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M16.24 7.76l-1.41 1.41"/>
+                  <path d="M9.17 14.83l-1.41 1.41"/>
+                  <path d="M7.76 7.76l1.41 1.41"/>
+                  <path d="M14.83 14.83l1.41 1.41"/>
+                </svg>
+              </div>
+              <div className="sidebar-label">ADMIN</div>
+            </div>
+          )}
+          
+          <div className="sidebar-item sidebar-user-info">
+            <div className="sidebar-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div className="sidebar-label">{user.username}</div>
+          </div>
+          
+          <div className="sidebar-item sidebar-logout" onClick={handleLogout}>
+            <div className="sidebar-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </div>
+            <div className="sidebar-label">Logout</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
