@@ -1,0 +1,6 @@
+vorrei che creassi una checklist di test dell'applicazione per testare tutte le funzionalità (checklist deve far parte del workspace, volgio anche un xlsx). In particolare:
+- creazione nuovo utente (uno per ogni profilo) attraverso admin panel, con successivo login, verifica collegamento, logout, disattivazione utente, tentato login di utente disattivato, riattivazione utente, corretta login e successiva cancellazione degli utenti creati. Alla fine la situazione utenti deve essere uguale a quella antecedente l'inizio dei test.
+- collegamento utente e verifica delle funzionalità di memorizzazione dei setting: spostamento colonne, ordinamento, filtri singoli e multipli, cancellazione colonne. Verifica che al logout le impostazioni siano mantenute. Ripristino situazione iniziale (tramite reset all columns) e verifica del ripristino.
+- Ogni altra funzionalità implementata che possa essere verificata
+- Alla fine della suite di test la situazione dell'applicazione e del DB deve essere quella iniziale.
+- genera un report dettagliato dei test fatti con data, orario, tempo di esecuzione, numero del test nella checklist, dettaglio del test, PASS/NO PASS, motivazione del NO PASS eventuale.

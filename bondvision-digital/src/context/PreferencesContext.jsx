@@ -1,26 +1,31 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 
 const PreferencesContext = createContext(null);
 
 const defaultPreferences = {
-    theme: 'light',
+    theme: 'dark',
     language: 'en',
-    defaultColumns: ['isin', 'description', 'price', 'yield'],
+    defaultColumns: ['isin', 'description', 'price', 'yield', 'maturity'],
+    columnOrder: [],
     lastTab: 'government-bonds',
-    gridLayout: 'comfortable'
+    gridLayout: 'comfortable',
+    columnWidths: {},
+    filters: {},
+    sorts: []
 };
 
 export const PreferencesProvider = ({ children }) => {
     const [preferences, setPreferences] = useState(defaultPreferences);
     const [loading, setLoading] = useState(true);
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, token } = useAuth();
+    const saveTimeoutRef = useRef(null);
 
     // Load preferences on mount
     useEffect(() => {
         if (isAuthenticated) {
-            loadPreferences();
+            loadPreferencesFromBackend();
         } else {
             // Load from localStorage for non-authenticated users
             const stored = localStorage.getItem('preferences');
@@ -33,94 +38,122 @@ export const PreferencesProvider = ({ children }) => {
             }
             setLoading(false);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, token]);
 
-    const loadPreferences = async () => {
+    const loadPreferencesFromBackend = async () => {
         try {
-            const response = await axios.get('/preferences');
-            // Handle both response formats
+            console.log('Loading preferences from backend - token:', token ? 'present' : 'absent')
+            const axiosConfig = {};
+            if (token) {
+                axiosConfig.headers = {
+                    'Authorization': `Bearer ${token}`
+                };
+            }
+            
+            const response = await axios.get('/preferences/ui_settings', axiosConfig);
+            console.log('Preferences loaded from backend:', response.data)
             let uiSettings = defaultPreferences;
             
             if (response.data?.preferences?.ui_settings) {
-                uiSettings = response.data.preferences.ui_settings;
-            } else if (response.data?.ui_settings) {
-                uiSettings = response.data.ui_settings;
-            } else if (response.data && Object.keys(response.data).length > 0) {
-                // If response.data is the preferences object itself
-                uiSettings = response.data?.ui_settings || response.data;
+                uiSettings = { ...defaultPreferences, ...response.data.preferences.ui_settings };
             }
             
+            console.log('Final preferences object:', uiSettings)
             setPreferences(uiSettings);
         } catch (error) {
             console.error('Failed to load preferences:', error);
-            // Use defaults on error
             setPreferences(defaultPreferences);
         } finally {
             setLoading(false);
         }
     };
 
-    const updatePreference = async (key, value) => {
-        const newPreferences = { ...preferences, [key]: value };
-        setPreferences(newPreferences);
-
-        if (isAuthenticated) {
-            try {
-                // Save to backend (bulk update with all preferences)
-                await axios.put('/preferences/ui_settings', {
-                    value: newPreferences
-                });
-            } catch (error) {
-                console.error('Failed to save preference:', error);
-                // Revert on error
-                setPreferences(preferences);
-            }
-        } else {
+    // Save preferences to backend (debounced)
+    const savePreferencesToBackend = useCallback(async (newPrefs) => {
+        if (!isAuthenticated) {
             // Save to localStorage for non-authenticated users
-            localStorage.setItem('preferences', JSON.stringify(newPreferences));
+            localStorage.setItem('preferences', JSON.stringify(newPrefs));
+            return;
         }
-    };
 
-    const updatePreferences = async (updates) => {
-        const newPreferences = { ...preferences, ...updates };
-        setPreferences(newPreferences);
-
-        if (isAuthenticated) {
-            try {
-                await axios.put('/preferences/ui_settings', {
-                    value: newPreferences
-                });
-            } catch (error) {
-                console.error('Failed to save preferences:', error);
-                setPreferences(preferences);
+        try {
+            const axiosConfig = {};
+            if (token) {
+                axiosConfig.headers = {
+                    'Authorization': `Bearer ${token}`
+                };
             }
-        } else {
-            localStorage.setItem('preferences', JSON.stringify(newPreferences));
+            
+            await axios.put('/preferences/ui_settings', newPrefs, axiosConfig);
+        } catch (error) {
+            console.error('Failed to save preferences:', error);
         }
-    };
+    }, [isAuthenticated, token]);
 
-    const resetPreferences = async () => {
+    const updatePreference = useCallback((key, value) => {
+        setPreferences(prev => {
+            const newPreferences = { ...prev, [key]: value };
+            
+            // Debounce the save operation
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            
+            saveTimeoutRef.current = setTimeout(() => {
+                savePreferencesToBackend(newPreferences);
+            }, 1000);
+            
+            return newPreferences;
+        });
+    }, [savePreferencesToBackend]);
+
+    const updatePreferences = useCallback((updates) => {
+        setPreferences(prev => {
+            const newPreferences = { ...prev, ...updates };
+            
+            // Debounce the save operation
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            
+            saveTimeoutRef.current = setTimeout(() => {
+                savePreferencesToBackend(newPreferences);
+            }, 1000);
+            
+            return newPreferences;
+        });
+    }, [savePreferencesToBackend]);
+
+    const resetPreferences = useCallback(async () => {
         setPreferences(defaultPreferences);
 
         if (isAuthenticated) {
             try {
-                await axios.put('/preferences/ui_settings', {
-                    value: defaultPreferences
-                });
+                await axios.put('/preferences/ui_settings', defaultPreferences);
             } catch (error) {
                 console.error('Failed to reset preferences:', error);
             }
         } else {
             localStorage.removeItem('preferences');
         }
-    };
+    }, [isAuthenticated]);
 
     const value = {
         preferences,
         loading,
         updatePreference,
         updatePreferences,
-        resetPreferences
+        resetPreferences,
+        // Convenience methods
+        setTheme: (theme) => updatePreference('theme', theme),
+        setLanguage: (language) => updatePreference('language', language),
+        setLastTab: (tab) => updatePreference('lastTab', tab),
+        setGridLayout: (layout) => updatePreference('gridLayout', layout),
+        setColumnOrder: (order) => updatePreference('columnOrder', order),
+        setColumnWidths: (widths) => updatePreference('columnWidths', widths),
+        setFilters: (filters) => updatePreference('filters', filters),
+        setSorts: (sorts) => updatePreference('sorts', sorts),
+        setDefaultColumns: (columns) => updatePreference('defaultColumns', columns)
     };
 
     return (

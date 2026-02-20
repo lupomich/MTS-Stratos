@@ -102,33 +102,38 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           <span className="user-id">{currentTime}</span>
           <span className="market-status">Market <span className="status-test">TEST</span></span>
           <span className="member-status">
-            Member <button 
+            Member <span 
               className={`status-badge ${memberStatus === 'ON' ? 'status-on' : 'status-off'}`}
               onClick={handleMemberToggle}
-              title="Click to toggle"
+              role="button"
+              tabIndex="0"
+              onKeyDown={(e) => e.key === 'Enter' && handleMemberToggle()}
             >
               {memberStatus}
-            </button>
+            </span>
           </span>
           <span className="dealer-status">
-            Trader <button 
+            Trader <span 
               className={`status-badge ${traderStatus === 'ON' ? 'status-on' : 'status-off'}`}
-              onClick={handleTraderToggle}
-              disabled={memberStatus === 'OFF'}
-              title={memberStatus === 'OFF' ? 'Enable Member first' : 'Click to toggle'}
+              onClick={memberStatus === 'ON' ? handleTraderToggle : undefined}
+              role="button"
+              tabIndex={memberStatus === 'OFF' ? -1 : 0}
+              onKeyDown={(e) => e.key === 'Enter' && memberStatus === 'ON' && handleTraderToggle()}
               style={{ opacity: memberStatus === 'OFF' ? 0.5 : 1, cursor: memberStatus === 'OFF' ? 'not-allowed' : 'pointer' }}
             >
               {traderStatus}
-            </button>
+            </span>
           </span>
           <span className="autoex-status">
-            AutoEx <button 
+            AutoEx <span 
               className={`status-badge ${autoexStatus === 'ON' ? 'status-on' : 'status-off'}`}
               onClick={() => toggleStatus(autoexStatus, setAutoexStatus)}
-              title="Click to toggle"
+              role="button"
+              tabIndex="0"
+              onKeyDown={(e) => e.key === 'Enter' && toggleStatus(autoexStatus, setAutoexStatus)}
             >
               {autoexStatus}
-            </button>
+            </span>
           </span>
         </div>
         <div className="header-icons">

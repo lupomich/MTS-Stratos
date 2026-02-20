@@ -8,6 +8,7 @@ const API_URL = 'http://localhost:3000/api';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -16,9 +17,10 @@ export const AuthProvider = ({ children }) => {
     
     // Add token to requests
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const storedToken = localStorage.getItem('token');
+        if (storedToken) {
+            setToken(storedToken);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         }
     }, []);
 
@@ -50,6 +52,7 @@ export const AuthProvider = ({ children }) => {
 
             // Store token
             localStorage.setItem('token', token);
+            setToken(token);
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
             setUser(user);
@@ -81,6 +84,7 @@ export const AuthProvider = ({ children }) => {
         } finally {
             // Clear state regardless of API result
             localStorage.removeItem('token');
+            setToken(null);
             delete axios.defaults.headers.common['Authorization'];
             setUser(null);
         }
@@ -92,6 +96,7 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
+        token,
         loading,
         error,
         login,

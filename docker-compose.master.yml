@@ -30,7 +30,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: mts-stratos-bondvision-digital
     ports:
-      - "3002:3001"
+      - "3002:3002"
     volumes:
       - ./bondvision-digital/src:/app/src
       - ./bondvision-digital/public:/app/public

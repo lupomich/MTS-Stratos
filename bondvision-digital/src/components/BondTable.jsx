@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import { useLanguage } from '../context/LanguageContext'
+import { usePreferences } from '../context/PreferencesContext'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import './BondTable.css'
@@ -15,6 +16,16 @@ class CustomHeaderWithMenu {
     this.eGui.className = 'custom-header-wrapper'
     this.eGui.innerHTML = `
       <span class="header-text">${params.displayName}</span>
+      <span class="header-sort-icon" title="Ordinamento">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="12 5 12 19"/><polyline points="5 12 12 5 19 12"/>
+        </svg>
+      </span>
+      <span class="header-sort-icon-desc" title="Ordinamento" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="12 5 12 19"/><polyline points="5 12 12 19 19 12"/>
+        </svg>
+      </span>
       <span class="header-filter-icon" title="Filtro attivo">
         <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
           <path d="M0 0 L10 0 L10 1 L6.5 5 L6.5 10 L3.5 10 L3.5 5 L0 1 Z"/>
@@ -22,12 +33,14 @@ class CustomHeaderWithMenu {
       </span>
       <span class="header-menu-icon" title="Menu colonna">☰</span>
     `
+    this.eSortIcon = this.eGui.querySelector('.header-sort-icon')
+    this.eSortIconDesc = this.eGui.querySelector('.header-sort-icon-desc')
     this.eFilterIcon = this.eGui.querySelector('.header-filter-icon')
     this.eMenuIcon = this.eGui.querySelector('.header-menu-icon')
     this.eMenuIcon.addEventListener('click', (e) => this.onMenuClicked(e))
     
-    // Controlla lo stato del filtro iniziale
-    this.updateFilterIcon()
+    // Controlla lo stato del filtro e ordinamento iniziale
+    this.updateIconsState()
     
     // Chiudi menu quando si clicca altrove
     this.documentClickListener = (e) => {
@@ -37,18 +50,41 @@ class CustomHeaderWithMenu {
     }
   }
   
-  updateFilterIcon() {
+  updateIconsState() {
     if (!this.params || !this.params.api) return
+    
+    // Aggiorna filtro icon
     const filterModel = this.params.api.getFilterModel()
     const isFiltered = filterModel && filterModel[this.colId]
     if (this.eFilterIcon) {
       this.eFilterIcon.style.display = isFiltered ? 'inline' : 'none'
     }
+    
+    // Aggiorna sort icons
+    const columnState = this.params.columnApi.getColumnState()
+    const thiColState = columnState.find(cs => cs.colId === this.colId)
+    
+    if (this.eSortIcon && this.eSortIconDesc) {
+      if (thiColState && thiColState.sort) {
+        if (thiColState.sort === 'asc') {
+          this.eSortIcon.style.display = 'inline'
+          this.eSortIconDesc.style.display = 'none'
+          this.eSortIcon.style.color = 'var(--color-primary)'
+        } else if (thiColState.sort === 'desc') {
+          this.eSortIcon.style.display = 'none'
+          this.eSortIconDesc.style.display = 'inline'
+          this.eSortIconDesc.style.color = 'var(--color-primary)'
+        }
+      } else {
+        this.eSortIcon.style.display = 'none'
+        this.eSortIconDesc.style.display = 'none'
+      }
+    }
   }
   
   refresh(params) {
     this.params = params
-    this.updateFilterIcon()
+    this.updateIconsState()
     return true
   }
   
@@ -192,23 +228,29 @@ class CustomHeaderWithMenu {
           state: [{ colId: this.colId, sort: 'asc' }],
           defaultState: { sort: null }
         })
+        // Forza refresh per mostrare l'icona sort
+        api.refreshHeader()
         break
       case 'sortDesc':
         columnApi.applyColumnState({
           state: [{ colId: this.colId, sort: 'desc' }],
           defaultState: { sort: null }
         })
+        // Forza refresh per mostrare l'icona sort
+        api.refreshHeader()
         break
       case 'sortNone':
         columnApi.applyColumnState({
           state: [{ colId: this.colId, sort: null }]
         })
+        // Forza refresh per nascondere l'icona sort
+        api.refreshHeader()
         break
       case 'autosizeThis':
         columnApi.autoSizeColumn(this.colId)
         break
       case 'autosizeAll':
-        const allColumnIds = columnApi.getAllColumns().map(col => col.getColId())
+        const allColumnIds = api.getColumns ? api.getColumns().map(col => col.getColId()) : columnApi.getAllColumns().map(col => col.getColId())
         columnApi.autoSizeColumns(allColumnIds)
         break
       case 'pinLeft':
@@ -229,9 +271,26 @@ class CustomHeaderWithMenu {
         api.refreshHeader()
         break
       case 'resetAll':
+        console.log('====== ResetAll action triggered ======')
+        console.log('Context object:', this.params.context)
+        console.log('ResetPreferences function:', this.params.context?.resetPreferences)
         columnApi.resetColumnState()
         api.setFilterModel(null)
         api.refreshHeader()
+        // Anche reset delle preferenze salvate
+        if (this.params.context && typeof this.params.context.resetPreferences === 'function') {
+          console.log('✓ Calling resetPreferences function')
+          try {
+            this.params.context.resetPreferences()
+            console.log('✓ Preferences reset to default')
+          } catch (err) {
+            console.error('✗ Error calling resetPreferences:', err)
+          }
+        } else {
+          console.log('✗ WARNING: resetPreferences not available in context')
+          console.log('Context keys:', Object.keys(this.params.context || {}))
+        }
+        console.log('====== ResetAll action complete ======')
         break
     }
   }
@@ -256,6 +315,7 @@ class CustomHeaderWithMenu {
 const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
   const gridRef = useRef()
   const { t, language } = useLanguage()
+  const { preferences, setColumnOrder, resetPreferences } = usePreferences()
   const [rowData, setRowData] = useState(countryBonds.length > 0 ? countryBonds : [])
 
   useEffect(() => {
@@ -400,7 +460,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
     sortable: true,
     resizable: true,
     filter: true,
-    suppressHeaderMenuButton: false
+    suppressMenu: false
   }), [])
 
   const onRowClicked = useCallback((event) => {
@@ -481,6 +541,58 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
     return () => clearInterval(interval)
   }, [])
 
+  // Listener per salvataggio posizione colonne
+  useEffect(() => {
+    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
+
+    const onColumnMoved = () => {
+      const columnState = gridRef.current.columnApi.getColumnState()
+      const columnOrder = columnState.map(col => col.colId)
+      setColumnOrder(columnOrder)
+      console.log('Column order saved:', columnOrder)
+    }
+
+    gridRef.current.api.addEventListener('columnMoved', onColumnMoved)
+
+    return () => {
+      if (gridRef.current?.api) {
+        gridRef.current.api.removeEventListener('columnMoved', onColumnMoved)
+      }
+    }
+  }, [setColumnOrder])
+
+  // Applica l'ordine salvato delle colonne all'avvio
+  useEffect(() => {
+    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
+    if (!preferences?.columnOrder || preferences.columnOrder.length === 0) return
+
+    // Piccola delay per assicurare che le colonne siano renderizzate
+    const timer = setTimeout(() => {
+      try {
+        // Ottieni tutte le colonne disponibili (ag-grid v31 compatibility)
+        const allColumns = gridRef.current.api.getColumns ? gridRef.current.api.getColumns() : gridRef.current.api.getAllColumns()
+        const allColIds = allColumns.map(col => col.getColId())
+        
+        // Riordina: metti columnOrder all'inizio, poi il resto
+        const columnOrderSet = new Set(preferences.columnOrder)
+        const reorderedColIds = [
+          ...preferences.columnOrder.filter(id => allColIds.includes(id)),
+          ...allColIds.filter(id => !columnOrderSet.has(id))
+        ]
+        
+        gridRef.current.api.applyColumnState({
+          state: reorderedColIds.map(colId => ({ colId })),
+          applyOrder: true
+        })
+        console.log('Column order applied:', reorderedColIds)
+      } catch (error) {
+        console.error('Failed to apply column order:', error)
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [preferences?.columnOrder])
+
   return (
     <div className="bond-table-container">
       <div className="ag-theme-alpine-dark bond-grid">
@@ -499,7 +611,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
           getRowStyle={getRowStyle}
           animateRows={true}
           suppressCellFocus={true}
-          context={{ t, language }}
+          context={{ t, language, resetPreferences }}
         />
       </div>
     </div>

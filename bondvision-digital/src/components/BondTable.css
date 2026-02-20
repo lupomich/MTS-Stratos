@@ -126,6 +126,22 @@
   display: block;
 }
 
+.header-sort-icon {
+  color: var(--color-primary);
+  opacity: 0.8;
+  margin-right: 2px;
+  flex-shrink: 0;
+  display: none;
+  line-height: 1;
+  height: 14px;
+  width: 14px;
+}
+
+.header-sort-icon svg {
+  vertical-align: middle;
+  display: block;
+}
+
 .header-menu-icon {
   cursor: pointer;
   font-size: 11px;

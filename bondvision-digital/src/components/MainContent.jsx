@@ -312,8 +312,9 @@ const MainContent = () => {
   const dataDefaultColDef = useMemo(() => ({
     sortable: true,
     resizable: true,
-    filter: 'agTextColumnFilter'
-  }), [])
+    filter: 'agTextColumnFilter',
+    getMainMenuItems: getMainMenuItems
+  }), [getMainMenuItems])
 
   return (
     <div className="main-content" ref={mainContentRef}>
