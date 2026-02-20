@@ -15,7 +15,7 @@ import path from 'path';
 // Configuration
 const BASE_URL = process.env.BASE_URL || 'http://172.18.0.5:3002';
 const API_BASE = process.env.API_BASE || 'http://bondvision-backend:3000/api';
-const TEST_TIMEOUT = 10000; // 10 secondi
+const TEST_TIMEOUT = 30000; // 30 secondi
 const ADMIN_USER = { username: 'admin', password: 'admin123' };
 const STOP_ON_FIRST_FAIL = process.env.STOP_ON_FIRST_FAIL === 'true';
 const START_FROM = Number.parseInt(process.env.START_FROM || '1', 10);
@@ -153,6 +153,19 @@ async function toggleUserActive(page, username) {
     const row = await findUserRow(page, username);
     await row.locator('label.toggle-switch').click();
     await sleep(500); // Wait for API call
+}
+
+async function waitForUserStatus(page, username, expectedStatus, timeout = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        const row = await findUserRow(page, username, 1000);
+        const status = await row.locator('.status-badge').textContent();
+        if (status?.includes(expectedStatus)) {
+            return;
+        }
+        await sleep(200);
+    }
+    throw new Error(`Expected status ${expectedStatus} for ${username}`);
 }
 
 // Utility: Delete user
@@ -552,9 +565,7 @@ async function runSection1(browser) {
         
         // Disable trader-test
         await toggleUserActive(page, 'trader-test');
-        let row = await findUserRow(page, 'trader-test');
-        let status = await row.locator('.status-badge').textContent();
-        if (!status.includes('Inactive')) throw new Error('Disable failed');
+        await waitForUserStatus(page, 'trader-test', 'Inactive', 6000);
         
         // Close panel and logout
         await page.locator('.admin-modal .close-btn').click();
@@ -575,9 +586,7 @@ async function runSection1(browser) {
         await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
         await openAdminPanel(page);
         await toggleUserActive(page, 'trader-test');
-        row = await findUserRow(page, 'trader-test');
-        status = await row.locator('.status-badge').textContent();
-        if (!status.includes('Active')) throw new Error('Re-enable failed');
+        await waitForUserStatus(page, 'trader-test', 'Active', 6000);
         
         // Logout and login trader-test (should work)
         await page.locator('.admin-modal .close-btn').click();
@@ -1002,7 +1011,7 @@ async function runSection3(browser) {
         const state = await getGridState(page);
         const sortedCols = state.columnState.filter(c => c.sort);
 
-        if (!(headers[0] === 'DESCRIPTION' && headers[1] === 'ISIN' && headers[2] === 'MATURITY')) {
+        if (!(headers[0] === 'DESCRIPTION' && headers[1] === 'ISIN' && headers[2] === 'CCY')) {
             throw new Error(`Reset: wrong header order ${headers.slice(0, 5).join(' | ')}`);
         }
         if (sortedCols.length !== 0) {

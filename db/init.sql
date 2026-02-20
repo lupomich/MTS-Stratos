@@ -94,7 +94,7 @@ INSERT INTO users (username, email, password_hash, role)
 VALUES (
     'demo',
     'demo@stratos.local',
-    '$2b$10$XQF5KX5K8tVGj3kYHZqXXN5L6F4HhN4W2rKZG8V8BYxJ3KQYqXqZ0V',
+    '$2a$10$42W40aPzYA0oiko.SBWj.uO9aM0PAmZP51VaLH/iP9mCEiTb.LuwK',
     'trader'
 ) ON CONFLICT (username) DO NOTHING;
 

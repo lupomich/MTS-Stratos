@@ -3,8 +3,18 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-// Use absolute URL to backend (CORS enabled in server.js)
-const API_URL = 'http://localhost:3000/api';
+// Detect API URL based on environment
+const getAPIUrl = () => {
+    if (typeof window !== 'undefined') {
+        const host = window.location.hostname;
+        if (host !== 'localhost' && host !== '127.0.0.1') {
+            return 'http://bondvision-backend:3000/api';
+        }
+    }
+    return 'http://localhost:3000/api';
+};
+
+const API_URL = getAPIUrl();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);

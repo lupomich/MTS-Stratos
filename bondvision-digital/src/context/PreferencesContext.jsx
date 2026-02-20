@@ -7,7 +7,7 @@ const PreferencesContext = createContext(null);
 const defaultPreferences = {
     theme: 'dark',
     language: 'en',
-    defaultColumns: ['isin', 'description', 'price', 'yield', 'maturity'],
+    defaultColumns: ['description', 'isin', 'ccy', 'bidSprd', 'bidYield', 'bidPrice', 'askPrice', 'askYield', 'askSprd', 'midPrice', 'midYield', 'coupon', 'maturity'],
     columnOrder: [],
     lastTab: 'government-bonds',
     gridLayout: 'comfortable',

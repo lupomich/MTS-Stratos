@@ -24,7 +24,21 @@ console.log('ENV:', process.env);
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+const allowedOrigins = [
+  'http://localhost:3002',
+  'http://bondvision-digital:3002',
+  process.env.CORS_ORIGIN
+].filter(Boolean);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
+  credentials: true
+}));
 
 let pool, redis;
 try {

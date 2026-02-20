@@ -271,26 +271,54 @@ class CustomHeaderWithMenu {
         api.refreshHeader()
         break
       case 'resetAll':
-        console.log('====== ResetAll action triggered ======')
-        console.log('Context object:', this.params.context)
-        console.log('ResetPreferences function:', this.params.context?.resetPreferences)
+        const allColumns = api.getColumns ? api.getColumns() : columnApi.getAllColumns()
+        const defaultOrder = allColumns.map(col => col.getColId())
+
         columnApi.resetColumnState()
+        columnApi.applyColumnState({
+          state: defaultOrder.map(colId => ({
+            colId,
+            hide: false,
+            sort: null,
+            pinned: null,
+            rowGroup: false,
+            pivot: false,
+            aggFunc: null
+          })),
+          applyOrder: true,
+          defaultState: {
+            hide: false,
+            sort: null,
+            pinned: null,
+            rowGroup: false,
+            pivot: false,
+            aggFunc: null
+          }
+        })
+
         api.setFilterModel(null)
+        api.onFilterChanged()
         api.refreshHeader()
-        // Anche reset delle preferenze salvate
+
         if (this.params.context && typeof this.params.context.resetPreferences === 'function') {
-          console.log('✓ Calling resetPreferences function')
           try {
             this.params.context.resetPreferences()
-            console.log('✓ Preferences reset to default')
+            if (typeof this.params.context.setColumnOrder === 'function') {
+              this.params.context.setColumnOrder(defaultOrder)
+            }
+            if (typeof this.params.context.setSorts === 'function') {
+              this.params.context.setSorts([])
+            }
+            if (typeof this.params.context.setFilters === 'function') {
+              this.params.context.setFilters({})
+            }
+            if (typeof this.params.context.setDefaultColumns === 'function') {
+              this.params.context.setDefaultColumns(defaultOrder)
+            }
           } catch (err) {
-            console.error('✗ Error calling resetPreferences:', err)
+            console.error('Error calling resetPreferences:', err)
           }
-        } else {
-          console.log('✗ WARNING: resetPreferences not available in context')
-          console.log('Context keys:', Object.keys(this.params.context || {}))
         }
-        console.log('====== ResetAll action complete ======')
         break
     }
   }
@@ -315,7 +343,8 @@ class CustomHeaderWithMenu {
 const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
   const gridRef = useRef()
   const { t, language } = useLanguage()
-  const { preferences, setColumnOrder, resetPreferences } = usePreferences()
+  const applyingPreferencesRef = useRef(false)
+  const { preferences, setColumnOrder, setSorts, setFilters, setDefaultColumns, resetPreferences } = usePreferences()
   const [rowData, setRowData] = useState(countryBonds.length > 0 ? countryBonds : [])
 
   useEffect(() => {
@@ -593,6 +622,52 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
     return () => clearTimeout(timer)
   }, [preferences?.columnOrder])
 
+  useEffect(() => {
+    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
+
+    const hasSavedSorts = Array.isArray(preferences?.sorts) && preferences.sorts.length > 0
+    const hasSavedFilters = preferences?.filters && Object.keys(preferences.filters).length > 0
+    if (!hasSavedSorts && !hasSavedFilters) return
+
+    applyingPreferencesRef.current = true
+    try {
+      if (hasSavedSorts) {
+        gridRef.current.api.applyColumnState({
+          state: preferences.sorts,
+          defaultState: { sort: null }
+        })
+      }
+
+      if (hasSavedFilters) {
+        gridRef.current.api.setFilterModel(preferences.filters)
+        gridRef.current.api.onFilterChanged()
+      }
+    } catch (error) {
+      console.error('Failed to apply saved grid preferences:', error)
+    } finally {
+      setTimeout(() => {
+        applyingPreferencesRef.current = false
+      }, 0)
+    }
+  }, [preferences?.sorts, preferences?.filters])
+
+  const onSortChanged = useCallback(() => {
+    if (!gridRef.current?.api || applyingPreferencesRef.current) return
+    const columnState = gridRef.current.api.getColumnState()
+    const activeSorts = columnState
+      .filter(col => col.sort)
+      .map(col => ({ colId: col.colId, sort: col.sort, sortIndex: col.sortIndex }))
+    setSorts(activeSorts)
+  }, [setSorts])
+
+  const onFilterChanged = useCallback(() => {
+    if (!gridRef.current?.api) return
+    gridRef.current.api.refreshHeader()
+    if (applyingPreferencesRef.current) return
+    const filterModel = gridRef.current.api.getFilterModel()
+    setFilters(filterModel)
+  }, [setFilters])
+
   const onGridReady = useCallback((params) => {
     // Registra l'API globalmente per i test Playwright
     window.__bondGridApi = params.api
@@ -609,15 +684,12 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
           rowSelection="single"
           onRowClicked={onRowClicked}
           onGridReady={onGridReady}
-          onFilterChanged={() => {
-            if (gridRef.current?.api) {
-              gridRef.current.api.refreshHeader()
-            }
-          }}
+          onSortChanged={onSortChanged}
+          onFilterChanged={onFilterChanged}
           getRowStyle={getRowStyle}
           animateRows={true}
           suppressCellFocus={true}
-          context={{ t, language, resetPreferences }}
+          context={{ t, language, resetPreferences, setColumnOrder, setSorts, setFilters, setDefaultColumns }}
         />
       </div>
     </div>
