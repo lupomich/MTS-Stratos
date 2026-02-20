@@ -161,70 +161,65 @@
   margin-right: 12px;
 }
 
-.market-status, .member-status, .dealer-status, .autoex-status {
-  color: var(--text-light);
-  font-size: 13px;
+.status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  height: 24px;
 }
 
-.status-test {
-  /* Status Badge - Success - Small */
-  background-color: #009639;
-  color: var(--color-bg-white);
-  padding: 5px 12px;
-  border-radius: 12px;
-  font-weight: var(--font-weight-bold);
-  margin-left: 6px;
+.status-label {
+  color: var(--text-light);
   font-size: 13px;
   font-family: var(--font-family-sans);
+  line-height: 24px;
+}
+
+.status-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 12px;
+  width: 64px;
+  height: 24px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  margin: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 24px;
-  line-height: normal;
-  vertical-align: middle;
-  border: none;
-  min-width: 55px;
-}
-
-.status-badge {
-  /* Base status badge - clickable - IDENTICO A .status-test */
-  background-color: transparent;
+  background: transparent;
   color: var(--color-bg-white);
-  padding: 5px 12px;
-  border-radius: 12px;
-  font-weight: var(--font-weight-bold);
-  margin-left: 6px;
-  font-size: 13px;
   font-family: var(--font-family-sans);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  line-height: normal;
-  vertical-align: middle;
-  border: none;
+  font-size: 13px;
+  font-weight: var(--font-weight-bold);
+  line-height: 24px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  min-width: 55px;
 }
 
-.status-badge:hover {
-  background-color: inherit;
+.status-pill:focus {
+  outline: 2px solid #41B6E6;
+  outline-offset: 2px;
 }
 
-.status-on {
-  /* Status Badge - Success/ON - Green */
+.pill-test,
+.pill-on {
   background-color: #009639;
 }
 
-.status-off {
-  /* Status Badge - Error/OFF - Red */
+.pill-off {
   background-color: #E74C3C;
+}
+
+.pill-locked {
+  cursor: not-allowed;
 }
 
 .header-icons {

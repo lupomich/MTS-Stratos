@@ -27,8 +27,8 @@ const Header = ({ activeMarket, setActiveMarket }) => {
     }
   }
 
-  const toggleStatus = (status, setStatus) => {
-    setStatus(status === 'OFF' ? 'ON' : 'OFF')
+  const handleAutoExToggle = () => {
+    setAutoexStatus(autoexStatus === 'OFF' ? 'ON' : 'OFF')
   }
 
   useEffect(() => {
@@ -100,41 +100,48 @@ const Header = ({ activeMarket, setActiveMarket }) => {
         <div className="header-info">
           <span className="transaction-label">{user?.username || 'Guest'}</span>
           <span className="user-id">{currentTime}</span>
-          <span className="market-status">Market <span className="status-test">TEST</span></span>
-          <span className="member-status">
-            Member <span 
-              className={`status-badge ${memberStatus === 'ON' ? 'status-on' : 'status-off'}`}
-              onClick={handleMemberToggle}
-              role="button"
-              tabIndex="0"
-              onKeyDown={(e) => e.key === 'Enter' && handleMemberToggle()}
-            >
-              {memberStatus}
-            </span>
-          </span>
-          <span className="dealer-status">
-            Trader <span 
-              className={`status-badge ${traderStatus === 'ON' ? 'status-on' : 'status-off'}`}
-              onClick={memberStatus === 'ON' ? handleTraderToggle : undefined}
-              role="button"
-              tabIndex={memberStatus === 'OFF' ? -1 : 0}
-              onKeyDown={(e) => e.key === 'Enter' && memberStatus === 'ON' && handleTraderToggle()}
-              style={{ opacity: memberStatus === 'OFF' ? 0.5 : 1, cursor: memberStatus === 'OFF' ? 'not-allowed' : 'pointer' }}
-            >
-              {traderStatus}
-            </span>
-          </span>
-          <span className="autoex-status">
-            AutoEx <span 
-              className={`status-badge ${autoexStatus === 'ON' ? 'status-on' : 'status-off'}`}
-              onClick={() => toggleStatus(autoexStatus, setAutoexStatus)}
-              role="button"
-              tabIndex="0"
-              onKeyDown={(e) => e.key === 'Enter' && toggleStatus(autoexStatus, setAutoexStatus)}
-            >
-              {autoexStatus}
-            </span>
-          </span>
+          <div className="status-row">
+            <div className="status-item">
+              <span className="status-label">Market</span>
+              <button type="button" className="status-pill pill-test" tabIndex={-1}>
+                TEST
+              </button>
+            </div>
+
+            <div className="status-item">
+              <span className="status-label">Member</span>
+              <button
+                type="button"
+                className={`status-pill ${memberStatus === 'ON' ? 'pill-on' : 'pill-off'}`}
+                onClick={handleMemberToggle}
+              >
+                {memberStatus}
+              </button>
+            </div>
+
+            <div className="status-item">
+              <span className="status-label">Trader</span>
+              <button
+                type="button"
+                className={`status-pill ${traderStatus === 'ON' ? 'pill-on' : 'pill-off'} ${memberStatus === 'OFF' ? 'pill-locked' : ''}`}
+                onClick={handleTraderToggle}
+                aria-disabled={memberStatus === 'OFF'}
+              >
+                {traderStatus}
+              </button>
+            </div>
+
+            <div className="status-item">
+              <span className="status-label">AutoEx</span>
+              <button
+                type="button"
+                className={`status-pill ${autoexStatus === 'ON' ? 'pill-on' : 'pill-off'}`}
+                onClick={handleAutoExToggle}
+              >
+                {autoexStatus}
+              </button>
+            </div>
+          </div>
         </div>
         <div className="header-icons">
           <button className="icon-btn language-btn" title="Language" onClick={toggleLanguage}>
