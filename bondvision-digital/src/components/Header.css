@@ -6,6 +6,22 @@
   gap: 48px;
   align-items: center;
   height: 48px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .header {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 800px) {
+  .header {
+    gap: 12px;
+  }
 }
 
 .header-left {
@@ -125,6 +141,13 @@
   font-family: var(--font-family-sans);
 }
 
+@media (max-width: 1024px) {
+  .header-info {
+    gap: 8px;
+    padding-left: 16px;
+  }
+}
+
 .user-id {
   color: var(--text-light);
   font-size: 13px;
@@ -141,44 +164,53 @@
 .market-status, .member-status, .dealer-status, .autoex-status {
   color: var(--text-light);
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  height: 24px;
 }
 
 .status-test {
   /* Status Badge - Success - Small */
   background-color: #009639;
   color: var(--color-bg-white);
-  padding: 2px 10px;
+  padding: 5px 12px;
   border-radius: 12px;
   font-weight: var(--font-weight-bold);
   margin-left: 6px;
-  font-size: 10px;
-  font-family: var(--font-family-sans);
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.status-badge {
-  /* Base status badge - clickable */
-  color: var(--color-bg-white);
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-weight: var(--font-weight-bold);
-  margin-left: 6px;
-  font-size: 10px;
+  font-size: 13px;
   font-family: var(--font-family-sans);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 20px;
-  width: 40px;
-  line-height: 1;
+  height: 24px;
+  line-height: normal;
+  vertical-align: middle;
+  border: none;
+  min-width: 55px;
+}
+
+.status-badge {
+  /* Base status badge - clickable - IDENTICO A .status-test */
+  background-color: transparent;
+  color: var(--color-bg-white);
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-weight: var(--font-weight-bold);
+  margin-left: 6px;
+  font-size: 13px;
+  font-family: var(--font-family-sans);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  line-height: normal;
   vertical-align: middle;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  min-width: 55px;
 }
 
 .status-badge:hover {
