@@ -2,7 +2,7 @@
 
 **Data creazione**: 2026-02-20  
 **Timeout per test**: 10 secondi  
-**Totale test**: 40  
+**Totale test**: 41  
 **Focus**: GUI con API secondarie
 
 ---
@@ -55,7 +55,7 @@
 
 ---
 
-## SECTION 2: SETTINGS PERSISTENCE - GUI (12 tests)
+## SECTION 2: SETTINGS PERSISTENCE - GUI (13 tests)
 
 ### Subsection E: Column Management (4 tests)
 
@@ -66,23 +66,24 @@
 | T27 | Show column | GUI | ⬜ Not Run | - | - | Show CCY back |
 | T28 | Reset All Columns | GUI | ⬜ Not Run | - | - | Menu action resetAll on ISIN |
 
-### Subsection F: Sorting (4 tests)
+### Subsection F: Sorting (5 tests)
 
 | ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
 |----|-----------------|------|--------|-----------|----------|-------|
 | T29 | Sort ascending | GUI | ⬜ Not Run | - | - | Menu action sortAsc on ISIN |
 | T30 | Sort descending | GUI | ⬜ Not Run | - | - | Menu action sortDesc on ISIN |
-| T31 | Sort different column | GUI | ⬜ Not Run | - | - | Sort MATURITY asc, ISIN sort removed |
-| T32 | Persist sort after logout | GUI | ⬜ Not Run | - | - | Expect MATURITY asc persisted |
+| T31 | Sort different column | GUI | ⬜ Not Run | - | - | Sort DESCRIPTION asc, ISIN sort removed |
+| T32 | Persist country tab after logout | GUI | ⬜ Not Run | - | - | Select DE, relogin, verify DE still active |
+| T33 | Persist sort after logout | GUI | ⬜ Not Run | - | - | Expect DESCRIPTION asc persisted |
 
 ### Subsection G: Filtering (4 tests)
 
 | ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
 |----|-----------------|------|--------|-----------|----------|-------|
-| T33 | Single filter | GUI | ⬜ Not Run | - | - | ISIN equals first-row ISIN |
-| T34 | Multiple filters | GUI | ⬜ Not Run | - | - | ISIN + MATURITY equals first row |
-| T35 | Remove one filter | GUI | ⬜ Not Run | - | - | Remove ISIN, keep MATURITY |
-| T36 | Clear all filters | GUI | ⬜ Not Run | - | - | Menu action clearFilters |
+| T34 | Single filter | GUI | ⬜ Not Run | - | - | ISIN equals first-row ISIN |
+| T35 | Multiple filters | GUI | ⬜ Not Run | - | - | ISIN + MATURITY equals first row |
+| T36 | Remove one filter | GUI | ⬜ Not Run | - | - | Remove ISIN, keep MATURITY |
+| T37 | Clear all filters | GUI | ⬜ Not Run | - | - | Menu action clearFilters |
 
 ---
 
@@ -92,10 +93,10 @@
 
 | ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
 |----|-----------------|------|--------|-----------|----------|-------|
-| T37 | Mixed modifications | GUI | ⬜ Not Run | - | - | Move CCY + hide CCY + ISIN desc + description filter |
-| T38 | Persist all after reload | GUI | ⬜ Not Run | - | - | Verify T37 state after relogin |
-| T39 | Complete reset | GUI | ⬜ Not Run | - | - | resetAll + verify default state |
-| T40 | Final cleanup | GUI | ⬜ Not Run | - | - | Delete trader-final & viewer-final |
+| T38 | Mixed modifications | GUI | ⬜ Not Run | - | - | Move CCY + hide CCY + ISIN desc + description filter |
+| T39 | Persist all after reload | GUI | ⬜ Not Run | - | - | Verify T38 state after relogin |
+| T40 | Complete reset | GUI | ⬜ Not Run | - | - | resetAll + verify default state |
+| T41 | Final cleanup | GUI | ⬜ Not Run | - | - | Delete trader-final & viewer-final |
 
 ---
 
@@ -106,9 +107,9 @@
 | Section | Total Tests | Passed | Failed | Not Run | Pass Rate |
 |---------|------------|--------|--------|---------|-----------|
 | Section 1: User Management | 24 | 0 | 0 | 24 | 0% |
-| Section 2: Settings Persistence | 12 | 0 | 0 | 12 | 0% |
+| Section 2: Settings Persistence | 13 | 0 | 0 | 13 | 0% |
 | Section 3: Integration | 4 | 0 | 0 | 4 | 0% |
-| **TOTAL** | **40** | **0** | **0** | **40** | **0%** |
+| **TOTAL** | **41** | **0** | **0** | **41** | **0%** |
 
 ### Execution Details
 
@@ -140,8 +141,8 @@ _None_
 
 ### Validation Checklist
 
-- [ ] All 40 tests executed
-- [ ] Pass rate ≥ 95% (38/40 minimum)
+- [ ] All 41 tests executed
+- [ ] Pass rate ≥ 95% (39/41 minimum)
 - [ ] Database restored to initial state (admin + demo)
 - [ ] No JavaScript console errors
 - [ ] Report files generated (HTML, CSV, XLSX)

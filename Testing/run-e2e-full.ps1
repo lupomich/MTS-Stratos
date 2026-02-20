@@ -17,7 +17,7 @@ function Remove-ContainerIfExists {
 }
 
 try {
-    Write-Host '=== MTS-Stratos E2E Full Run (TC01-TC40) ===' -ForegroundColor Cyan
+    Write-Host '=== MTS-Stratos E2E Full Run (TC01-TC41) ===' -ForegroundColor Cyan
 
     Write-Host 'Step 1/6 - Clean containers, network, volumes' -ForegroundColor Yellow
     docker-compose -f docker-compose.master.yml down --volumes --remove-orphans
@@ -30,7 +30,7 @@ try {
 
     Write-Host 'Step 4/6 - Run full E2E suite from TC01' -ForegroundColor Yellow
     Remove-ContainerIfExists -Name 'mts-e2e-full-run'
-    docker-compose -f docker-compose.master.yml run --name mts-e2e-full-run -e START_FROM=1 e2e node scripts/e2e-final.mjs
+    docker-compose -f docker-compose.master.yml run --build --name mts-e2e-full-run -e START_FROM=1 e2e node scripts/e2e-final.mjs
 
     Write-Host 'Step 5/6 - Export reports to Testing/' -ForegroundColor Yellow
     docker cp mts-e2e-full-run:/app/test-results.csv Testing/test-results.csv

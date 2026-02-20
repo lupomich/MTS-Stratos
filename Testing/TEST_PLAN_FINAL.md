@@ -4,7 +4,7 @@
 **Versione**: FINAL  
 **Timeout**: 10 secondi per test  
 **Focus**: GUI (con API secondarie)  
-**Totale Test**: 40
+**Totale Test**: 41
 
 ---
 
@@ -136,7 +136,7 @@
 
 ---
 
-## SECTION 2: PERSISTENZA SETTINGS GUI (Tests 25-36)
+## SECTION 2: PERSISTENZA SETTINGS GUI (Tests 25-37)
 
 **Setup**: Login come trader-final, naviga a BondTable
 
@@ -158,7 +158,7 @@
 - Menu colonna `ISIN` → azione `Reset All`
 - **Expected**: ordine default (`DESCRIPTION`, `ISIN`, `CCY`), filtri/sort azzerati
 
-### Tests 29-32: Ordinamento
+### Tests 29-33: Ordinamento
 
 **T29: Ordinamento singolo (GUI)**
 - Menu colonna `ISIN` → `Sort Asc`
@@ -170,48 +170,53 @@
 
 **T31: Ordinamento altra colonna (GUI)**
 - Menu colonna `MATURITY` → `Sort Asc`
-- **Expected**: sort su `maturity`, sort precedente su `isin` rimosso
+- **Expected**: sort su `description`, sort precedente su `isin` rimosso
 
-**T32: Logout e verifica sort (GUI)**
+**T32: Logout e verifica country tab (GUI)**
+- Seleziona country tab `DE`
 - Logout → Re-login trader-final
-- **Expected**: ultimo sort (`maturity asc`) mantenuto
+- **Expected**: tab `DE` ancora selezionato (persistenza country)
 
-### Tests 33-36: Filtri
+**T33: Logout e verifica sort (GUI)**
+- Logout → Re-login trader-final
+- **Expected**: ultimo sort (`description asc`) mantenuto
 
-**T33: Filtro singolo (GUI)**
+### Tests 34-37: Filtri
+
+**T34: Filtro singolo (GUI)**
 - Applica filtro `isin = <valore prima riga>`
 - **Expected**: 1 sola riga visibile
 
-**T34: Filtro multiplo (GUI)**
+**T35: Filtro multiplo (GUI)**
 - Mantieni filtro `isin` + aggiungi filtro `maturity = <valore prima riga>`
 - **Expected**: 2 filtri attivi, almeno 1 riga risultante
 
-**T35: Rimozione filtro (GUI)**
+**T36: Rimozione filtro (GUI)**
 - Rimuovi filtro `isin`
 - **Expected**: resta solo filtro `maturity`
 
-**T36: Clear all filtri (GUI)**
+**T37: Clear all filtri (GUI)**
 - Menu colonna `MATURITY` → `Clear Filters`
 - **Expected**: nessun filtro attivo, tabella completa
 
 ---
 
-## SECTION 3: PERSISTENZA COMPLETA (Tests 37-40)
+## SECTION 3: PERSISTENZA COMPLETA (Tests 38-41)
 
-**T37: Modifica miste (GUI)**
+**T38: Modifica miste (GUI)**
 - Login trader-final
 - Sposta `CCY` in testa + nascondi `CCY` + sort `ISIN desc` + filtro `description contains <word>`
 - **Expected**: Tutte modifiche applicate
 
-**T38: Logout e reload (GUI)**
+**T39: Logout e reload (GUI)**
 - Logout → Login trader-final
-- **Expected**: hidden/sort/filtro del T37 ripristinati
+- **Expected**: hidden/sort/filtro del T38 ripristinati
 
-**T39: Reset completo (GUI)**
+**T40: Reset completo (GUI)**
 - Click "Reset All Columns"
 - **Expected**: Tutto ripristinato (colonne, sort, filtri)
 
-**T40: Cleanup finale (GUI)**
+**T41: Cleanup finale (GUI)**
 - Login admin → Delete trader-final e viewer-final
 - Verifica baseline utenti in DB
 - **Expected**: Database in stato iniziale (`admin`, `demo`)
@@ -236,7 +241,7 @@ T02     | Open AdminPanel | GUI | 10:15:25 | 567        | FAIL   | Button not fo
 2. **Testing/test-results.csv** - Dati grezzi
 3. **Testing/TEST_RESULTS.xlsx** - Excel con 2 sheets:
    - Summary: Pass rate, durata totale, breakdown per sezione
-   - Details: Tutti i 40 test con timestamp e motivi fail
+   - Details: Tutti i 41 test con timestamp e motivi fail
 
 ### Success Criteria
 - ✅ Tutti i test automatizzati PASS

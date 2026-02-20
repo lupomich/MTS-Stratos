@@ -5,7 +5,7 @@
  * Data: 2026-02-20
  * Focus: GUI primario, API secondario
  * Timeout: 10 secondi per test
- * Tests totali: 40
+ * Tests totali: 41
  */
 
 import { chromium } from 'playwright';
@@ -745,7 +745,7 @@ async function runSection1(browser) {
 }
 
 // ============================================================================
-// SECTION 2: SETTINGS PERSISTENCE - GUI (Tests 25-36)
+// SECTION 2: SETTINGS PERSISTENCE - GUI (Tests 25-37)
 // ============================================================================
 
 async function runSection2(browser) {
@@ -817,7 +817,7 @@ async function runSection2(browser) {
         }
     });
     
-    // --- Subsection F: Sorting (T29-T32) ---
+    // --- Subsection F: Sorting (T29-T33) ---
     console.log('\n--- Subsection F: Sorting ---');
     
     await runTest('T29', 'Sort ascending', 'GUI', async () => {
@@ -854,7 +854,32 @@ async function runSection2(browser) {
         }
     });
     
-    await runTest('T32', 'Persist sort after logout', 'GUI', async () => {
+    await runTest('T32', 'Persist country tab after logout', 'GUI', async () => {
+        const countryButton = page.locator('.country-tabs .country-tab').filter({ hasText: 'DE' }).first();
+        await countryButton.click();
+        await page.waitForTimeout(800);
+
+        const selectedBeforeLogout = await countryButton.evaluate((el) => el.classList.contains('active'));
+        if (!selectedBeforeLogout) {
+            throw new Error('Expected DE country tab to be active before logout');
+        }
+
+        await logoutGUI(page);
+        await loginGUI(page, 'trader-final', 'Trader123!');
+        await waitForBondGrid(page);
+
+        const selectedAfterRelogin = await page
+            .locator('.country-tabs .country-tab')
+            .filter({ hasText: 'DE' })
+            .first()
+            .evaluate((el) => el.classList.contains('active'));
+
+        if (!selectedAfterRelogin) {
+            throw new Error('Expected DE country tab to persist after relogin');
+        }
+    });
+
+    await runTest('T33', 'Persist sort after logout', 'GUI', async () => {
         await page.waitForTimeout(1500);
         await logoutGUI(page);
         await loginGUI(page, 'trader-final', 'Trader123!');
@@ -867,10 +892,10 @@ async function runSection2(browser) {
         }
     });
     
-    // --- Subsection G: Filtering (T33-T36) ---
+    // --- Subsection G: Filtering (T34-T37) ---
     console.log('\n--- Subsection G: Filtering ---');
     
-    await runTest('T33', 'Single filter', 'GUI', async () => {
+    await runTest('T34', 'Single filter', 'GUI', async () => {
         const exactIsin = await getCellValueFromFirstRow(page, 'isin');
         if (!exactIsin) throw new Error('No first row isin available');
 
@@ -888,7 +913,7 @@ async function runSection2(browser) {
         }
     });
     
-    await runTest('T34', 'Multiple filters', 'GUI', async () => {
+    await runTest('T35', 'Multiple filters', 'GUI', async () => {
         const exactIsin = await getCellValueFromFirstRow(page, 'isin');
         const maturity = await getCellValueFromFirstRow(page, 'maturity');
         if (!exactIsin || !maturity) throw new Error('Unable to derive filter values');
@@ -915,7 +940,7 @@ async function runSection2(browser) {
         }
     });
     
-    await runTest('T35', 'Remove one filter', 'GUI', async () => {
+    await runTest('T36', 'Remove one filter', 'GUI', async () => {
         const stateBefore = await getGridState(page);
         const maturityFilter = stateBefore.filterModel?.maturity;
         if (!maturityFilter) throw new Error('maturity filter not found before remove-one-filter step');
@@ -930,7 +955,7 @@ async function runSection2(browser) {
         }
     });
     
-    await runTest('T36', 'Clear all filters', 'GUI', async () => {
+    await runTest('T37', 'Clear all filters', 'GUI', async () => {
         await openHeaderMenu(page, 'DESCRIPTION');
         await clickHeaderMenuAction(page, 'clearFilters');
 
@@ -947,7 +972,7 @@ async function runSection2(browser) {
 }
 
 // ============================================================================
-// SECTION 3: FULL PERSISTENCE & CLEANUP (Tests 37-40)
+// SECTION 3: FULL PERSISTENCE & CLEANUP (Tests 38-41)
 // ============================================================================
 
 async function runSection3(browser) {
@@ -964,7 +989,7 @@ async function runSection3(browser) {
     await waitForBondGrid(page);
     await waitForGridApi(page);
     
-    await runTest('T37', 'Mixed modifications', 'GUI', async () => {
+    await runTest('T38', 'Mixed modifications', 'GUI', async () => {
         await moveColumn(page, 'ccy', 0);
         await setColumnVisible(page, 'ccy', false);
         await openHeaderMenu(page, 'ISIN');
@@ -990,7 +1015,7 @@ async function runSection3(browser) {
         if (!state.filterModel?.description) throw new Error('Mixed: description filter missing');
     });
     
-    await runTest('T38', 'Persist all after reload', 'GUI', async () => {
+    await runTest('T39', 'Persist all after reload', 'GUI', async () => {
         await page.waitForTimeout(3000);
         await logoutGUI(page);
         await loginGUI(page, 'trader-final', 'Trader123!');
@@ -1002,7 +1027,7 @@ async function runSection3(browser) {
         }
     });
     
-    await runTest('T39', 'Complete reset', 'GUI', async () => {
+    await runTest('T40', 'Complete reset', 'GUI', async () => {
         await openHeaderMenu(page, 'ISIN');
         await clickHeaderMenuAction(page, 'resetAll');
         await page.waitForTimeout(800);
@@ -1022,7 +1047,7 @@ async function runSection3(browser) {
         }
     });
     
-    await runTest('T40', 'Final cleanup', 'GUI', async () => {
+    await runTest('T41', 'Final cleanup', 'GUI', async () => {
         // Logout trader-final
         await logoutGUI(page);
         
