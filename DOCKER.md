@@ -139,16 +139,15 @@ Documentazione delle immagini Docker utilizzate nel progetto MTS-Stratos.
 File: `bondvision-digital/Dockerfile.e2e`
 - Base image: `mcr.microsoft.com/playwright:v1.58.2-jammy`
 - Browser: Chromium (headless)
-- Script: `scripts/e2e-preferences.mjs`
+- Script principale: `scripts/e2e-final.mjs` (suite completa TC01-TC40)
 
 ### 📝 Cosa testa
-Lo script `e2e-preferences.mjs` testa:
-1. **Login API** - Autentica con credenziali (admin/admin123)
-2. **Impostazioni utente** - Setta preferenze UI tramite API
-3. **Caricamento UI** - Accede a http://localhost:3002
-4. **Login UI** - Effettua login nell'interfaccia
-5. **Colonne tabella** - Verifica ordine colonne: ISIN → DESCRIPTION → CCY
-6. **Icona ordinamento** - Verifica la presence dell'icona di sort sull'ISIN
+La suite `e2e-final.mjs` copre 40 test E2E:
+1. **User lifecycle** (create/login/logout/disable-enable/delete)
+2. **Role behavior** (admin/trader/viewer)
+3. **Settings persistence** (column order, sort, filters)
+4. **Reset all columns** e verifica stato default
+5. **Cleanup finale** con ritorno a baseline utenti
 
 ### 🚀 Come eseguire i test
 
@@ -163,7 +162,19 @@ Aspetta che siano pronti:
 - Backend: http://localhost:3000 (pronto)
 - DB: PostgreSQL pronto
 
-#### **Opzione 1: Eseguire test tramite docker-compose (raccomandato)**
+#### **Opzione 1: Script completo (raccomandato)**
+
+```powershell
+cd "c:\Users\MALupo\OneDrive - Euronext\Github\MTS-Stratos"
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1
+```
+
+Questo script:
+- esegue clean reset dei servizi
+- lancia la suite completa TC01-TC40
+- esporta i report in `Testing/`
+
+#### **Opzione 2: Eseguire test tramite docker-compose**
 
 ```bash
 cd "c:\Users\MALupo\OneDrive - Euronext\Github\MTS-Stratos"
@@ -173,7 +184,7 @@ docker-compose -f docker-compose.master.yml run --rm e2e
 Questo:
 - Avvia il servizio `e2e` dal docker-compose
 - Collega automaticamente alla rete `mts-network`
-- Accede ai servizi tramite DNS interno (bondvision-backend:3000, bondvision-digital:3001)
+- Accede ai servizi tramite DNS interno (bondvision-backend:3000, bondvision-digital:3002)
 - Esegue lo script di test
 - Rimuove il container al termine
 
@@ -197,14 +208,15 @@ Response: 200 http://localhost:3000/api/auth/login
 HTTP status: 200
 Loaded HTML: <html>...</html>
 Headers: ISIN | DESCRIPTION | CCY | ...
-Order OK: true
-Sort Icon OK: true
+Total tests: 40
+Passed: 40
+Failed: 0
 ```
 
 **Fallimento:**
 ```
-Order OK: false    # Colonne non nell'ordine corretto
-Sort Icon OK: false # Icona di ordinamento non presente
+FAILED TEST: Txx
+Reason: ...
 ```
 
 ### 🔧 Variabili di Ambiente per i test
@@ -216,17 +228,18 @@ Sort Icon OK: false # Icona di ordinamento non presente
 
 ### 📋 Dati test hardcoded
 
-Nel file `scripts/e2e-preferences.mjs`:
+Nel file `scripts/e2e-final.mjs`:
 - **Username:** `admin`
 - **Password:** `admin123`
-- **Tema:** `dark`
-- **Lingua:** `en`
-- **Colonne aspettate:** `isin`, `description`, `ccy`
-- **Ordinamento:** ISIN ascending
+- **Utenti baseline attesi:** `admin`, `demo`
+- **Nuovi utenti di test:** creati e rimossi durante la suite
 
 ### 🖼️ Output test completo
 
-Il container E2E genererà un file `e2e-output.txt` con i dettagli dell'esecuzione.
+I report completi vengono esportati in `Testing/`:
+- `Testing/test-report.html`
+- `Testing/test-results.csv`
+- `Testing/test-results.json`
 
 ---
 
@@ -246,7 +259,7 @@ docker-compose -f docker-compose.master.yml up -d bondvision-backend
 
 ### Eseguire test E2E
 ```bash
-docker-compose -f docker-compose.master.yml run --rm e2e
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1
 ```
 
 ### Visualizzare logs

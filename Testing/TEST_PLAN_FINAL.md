@@ -232,9 +232,9 @@ T02     | Open AdminPanel | GUI | 10:15:25 | 567        | FAIL   | Button not fo
 ```
 
 ### Output Files
-1. **test-report.html** - Report visuale
-2. **test-report.csv** - Dati grezzi
-3. **TEST_RESULTS.xlsx** - Excel con 2 sheets:
+1. **Testing/test-report.html** - Report visuale
+2. **Testing/test-results.csv** - Dati grezzi
+3. **Testing/TEST_RESULTS.xlsx** - Excel con 2 sheets:
    - Summary: Pass rate, durata totale, breakdown per sezione
    - Details: Tutti i 40 test con timestamp e motivi fail
 

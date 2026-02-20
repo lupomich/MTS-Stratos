@@ -164,9 +164,9 @@ _None_
 4. Browser launched with devtools for debugging
 
 ### Post-Test Actions
-1. Generate HTML report (test-report.html)
-2. Generate CSV export (test-results.csv)
-3. Generate Excel report (TEST_RESULTS.xlsx)
+1. Generate HTML report (Testing/test-report.html)
+2. Generate CSV export (Testing/test-results.csv)
+3. Generate Excel report (Testing/TEST_RESULTS.xlsx)
 4. Archive test run with timestamp
 5. Update TEST_PLAN_FINAL.md with findings
 

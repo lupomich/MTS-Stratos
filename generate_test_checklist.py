@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime
+from pathlib import Path
 
 # Create workbook
 wb = Workbook()
@@ -178,6 +179,8 @@ ws_results.column_dimensions['F'].width = 12
 ws_results.column_dimensions['G'].width = 40
 
 # Save workbook
-output_path = 'TEST_CHECKLIST.xlsx'
+output_dir = Path('Testing')
+output_dir.mkdir(parents=True, exist_ok=True)
+output_path = output_dir / 'TEST_RESULTS.xlsx'
 wb.save(output_path)
 print(f"✅ Excel file created: {output_path}")
