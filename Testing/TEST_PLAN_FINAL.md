@@ -173,9 +173,9 @@
 - **Expected**: sort su `description`, sort precedente su `isin` rimosso
 
 **T32: Logout e verifica country tab (GUI)**
-- Seleziona country tab `DE`
+- Se tab attivo = `DE`, seleziona `IT`; altrimenti seleziona `DE`
 - Logout → Re-login trader-final
-- **Expected**: tab `DE` ancora selezionato (persistenza country)
+- **Expected**: il tab selezionato resta lo stesso dopo relogin (persistenza country)
 
 **T33: Logout e verifica sort (GUI)**
 - Logout → Re-login trader-final

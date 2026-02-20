@@ -73,7 +73,7 @@
 | T29 | Sort ascending | GUI | ⬜ Not Run | - | - | Menu action sortAsc on ISIN |
 | T30 | Sort descending | GUI | ⬜ Not Run | - | - | Menu action sortDesc on ISIN |
 | T31 | Sort different column | GUI | ⬜ Not Run | - | - | Sort DESCRIPTION asc, ISIN sort removed |
-| T32 | Persist country tab after logout | GUI | ⬜ Not Run | - | - | Select DE, relogin, verify DE still active |
+| T32 | Persist country tab after logout | GUI | ⬜ Not Run | - | - | If active=DE select IT, else select DE; relogin and verify persistence |
 | T33 | Persist sort after logout | GUI | ⬜ Not Run | - | - | Expect DESCRIPTION asc persisted |
 
 ### Subsection G: Filtering (4 tests)

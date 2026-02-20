@@ -855,13 +855,19 @@ async function runSection2(browser) {
     });
     
     await runTest('T32', 'Persist country tab after logout', 'GUI', async () => {
-        const countryButton = page.locator('.country-tabs .country-tab').filter({ hasText: 'DE' }).first();
+        const activeCountry = await page.evaluate(() => {
+            const active = document.querySelector('.country-tabs .country-tab.active .code');
+            return active?.textContent?.trim() || null;
+        });
+
+        const targetCountry = activeCountry === 'DE' ? 'IT' : 'DE';
+        const countryButton = page.locator('.country-tabs .country-tab').filter({ hasText: targetCountry }).first();
         await countryButton.click();
         await page.waitForTimeout(800);
 
         const selectedBeforeLogout = await countryButton.evaluate((el) => el.classList.contains('active'));
         if (!selectedBeforeLogout) {
-            throw new Error('Expected DE country tab to be active before logout');
+            throw new Error(`Expected ${targetCountry} country tab to be active before logout`);
         }
 
         await logoutGUI(page);
@@ -870,12 +876,12 @@ async function runSection2(browser) {
 
         const selectedAfterRelogin = await page
             .locator('.country-tabs .country-tab')
-            .filter({ hasText: 'DE' })
+            .filter({ hasText: targetCountry })
             .first()
             .evaluate((el) => el.classList.contains('active'));
 
         if (!selectedAfterRelogin) {
-            throw new Error('Expected DE country tab to persist after relogin');
+            throw new Error(`Expected ${targetCountry} country tab to persist after relogin`);
         }
     });
 
