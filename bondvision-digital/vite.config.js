@@ -6,10 +6,16 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3002,
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'bondvision-digital',
+      'host.docker.internal'
+    ],
     hmr: {
-      host: 'localhost',
-      port: 3002
-    },
-    origin: 'http://host.docker.internal:3002'
+      host: 'bondvision-digital',
+      port: 3002,
+      protocol: 'http'
+    }
   }
 })

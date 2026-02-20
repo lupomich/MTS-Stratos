@@ -593,6 +593,11 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
     return () => clearTimeout(timer)
   }, [preferences?.columnOrder])
 
+  const onGridReady = useCallback((params) => {
+    // Registra l'API globalmente per i test Playwright
+    window.__bondGridApi = params.api
+  }, [])
+
   return (
     <div className="bond-table-container">
       <div className="ag-theme-alpine-dark bond-grid">
@@ -603,6 +608,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
           defaultColDef={defaultColDef}
           rowSelection="single"
           onRowClicked={onRowClicked}
+          onGridReady={onGridReady}
           onFilterChanged={() => {
             if (gridRef.current?.api) {
               gridRef.current.api.refreshHeader()

@@ -1,0 +1,229 @@
+{
+  "summary": {
+    "startTime": "2026-02-20T18:46:33.657Z",
+    "endTime": "2026-02-20T18:47:17.737Z",
+    "durationMs": 44080,
+    "totalTests": 24,
+    "passed": 24,
+    "failed": 0,
+    "passRate": "100.0%"
+  },
+  "tests": [
+    {
+      "id": "T01",
+      "description": "Login Admin (GUI)",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:34.011Z",
+      "duration": 1396,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T02",
+      "description": "Open Admin Panel",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:35.407Z",
+      "duration": 120,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T03",
+      "description": "Create Admin user",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:35.527Z",
+      "duration": 292,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T04",
+      "description": "Login nuovo Admin",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:35.820Z",
+      "duration": 1490,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T05",
+      "description": "Logout Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:37.310Z",
+      "duration": 127,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T06",
+      "description": "Disable Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:37.437Z",
+      "duration": 1973,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T07",
+      "description": "Login utente disabilitato",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:39.410Z",
+      "duration": 1756,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T08",
+      "description": "Riattivazione Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:41.166Z",
+      "duration": 1988,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T09",
+      "description": "Login post-riattivazione",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:43.154Z",
+      "duration": 1418,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T10",
+      "description": "Delete Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:44.572Z",
+      "duration": 2184,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T11",
+      "description": "Verify DB clean (API)",
+      "type": "API",
+      "startTime": "2026-02-20T18:46:46.756Z",
+      "duration": 73,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T12",
+      "description": "Create Trader user",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:46.829Z",
+      "duration": 233,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T13",
+      "description": "Login Trader",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:47.062Z",
+      "duration": 1569,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T14",
+      "description": "Logout Trader",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:48.632Z",
+      "duration": 107,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T15",
+      "description": "Disable/Enable Trader cycle",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:48.739Z",
+      "duration": 7595,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T16",
+      "description": "Delete Trader",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:56.334Z",
+      "duration": 2105,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T17",
+      "description": "Create Viewer user",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:58.439Z",
+      "duration": 209,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T18",
+      "description": "Login Viewer",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:46:58.648Z",
+      "duration": 1471,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T19",
+      "description": "Logout Viewer",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:47:00.119Z",
+      "duration": 132,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T20",
+      "description": "Disable/Enable Viewer cycle",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:47:00.251Z",
+      "duration": 7724,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T21",
+      "description": "Delete Viewer",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:47:07.976Z",
+      "duration": 2159,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T22",
+      "description": "Verify DB clean (API)",
+      "type": "API",
+      "startTime": "2026-02-20T18:47:10.135Z",
+      "duration": 69,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T23",
+      "description": "Verify GUI clean",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:47:10.204Z",
+      "duration": 9,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T24",
+      "description": "Create users for Section 2",
+      "type": "GUI",
+      "startTime": "2026-02-20T18:47:10.213Z",
+      "duration": 416,
+      "status": "PASS",
+      "failReason": null
+    }
+  ]
+}

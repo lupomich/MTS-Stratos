@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MTS-Stratos Test Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    .header { background: #333; color: white; padding: 20px; border-radius: 5px; }
+    .summary { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #4CAF50; color: white; }
+    tr:hover { background: #f5f5f5; }
+    .pass { background: #d4edda; color: #155724; font-weight: bold; }
+    .fail { background: #f8d7da; color: #721c24; font-weight: bold; }
+    .metric { display: inline-block; margin: 10px 20px; }
+    .metric-value { font-size: 24px; font-weight: bold; color: #4CAF50; }
+    .footer { margin-top: 30px; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>MTS-Stratos E2E Test Report</h1>
+    <p>Generated: 2/20/2026, 6:55:23 PM</p>
+  </div>
+
+  <div class="summary">
+    <h2>Test Summary</h2>
+    <div class="metric">
+      <div>Total Tests</div>
+      <div class="metric-value">6</div>
+    </div>
+    <div class="metric">
+      <div>Passed</div>
+      <div class="metric-value" style="color: #28a745;">0</div>
+    </div>
+    <div class="metric">
+      <div>Failed</div>
+      <div class="metric-value" style="color: #dc3545;">6</div>
+    </div>
+    <div class="metric">
+      <div>Success Rate</div>
+      <div class="metric-value">0.0%</div>
+    </div>
+    <div class="metric">
+      <div>Total Duration</div>
+      <div class="metric-value">60.61s</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Test #</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Timestamp</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <tr>
+        <td>1</td>
+        <td>Create Admin user</td>
+        <td class="fail">FAIL</td>
+        <td>6:54:22 PM</td>
+        <td>—</td>
+      </tr>
+    
+      <tr>
+        <td>9</td>
+        <td>Create Member user</td>
+        <td class="fail">FAIL</td>
+        <td>6:54:22 PM</td>
+        <td>—</td>
+      </tr>
+    
+      <tr>
+        <td>17</td>
+        <td>Create Trader user</td>
+        <td class="fail">FAIL</td>
+        <td>6:54:23 PM</td>
+        <td>—</td>
+      </tr>
+    
+      <tr>
+        <td>25</td>
+        <td>Create AutoEx user</td>
+        <td class="fail">FAIL</td>
+        <td>6:54:23 PM</td>
+        <td>—</td>
+      </tr>
+    
+      <tr>
+        <td>33</td>
+        <td>UI Settings tests</td>
+        <td class="fail">FAIL</td>
+        <td>6:54:53 PM</td>
+        <td>page.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('input[id="username"]')
+</td>
+      </tr>
+    
+      <tr>
+        <td>41</td>
+        <td>Badge tests</td>
+        <td class="fail">FAIL</td>
+        <td>6:55:23 PM</td>
+        <td>page.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('input[id="username"]')
+</td>
+      </tr>
+    
+    </tbody>
+  </table>
+
+  <div class="summary">
+    <h3>Test Environment</h3>
+    <p><strong>API Base:</strong> http://bondvision-backend:3000/api</p>
+    <p><strong>UI Base:</strong> http://bondvision-digital:3002</p>
+    <p><strong>Execution Date:</strong> 2/20/2026, 6:54:22 PM</p>
+  </div>
+
+  <div class="footer">
+    <p>MTS-Stratos Automated Testing Suite v1.0</p>
+  </div>
+</body>
+</html>
+  
