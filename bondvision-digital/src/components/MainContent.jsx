@@ -4,6 +4,7 @@ import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
+import RfqOutright from './RfqOutright'
 import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
 import { usePreferences } from '../context/PreferencesContext'
 import './MainContent.css'
@@ -154,6 +155,9 @@ const MainContent = () => {
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
   const [searchTerm, setSearchTerm] = useState('')
   const [dataTableRows, setDataTableRows] = useState([])
+  const [showRfqOutright, setShowRfqOutright] = useState(false)
+  const [rfqPricingData, setRfqPricingData] = useState(null)
+  const [rfqLoading, setRfqLoading] = useState(false)
   const priceUpdateIntervalRef = useRef(null)
   
   // State per il resize dinamico
@@ -343,13 +347,67 @@ const MainContent = () => {
     getMainMenuItems: getMainMenuItems
   }), [getMainMenuItems])
 
+  // Handle RFQ OUTRIGHT button click
+  const handleOpenRfqOutright = useCallback(async () => {
+    if (!selectedBond) {
+      console.warn('No bond selected')
+      return
+    }
+
+    setRfqLoading(true)
+    try {
+      // Fetch pricing data from backend
+      const response = await fetch(`/api/bonds/${selectedBond.isin}/rfq-data`)
+      const data = await response.json()
+      
+      if (data && data.dealers && data.quotes) {
+        setRfqPricingData(data)
+        setShowRfqOutright(true)
+      } else {
+        console.error('Invalid pricing data:', data)
+      }
+    } catch (error) {
+      console.error('Error fetching RFQ data:', error)
+    } finally {
+      setRfqLoading(false)
+    }
+  }, [selectedBond])
+
+  // Handle RFQ submission
+  const handleRfqSubmit = useCallback((rfqData) => {
+    console.log('RFQ Data submitted:', rfqData)
+    
+    // Send to backend
+    fetch('/api/rfq/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rfqData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('RFQ submission response:', data)
+        // Could add success notification here
+      })
+      .catch(error => console.error('Error submitting RFQ:', error))
+  }, [])
+
   return (
     <div className="main-content" ref={mainContentRef}>
       <div className="rfq-toolbar">
         <div className="toolbar-left">
           <div className="rfq-dropdown">
-            <button className={`rfq-button ${expandedRFQ ? 'expanded' : ''}`} onClick={() => setExpandedRFQ(!expandedRFQ)}>
-              {expandedRFQ ? selectedRFQ : 'OPEN RFQ'} ▼
+            <button 
+              className={`rfq-button ${expandedRFQ ? 'expanded' : ''}`} 
+              onClick={() => {
+                if (selectedRFQ === 'RFQ OUTRIGHT') {
+                  handleOpenRfqOutright()
+                  setExpandedRFQ(false)
+                } else {
+                  setExpandedRFQ(!expandedRFQ)
+                }
+              }}
+            >
+              {expandedRFQ ? selectedRFQ : 'OPEN RFQ'} {!expandedRFQ && '▼'}
             </button>
             {expandedRFQ && (
               <div className="rfq-menu">
@@ -359,6 +417,9 @@ const MainContent = () => {
                     className={`rfq-option ${selectedRFQ === type ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedRFQ(type)
+                      if (type === 'RFQ OUTRIGHT') {
+                        handleOpenRfqOutright()
+                      }
                       setExpandedRFQ(false)
                     }}
                   >
@@ -465,6 +526,21 @@ const MainContent = () => {
           <MarketDepth selectedBond={selectedBond} />
         </div>
       </div>
+
+      {showRfqOutright && selectedBond && rfqPricingData && (
+        <RfqOutright
+          bond={{
+            isin: selectedBond.isin,
+            description: selectedBond.description,
+          }}
+          pricingData={rfqPricingData}
+          onClose={() => {
+            setShowRfqOutright(false)
+            setRfqPricingData(null)
+          }}
+          onSubmit={handleRfqSubmit}
+        />
+      )}
     </div>
   )
 }

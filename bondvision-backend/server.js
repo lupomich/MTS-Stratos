@@ -7,6 +7,7 @@ import { Pool } from 'pg';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import preferencesRoutes from './routes/preferences.js';
+import bondsRouter from './routes/bonds.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ try {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/preferences', preferencesRoutes);
+app.use('/api/bonds', bondsRouter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
