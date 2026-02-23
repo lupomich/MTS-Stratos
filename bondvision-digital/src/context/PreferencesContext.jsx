@@ -91,7 +91,9 @@ export const PreferencesProvider = ({ children }) => {
         }
     }, [isAuthenticated, token]);
 
-    const updatePreference = useCallback((key, value) => {
+    const updatePreference = useCallback((key, value, options = {}) => {
+        const { immediate = false } = options;
+
         setPreferences(prev => {
             const newPreferences = { ...prev, [key]: value };
             
@@ -99,10 +101,14 @@ export const PreferencesProvider = ({ children }) => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
-            
-            saveTimeoutRef.current = setTimeout(() => {
+
+            if (immediate) {
                 savePreferencesToBackend(newPreferences);
-            }, 1000);
+            } else {
+                saveTimeoutRef.current = setTimeout(() => {
+                    savePreferencesToBackend(newPreferences);
+                }, 1000);
+            }
             
             return newPreferences;
         });
@@ -149,12 +155,12 @@ export const PreferencesProvider = ({ children }) => {
         setTheme: (theme) => updatePreference('theme', theme),
         setLanguage: (language) => updatePreference('language', language),
         setLastTab: (tab) => updatePreference('lastTab', tab),
-        setSelectedCountryTab: (countryCode) => updatePreference('selectedCountryTab', countryCode),
+        setSelectedCountryTab: (countryCode) => updatePreference('selectedCountryTab', countryCode, { immediate: true }),
         setGridLayout: (layout) => updatePreference('gridLayout', layout),
         setColumnOrder: (order) => updatePreference('columnOrder', order),
         setColumnWidths: (widths) => updatePreference('columnWidths', widths),
         setFilters: (filters) => updatePreference('filters', filters),
-        setSorts: (sorts) => updatePreference('sorts', sorts),
+        setSorts: (sorts) => updatePreference('sorts', sorts, { immediate: true }),
         setDefaultColumns: (columns) => updatePreference('defaultColumns', columns)
     };
 

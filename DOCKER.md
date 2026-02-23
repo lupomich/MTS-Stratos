@@ -139,10 +139,10 @@ Documentazione delle immagini Docker utilizzate nel progetto MTS-Stratos.
 File: `bondvision-digital/Dockerfile.e2e`
 - Base image: `mcr.microsoft.com/playwright:v1.58.2-jammy`
 - Browser: Chromium (headless)
-- Script principale: `scripts/e2e-final.mjs` (suite completa TC01-TC40)
+- Script principale: `scripts/e2e-final.mjs` (suite completa TC01-TC41)
 
 ### 📝 Cosa testa
-La suite `e2e-final.mjs` copre 40 test E2E:
+La suite `e2e-final.mjs` copre 41 test E2E:
 1. **User lifecycle** (create/login/logout/disable-enable/delete)
 2. **Role behavior** (admin/trader/viewer)
 3. **Settings persistence** (column order, sort, filters)
@@ -170,9 +170,30 @@ powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1
 ```
 
 Questo script:
-- esegue clean reset dei servizi
-- lancia la suite completa TC01-TC40
+- crea snapshot DB **pre-test** (`Testing/db-snapshots/pre-e2e-<runId>.dump`)
+- esegue clean reset dei servizi (volumi Postgres/Redis)
+- lancia la suite completa TC01-TC41
 - esporta i report in `Testing/`
+- ripristina il DB allo stato pre-test al termine (anche in caso di fallimento)
+- preserva il volume `pgadmin-data` (server/connections salvate in pgAdmin)
+
+Per disabilitare backup/restore DB (es. in CI):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -SkipDbBackupRestore
+```
+
+Per conservare sempre sia snapshot pre-test che post-test:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepDbSnapshots
+```
+
+Per conservare snapshot post-test **solo in caso di FAIL** (consigliato per troubleshooting):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepPostTestDbOnFailure
+```
 
 #### **Opzione 2: Eseguire test tramite docker-compose**
 
@@ -188,7 +209,7 @@ Questo:
 - Esegue lo script di test
 - Rimuove il container al termine
 
-#### **Opzione 2: Eseguire il test con Docker standalone**
+#### **Opzione 3: Eseguire il test con Docker standalone**
 
 ```bash
 cd "c:\Users\MALupo\OneDrive - Euronext\Github\MTS-Stratos\bondvision-digital"
@@ -240,6 +261,22 @@ I report completi vengono esportati in `Testing/`:
 - `Testing/test-report.html`
 - `Testing/test-results.csv`
 - `Testing/test-results.json`
+
+Gli snapshot DB (quando richiesti) vengono salvati in `Testing/db-snapshots/`.
+
+### 🧰 Procedura troubleshooting consigliata
+
+1. Esegui test con:
+  - `powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepPostTestDbOnFailure`
+2. Se c'è FAIL:
+  - apri `Testing/test-results.json` e identifica test fallito
+  - usa lo snapshot `post-e2e-<runId>.dump` in `Testing/db-snapshots/`
+3. Per analisi isolata:
+  - crea DB temporaneo (es. `stratos_debug`) e fai `pg_restore` dello snapshot post-test
+4. Ambiente principale:
+  - è già tornato al pre-test grazie al restore automatico scriptato
+
+Runbook dettagliato: `Testing/E2E_DB_SNAPSHOT_RUNBOOK.md`
 
 ---
 

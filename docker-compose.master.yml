@@ -41,6 +41,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - pgadmin
     networks:
       - mts-network
 

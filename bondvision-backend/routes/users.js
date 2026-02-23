@@ -21,7 +21,20 @@ function requireAdmin(req, res, next) {
 
 router.get('/', requireAdmin, async (req, res) => {
   const pool = req.app.get('pool');
-  const result = await pool.query('SELECT id, username, email, role, is_active, last_login FROM users ORDER BY username');
+  const result = await pool.query(`
+    SELECT
+      u.id,
+      u.username,
+      u.email,
+      u.role,
+      u.is_active,
+      u.last_login,
+      u.created_by,
+      c.username AS created_by_username
+    FROM users u
+    LEFT JOIN users c ON c.id = u.created_by
+    ORDER BY u.username
+  `);
   res.json({ users: result.rows });
 });
 
@@ -37,10 +50,15 @@ router.post('/',
     const { username, email, password, role } = req.body;
     const pool = req.app.get('pool');
     try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id) ON DELETE SET NULL');
+
       const exists = await pool.query('SELECT 1 FROM users WHERE username = $1 OR email = $2', [username, email]);
       if (exists.rows.length > 0) return res.status(409).json({ error: 'Username or email already exists' });
       const hash = await bcrypt.hash(password, 10);
-      await pool.query('INSERT INTO users (username, email, password_hash, role, is_active) VALUES ($1, $2, $3, $4, true)', [username, email, hash, role]);
+      await pool.query(
+        'INSERT INTO users (username, email, password_hash, role, is_active, created_by) VALUES ($1, $2, $3, $4, true, $5)',
+        [username, email, hash, role, req.user.id]
+      );
       res.json({ message: 'User created' });
     } catch (err) {
       console.error('User creation error:', err);

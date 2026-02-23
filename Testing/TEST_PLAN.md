@@ -6,6 +6,28 @@
 **Focus**: GUI (con API secondarie)  
 **Totale Test**: 41
 
+## Ultimo Esito Esecuzione (2026-02-23)
+
+- **Suite eseguita**: TC01-TC41
+- **Risultato**: 41 PASS, 0 FAIL
+- **Pass rate**: 100.0%
+- **Durata totale**: 79.39s
+- **Report generati**:
+   - `Testing/test-report.html`
+   - `Testing/test-results.csv`
+   - `Testing/test-results.json`
+   - `Testing/TEST_RESULTS.xlsx`
+
+### Stato Run / Pass-Fail
+
+| Campo | Valore |
+|-------|--------|
+| Status | RUN |
+| Pass/Fail | PASS |
+| Test eseguiti | 41/41 |
+| Test PASS | 41 |
+| Test FAIL | 0 |
+
 ---
 
 ## SECTION 1: GESTIONE UTENTI - GUI ADMIN PANEL (Tests 1-24)

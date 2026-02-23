@@ -19,6 +19,9 @@ router.post('/login',
       const user = result.rows[0];
       const match = await bcrypt.compare(password, user.password_hash);
       if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+
+      await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
       const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
       res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
     } catch (err) {

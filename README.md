@@ -107,3 +107,35 @@ Vedi [bondvision-mockup/README.md](bondvision-mockup/README.md) per maggiori det
 | Hello App | 3000 | http://localhost:3000 |
 | BondVision Mockup | 3001 | http://localhost:3001 |
 | BondVision Digital | 3002 | http://localhost:3002 |
+
+## Testing E2E - Convenzioni operative
+
+### Esecuzione test completa con protezione dati
+
+```powershell
+# Run standard con backup/restore automatico DB
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1
+
+# Run consigliato con snapshot post-test su FAIL (troubleshooting)
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepPostTestDbOnFailure
+
+# Run audit con snapshot pre + post sempre persistenti
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepDbSnapshots
+
+# Run CI veloce (niente backup/restore)
+powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -SkipDbBackupRestore
+```
+
+### Comportamento predefinito
+- **Pre-test**: snapshot DB automatico (`Testing/db-snapshots/pre-e2e-<runId>.dump`)
+- **Esecuzione suite**: test TC01-TC41 su ambiente resettato
+- **Post-test**: restore automatico DB pre-test (preserva utenti/dati manuali)
+- **Report**: `Testing/test-report.html`, `test-results.csv`, `test-results.json`
+
+### Troubleshooting con snapshot post-test
+1. Usa `-KeepPostTestDbOnFailure` in fase di test
+2. In caso di FAIL, conserva `post-e2e-<runId>.dump` in `Testing/db-snapshots/`
+3. Ripristina snapshot in DB debug isolato (`stratos_debug`) per indagine
+4. L'ambiente principale è già tornato allo stato pre-test
+
+**Runbook dettagliato**: `Testing/E2E_DB_SNAPSHOT_RUNBOOK.md`

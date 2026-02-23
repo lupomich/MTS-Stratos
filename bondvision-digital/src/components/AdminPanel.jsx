@@ -158,6 +158,7 @@ const AdminPanel = ({ onClose }) => {
                                         <th>Role</th>
                                         <th>Status</th>
                                         <th>Last Login</th>
+                                        <th>Created By</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -187,6 +188,7 @@ const AdminPanel = ({ onClose }) => {
                                                     ? new Date(user.last_login).toLocaleString()
                                                     : 'Never'}
                                             </td>
+                                            <td>{user.created_by_username || 'System'}</td>
                                             <td className="actions">
                                                 <label className="toggle-switch" title={user.is_active ? 'Deactivate user' : 'Activate user'}>
                                                     <input
