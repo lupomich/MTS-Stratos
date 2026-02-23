@@ -1,103 +1,125 @@
-# Test2 - Workspace Multi-Progetto
+# MTS-Stratos - BondVision Trading Platform
 
-Workspace contenente diverse applicazioni containerizzate.
+Workspace full-stack containerizzato per la piattaforma di trading MTS BondVision.
 
-## Progetti nel workspace
+## Architettura del Progetto
 
-### 1. Hello App (porta 3000)
-Semplice applicazione web con server Node.js containerizzato.
+### Stack Tecnologico
+- **Frontend:** React 18 + Vite
+- **Backend:** Node.js/Express
+- **Database:** PostgreSQL
+- **Cache:** Redis
+- **Testing:** Playwright E2E
+- **Admin:** pgAdmin
 
-### 2. BondVision Digital (porta 3002)
-Applicazione MTS BondVision Trading Platform - Versione React moderna.
+### Servizi
+
+#### BondVision Digital - Frontend (porta 3002)
+Applicazione di trading MTS BondVision con interfaccia moderna.
 - **URL:** http://localhost:3002
 - **Tecnologia:** React 18 + Vite
 - **Documentazione:** [bondvision-digital/README.md](bondvision-digital/README.md)
 
-### 3. BondVision Mockup (porta 3001)
-Applicazione MTS BondVision Trading Platform - Versione mockup/prototipo.
-- **URL:** http://localhost:3001
-- **Tecnologia:** React 18 + Vite
-- **Documentazione:** [bondvision-mockup/README.md](bondvision-mockup/README.md)
+#### BondVision Backend - API (porta 5000)
+Server API RESTful per la piattaforma BondVision.
+- **URL:** http://localhost:5000
+- **Tecnologia:** Express.js
+- **Database:** PostgreSQL (connessione via Docker)
 
-### 4. BondVision Static
-Versione statica dell'applicazione BondVision.
+#### PostgreSQL (porta 5432)
+Database relazionale per la piattaforma.
+- **Database:** stratos_db
+- **User:** stratos
+- **Snapshots:** `Testing/db-snapshots/`
 
-## Struttura del progetto
+#### Redis (porta 6379)
+Servizio di caching e sessioni.
+
+#### pgAdmin (porta 5050)
+Strumento di amministrazione PostgreSQL.
+- **URL:** http://localhost:5050
+
+## Struttura del Progetto
 
 ```
 .
-├── server.js                 # Hello App - Server Express
-├── public/
-│   └── index.html            # Hello App - Client HTML
-├── package.json              # Hello App - Dipendenze Node.js
-├── Dockerfile                # Hello App - Configurazione Docker
-├── docker-compose.yml        # Hello App - Orchestrazione Docker
-├── bondvision-digital/       # Progetto BondVision Digital (porta 3002)
-├── bondvision-mockup/        # Progetto BondVision Mockup (porta 3001)
-└── bondvision-static/        # Progetto BondVision Static
+├── bondvision-digital/       # Frontend React (porta 3002)
+│   ├── src/
+│   ├── scripts/              # E2E tests (Playwright)
+│   ├── package.json
+│   ├── vite.config.js
+│   └── Dockerfile
+├── bondvision-backend/       # Backend Express (porta 5000)
+│   ├── routes/
+│   ├── server.js
+│   ├── package.json
+│   └── Dockerfile
+├── db/                       # Database initialization
+│   └── init.sql
+├── Testing/                  # E2E test suite e automation
+│   ├── run-e2e-full.ps1     # Orchestratore test (PowerShell)
+│   ├── E2E_DB_SNAPSHOT_RUNBOOK.md  # Procedura snapshot
+│   ├── TEST_CHECKLIST.md    # Test results checklist
+│   ├── TEST_PLAN.md         # Test plan
+│   ├── TEST_RESULTS.xlsx    # Excel report
+│   └── db-snapshots/        # Database snapshots pre/post test
+├── docker-compose.master.yml # Orchestrazione multi-servizio
+└── DOCKER.md                # Documentazione Docker
 ```
 
-## Come avviare l'applicazione
+## Come Avviare l'Applicazione
 
-### Hello App (porta 3000)
-
-#### Con Docker (raccomandato)
+### Con Docker Compose (raccomandato)
 
 ```bash
-# Costruisci e avvia il container
-docker-compose up --build
+# Avvia tutti i servizi
+docker-compose -f docker-compose.master.yml up -d
 
-# L'app sarà disponibile su http://localhost:3000
+# Arresta tutti i servizi
+docker-compose -f docker-compose.master.yml down
 ```
 
-#### Senza Docker
+### Servizi e porte
 
-```bash
-# Installa le dipendenze
-npm install
-
-# Avvia il server
-npm start
-
-# L'app sarà disponibile su http://localhost:3000
-```
+| Servizio | Porta | URL |
+|----------|-------|-----|
+| BondVision Frontend | 3002 | http://localhost:3002 |
+| BondVision Backend | 5000 | http://localhost:5000 |
+| PostgreSQL | 5432 | localhost:5432 |
+| Redis | 6379 | localhost:6379 |
+| pgAdmin | 5050 | http://localhost:5050 |
 
 ### BondVision Digital (porta 3002)
 
 ```bash
 cd bondvision-digital
-docker-compose up --build
-
-# L'app sarà disponibile su http://localhost:3002
+npm install
+npm run dev
 ```
 
 Vedi [bondvision-digital/README.md](bondvision-digital/README.md) per maggiori dettagli.
 
-### BondVision Mockup (porta 3001)
+### BondVision Backend (porta 5000)
 
 ```bash
-cd bondvision-mockup
-docker-compose up --build
-
-# L'app sarà disponibile su http://localhost:3001
+cd bondvision-backend
+npm install
+npm start
 ```
 
-Vedi [bondvision-mockup/README.md](bondvision-mockup/README.md) per maggiori dettagli.
+## Utilizzo Piattaforma
 
-## Utilizzo
+### Login alla Piattaforma
+1. Naviga su http://localhost:3002
+2. Credenziali predefinite:
+   - **Admin:** username: `admin`, password: `admin123`
+   - **Demo User:** username: `demo`, password: `demo123`
+3. Accedi alla dashboard di trading
 
-### Hello App
-1. Apri il browser su http://localhost:3000
-2. Inserisci il tuo nome nel campo di testo
-3. Premi OK o Enter
-4. Il server risponderà con "Hello [nome]"
-
-### BondVision Digital
-1. Apri il browser su http://localhost:3002
-2. Interfaccia completa della piattaforma di trading MTS BondVision
-
-### BondVision Mockup
-1. Apri il browser su http://localhost:3001
+### Amministrazione Database
+1. Accedi a http://localhost:5050
+2. Connettiti al database PostgreSQL
+3. Gestisci tabelle e dati
 2. Versione prototipo della piattaforma di trading MTS BondVision
 
 ## Riepilogo Porte
