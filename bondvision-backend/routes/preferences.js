@@ -9,6 +9,7 @@ const defaultPreferences = {
   language: 'en',
   defaultColumns: ['isin', 'description', 'price', 'yield', 'maturity'],
   lastTab: 'government-bonds',
+  selectedCountryTab: 'IT',
   gridLayout: 'comfortable'
 };
 

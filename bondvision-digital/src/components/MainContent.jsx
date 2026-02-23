@@ -5,6 +5,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
 import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
+import { usePreferences } from '../context/PreferencesContext'
 import './MainContent.css'
 import sortAscendingIcon from '../icons/sortAscending.svg'
 import sortDescendingIcon from '../icons/sortDescending.svg'
@@ -144,9 +145,11 @@ const dataTableRows = [
 ]
 
 const MainContent = () => {
+  const { preferences, loading: preferencesLoading, setSelectedCountryTab } = usePreferences()
   const [selectedBond, setSelectedBond] = useState(null)
   const [selectedTopTab, setSelectedTopTab] = useState('ALL')
   const [selectedCountry, setSelectedCountry] = useState('IT')
+  const [countryTabHydrated, setCountryTabHydrated] = useState(false)
   const [expandedRFQ, setExpandedRFQ] = useState(false)
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
   const [searchTerm, setSearchTerm] = useState('')
@@ -161,6 +164,30 @@ const MainContent = () => {
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const contentBodyRef = useRef(null)
   const mainContentRef = useRef(null)
+
+  // Load persisted country tab preference when available
+  useEffect(() => {
+    if (preferencesLoading) return
+
+    const persistedCountry = preferences?.selectedCountryTab
+    const isValidCountry = countries.some((country) => country.code === persistedCountry && country.code !== '+')
+
+    if (isValidCountry) {
+      setSelectedCountry(persistedCountry)
+    }
+
+    setCountryTabHydrated(true)
+  }, [preferencesLoading, preferences])
+
+  // Persist selected country tab (skip the '+' action tab)
+  useEffect(() => {
+    if (preferencesLoading || !countryTabHydrated) return
+    if (selectedCountry === '+') return
+
+    if (preferences?.selectedCountryTab !== selectedCountry) {
+      setSelectedCountryTab(selectedCountry)
+    }
+  }, [selectedCountry, preferencesLoading, countryTabHydrated, preferences, setSelectedCountryTab])
 
   // Carica bond casuali quando cambia il paese
   useEffect(() => {
