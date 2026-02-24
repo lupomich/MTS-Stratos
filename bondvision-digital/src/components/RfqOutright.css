@@ -10,7 +10,7 @@
 .rfq-modal.rfq-floating-window {
   position: absolute;
   pointer-events: auto;
-  width: min(1400px, calc(100vw - 20px));
+  width: min(1150px, calc(100vw - 20px));
   max-height: calc(100vh - 20px);
   display: flex;
   flex-direction: column;
