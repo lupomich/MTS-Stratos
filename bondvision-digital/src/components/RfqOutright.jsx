@@ -161,18 +161,22 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   }, [pricingData, bestDealerIds]);
 
   useEffect(() => {
-    const updatePosition = () => {
-      const modalWidth = windowRef.current?.offsetWidth || 900;
-      const modalHeight = windowRef.current?.offsetHeight || 760;
-      const centeredX = Math.max(16, Math.floor((activeWindow.innerWidth - modalWidth) / 2));
-      const centeredY = Math.max(16, Math.floor((activeWindow.innerHeight - modalHeight) / 2));
-      setPosition(clampPosition(centeredX, centeredY));
-    };
+    // Only center position for popup windows, not for inline modals
+    // Inline modals should use initialPosition passed from MainContent
+    if (isPopup) {
+      const updatePosition = () => {
+        const modalWidth = windowRef.current?.offsetWidth || 900;
+        const modalHeight = windowRef.current?.offsetHeight || 760;
+        const centeredX = Math.max(16, Math.floor((activeWindow.innerWidth - modalWidth) / 2));
+        const centeredY = Math.max(16, Math.floor((activeWindow.innerHeight - modalHeight) / 2));
+        setPosition(clampPosition(centeredX, centeredY));
+      };
 
-    updatePosition();
-    activeWindow.addEventListener('resize', updatePosition);
-    return () => activeWindow.removeEventListener('resize', updatePosition);
-  }, [activeWindow, clampPosition]);
+      updatePosition();
+      activeWindow.addEventListener('resize', updatePosition);
+      return () => activeWindow.removeEventListener('resize', updatePosition);
+    }
+  }, [activeWindow, clampPosition, isPopup]);
 
   useEffect(() => {
     if (isLoading) return;

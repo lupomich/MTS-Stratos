@@ -107,25 +107,6 @@ services:
     networks:
       - mts-network
 
-  # E2E Full Test Suite with reporting
-  e2e-full:
-    build:
-      context: ./bondvision-digital
-      dockerfile: Dockerfile.e2e
-    command: node scripts/e2e-full-test.mjs
-    environment:
-      - API_BASE=http://bondvision-backend:3000/api
-      - UI_BASE=http://bondvision-digital:3002
-    volumes:
-      - ./bondvision-digital:/app
-    depends_on:
-      - bondvision-backend
-      - bondvision-digital
-      - postgres
-      - redis
-    networks:
-      - mts-network
-
 networks:
   mts-network:
     driver: bridge

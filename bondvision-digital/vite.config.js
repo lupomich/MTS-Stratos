@@ -12,6 +12,13 @@ export default defineConfig({
       'bondvision-digital',
       'host.docker.internal'
     ],
+    proxy: {
+      '/api': {
+        target: 'http://bondvision-backend:3000',
+        changeOrigin: true,
+        rewrite: (path) => path
+      }
+    },
     hmr: {
       host: 'bondvision-digital',
       port: 3002,

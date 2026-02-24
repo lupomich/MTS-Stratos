@@ -12,6 +12,7 @@ const defaultPreferences = {
     lastTab: 'government-bonds',
     selectedCountryTab: 'IT',
     gridLayout: 'comfortable',
+    rfqOpenInPopup: false,
     columnWidths: {},
     filters: {},
     sorts: []
@@ -157,6 +158,7 @@ export const PreferencesProvider = ({ children }) => {
         setLastTab: (tab) => updatePreference('lastTab', tab),
         setSelectedCountryTab: (countryCode) => updatePreference('selectedCountryTab', countryCode, { immediate: true }),
         setGridLayout: (layout) => updatePreference('gridLayout', layout),
+        setRfqOpenInPopup: (enabled) => updatePreference('rfqOpenInPopup', enabled, { immediate: true }),
         setColumnOrder: (order) => updatePreference('columnOrder', order),
         setColumnWidths: (widths) => updatePreference('columnWidths', widths),
         setFilters: (filters) => updatePreference('filters', filters),

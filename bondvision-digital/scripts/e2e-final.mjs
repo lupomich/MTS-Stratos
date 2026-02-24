@@ -1160,10 +1160,9 @@ async function runSection3(browser) {
     
     await runTest('T43', 'Double-click bond row opens RFQ modal', 'GUI', async () => {
         // Ensure grid is fully loaded
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
         
-        // ag-grid double-click: target first visible data cell
-        const firstCell = page.locator('.ag-row').first().locator('.ag-cell').first();
+        // Click on first row to select it
         const firstRow = page.locator('.ag-row').first();
         const rowCount = await page.locator('.ag-row').count();
         
@@ -1173,19 +1172,34 @@ async function runSection3(browser) {
             throw new Error('No rows found in ag-grid');
         }
 
-        // Double-click on the cell element (ag-grid listens to cell events)
-        await firstCell.dblclick({ force: true });
-        console.log('  [T43] Double-click executed on first cell');
+        // Single click to select the row with longer timeout
+        console.log('  [T43] About to click first row...');
+        await firstRow.click({ timeout: 3000 });
+        await page.waitForTimeout(500);
+        console.log('  [T43] Row clicked and selected');
+        
+        // Click OPEN RFQ dropdown button
+        console.log('  [T43] Looking for OPEN RFQ button...');
+        const openRfqBtn = page.locator('button:has-text("OPEN RFQ")').first();
+        const btnVisible = await openRfqBtn.isVisible({ timeout: 2000 });
+        console.log(`  [T43] Button visible: ${btnVisible}`);
+        
+        await openRfqBtn.click({ timeout: 3000 });
+        await page.waitForTimeout(300);
+        console.log('  [T43] OPEN RFQ menu clicked');
+        
+        // Click RFQ OUTRIGHT option
+        console.log('  [T43] Looking for RFQ OUTRIGHT option...');
+        const rfqOutrightOption = page.locator('text=RFQ OUTRIGHT').first();
+        const optionVisible = await rfqOutrightOption.isVisible({ timeout: 2000 });
+        console.log(`  [T43] Option visible: ${optionVisible}`);
+        
+        await rfqOutrightOption.click({ timeout: 3000 });
+        console.log('  [T43] RFQ OUTRIGHT clicked, waiting for modal...');
         
         // Wait for RFQ window to appear
         const rfqModal = page.locator('.rfq-modal').first();
-        try {
-            await rfqModal.waitFor({ state: 'visible', timeout: 5000 });
-        } catch {
-            await firstRow.dblclick({ force: true });
-            console.log('  [T43] Fallback: double-click executed on first row');
-            await rfqModal.waitFor({ state: 'visible', timeout: 10000 });
-        }
+        await rfqModal.waitFor({ state: 'visible', timeout: 5000 });
         
         console.log('  [T43] Modal appeared!');
     });

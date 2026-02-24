@@ -281,14 +281,14 @@ const MainContent = () => {
     // Calculate offset based on number of existing windows to avoid overlapping
     // Count existing open windows from the ref map
     const existingWindowCount = rfqWindowsRef.current.size
-    const offsetLeft = 100 + (existingWindowCount * 30)  // Move 30px to the right
-    const offsetTop = Math.max(50, 500 - (existingWindowCount * 30))  // Move 30px up, min 50px from top
+    const offsetLeft = 300 + (existingWindowCount * 30)  // Move 30px to the right
+    const offsetTop = Math.max(50, 100 - (existingWindowCount * 30))  // Move 30px up, min 50px from top
 
     // Dimensioni ottimizzate per mostrare il modal senza scrollbar indesiderate
     const popup = window.open(
       '', 
       `rfq-outright-window-${rfqId}`, 
-      `width=1150,height=950,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
+      `width=1250,height=800,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
     )
     if (!popup) {
       console.error('Failed to open RFQ window')
@@ -520,10 +520,19 @@ const MainContent = () => {
         if (data && data.dealers && data.quotes) {
           // Create new RFQ modal with unique ID for EACH double-click
           const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          
+          // Calculate cascading position
+          const totalModalCount = rfqModals.length
+          const initialPosition = {
+            x: 300 + (totalModalCount * 30),
+            y: 200 + (totalModalCount * 10)
+          }
+          
           const newModal = {
             id: rfqId,
             bond: bond,
-            pricingData: data
+            pricingData: data,
+            initialPosition
           }
 
           // If popup mode, create window first
