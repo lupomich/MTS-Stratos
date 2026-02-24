@@ -340,12 +340,13 @@ class CustomHeaderWithMenu {
   }
 }
 
-const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
+const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchTerm = '' }) => {
   const gridRef = useRef()
   const { t, language } = useLanguage()
   const applyingPreferencesRef = useRef(false)
   const { preferences, setColumnOrder, setSorts, setFilters, setDefaultColumns, resetPreferences } = usePreferences()
   const [rowData, setRowData] = useState(countryBonds.length > 0 ? countryBonds : [])
+  const [selectedBondIsin, setSelectedBondIsin] = useState(null)
 
   useEffect(() => {
     if (countryBonds.length > 0) {
@@ -358,6 +359,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
         return {
           description: bond.description,
           isin: bond.isin,
+          __isSelected: selectedBondIsin === bond.isin,
           maturity: bond.maturity,
           ccy: bond.ccy,
           coupon: bond.coupon || 0,
@@ -373,7 +375,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
       })
       setRowData(formattedBonds)
     }
-  }, [countryBonds])
+  }, [countryBonds, selectedBondIsin])
 
   const columnDefs = useMemo(() => [
     { 
@@ -493,11 +495,30 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
   }), [])
 
   const onRowClicked = useCallback((event) => {
+    const clickedIsin = event.data?.isin || null
+    setSelectedBondIsin(clickedIsin)
+    setRowData(prev => prev.map(row => ({ ...row, __isSelected: row.isin === clickedIsin })))
     onSelectBond(event.data)
   }, [onSelectBond])
 
+  const onCellDoubleClicked = useCallback((event) => {
+    // Ignore cell double-click - use row double-click instead to avoid duplicate opens
+  }, [onDoubleClickBond])
+
+  const onRowDoubleClicked = useCallback((event) => {
+    if (onDoubleClickBond) {
+      onDoubleClickBond(event.data)
+    }
+  }, [onDoubleClickBond])
+
+  const rowClassRules = useMemo(() => ({
+    'bond-row-selected-persistent': (params) => Boolean(params.data?.__isSelected)
+  }), [selectedBondIsin])
+
   // Evidenzia la riga che matcha la ricerca
   const getRowStyle = useCallback((params) => {
+    if (selectedBondIsin && params.data?.isin === selectedBondIsin) return null
+
     if (searchTerm && params.data.description) {
       const description = params.data.description.toLowerCase()
       const search = searchTerm.toLowerCase()
@@ -506,7 +527,7 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
       }
     }
     return null
-  }, [searchTerm])
+  }, [searchTerm, selectedBondIsin])
 
   // Force grid refresh when language changes
   useEffect(() => {
@@ -681,12 +702,17 @@ const BondTable = ({ onSelectBond, countryBonds = [], searchTerm = '' }) => {
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
-          rowSelection="single"
+          deltaRowDataMode={true}
+          suppressHeaderFocus={true}
           onRowClicked={onRowClicked}
+          onCellDoubleClicked={onCellDoubleClicked}
+          onRowDoubleClicked={onRowDoubleClicked}
           onGridReady={onGridReady}
           onSortChanged={onSortChanged}
           onFilterChanged={onFilterChanged}
+          rowClassRules={rowClassRules}
           getRowStyle={getRowStyle}
+          getRowId={(params) => params.data.isin}
           animateRows={true}
           suppressCellFocus={true}
           context={{ t, language, resetPreferences, setColumnOrder, setSorts, setFilters, setDefaultColumns }}
