@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite --host --port 3002",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "node scripts/e2e-final.mjs",
+    "e2e:live": "node scripts/e2e-final.mjs",
+    "e2e:ui": "node ./node_modules/playwright/cli.js test -c playwright-ui.config.mjs --ui",
+    "e2e:ui:run": "node ./node_modules/playwright/cli.js test -c playwright-ui.config.mjs"
   },
   "dependencies": {
     "ag-grid-community": "^31.0.0",

@@ -11,18 +11,54 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 // Configuration
-const BASE_URL = process.env.BASE_URL || 'http://172.18.0.5:3002';
-const API_BASE = process.env.API_BASE || 'http://bondvision-backend:3000/api';
-const TEST_TIMEOUT = 30000; // 30 secondi
 const ADMIN_USER = { username: 'admin', password: 'admin123' };
-const STOP_ON_FIRST_FAIL = process.env.STOP_ON_FIRST_FAIL === 'true';
-const START_FROM = Number.parseInt(process.env.START_FROM || '1', 10);
+const IN_DOCKER = fs.existsSync('/.dockerenv');
+
+function getRuntimeConfig(overrides = {}) {
+    const liveView = Object.prototype.hasOwnProperty.call(overrides, 'liveView')
+        ? Boolean(overrides.liveView)
+        : process.env.LIVE_VIEW === 'true';
+    const headless = Object.prototype.hasOwnProperty.call(overrides, 'headless')
+        ? Boolean(overrides.headless)
+        : process.env.HEADLESS
+            ? process.env.HEADLESS !== 'false'
+            : !liveView;
+    const startFromRaw = Object.prototype.hasOwnProperty.call(overrides, 'startFrom')
+        ? overrides.startFrom
+        : (process.env.START_FROM || '1');
+    const slowMoRaw = Object.prototype.hasOwnProperty.call(overrides, 'slowMo')
+        ? overrides.slowMo
+        : (process.env.SLOW_MO || (liveView ? '250' : '0'));
+    const timeoutRaw = Object.prototype.hasOwnProperty.call(overrides, 'testTimeout')
+        ? overrides.testTimeout
+        : (process.env.TEST_TIMEOUT || '30000');
+
+    return {
+        BASE_URL: Object.prototype.hasOwnProperty.call(overrides, 'baseUrl')
+            ? overrides.baseUrl
+            : (process.env.BASE_URL || 'http://172.18.0.5:3002'),
+        API_BASE: Object.prototype.hasOwnProperty.call(overrides, 'apiBase')
+            ? overrides.apiBase
+            : (process.env.API_BASE || 'http://bondvision-backend:3000/api'),
+        TEST_TIMEOUT: Number.parseInt(String(timeoutRaw), 10) || 30000,
+        STOP_ON_FIRST_FAIL: Object.prototype.hasOwnProperty.call(overrides, 'stopOnFirstFail')
+            ? Boolean(overrides.stopOnFirstFail)
+            : process.env.STOP_ON_FIRST_FAIL === 'true',
+        START_FROM: Number.parseInt(String(startFromRaw), 10) || 1,
+        LIVE_VIEW: liveView,
+        HEADLESS: headless,
+        SLOW_MO: Number.parseInt(String(slowMoRaw), 10) || 0
+    };
+}
+
+let runtimeConfig = getRuntimeConfig();
 
 // Test results storage
 const testResults = [];
-const startTime = new Date();
+let startTime = new Date();
 
 class SkipTest extends Error {
     constructor(message) {
@@ -37,7 +73,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Utility: Test wrapper
 async function runTest(testId, description, type, testFn) {
     const testNumber = Number.parseInt(String(testId).replace(/^T/i, ''), 10);
-    if (!Number.isNaN(testNumber) && testNumber < START_FROM) {
+    if (!Number.isNaN(testNumber) && testNumber < runtimeConfig.START_FROM) {
         return {
             id: testId,
             description,
@@ -45,7 +81,7 @@ async function runTest(testId, description, type, testFn) {
             startTime: new Date().toISOString(),
             duration: 0,
             status: 'SKIP',
-            failReason: `Skipped by START_FROM=${START_FROM}`
+            failReason: `Skipped by START_FROM=${runtimeConfig.START_FROM}`
         };
     }
 
@@ -65,7 +101,7 @@ async function runTest(testId, description, type, testFn) {
         await Promise.race([
             testFn(),
             new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout 10s')), TEST_TIMEOUT)
+                setTimeout(() => reject(new Error('Timeout 10s')), runtimeConfig.TEST_TIMEOUT)
             )
         ]);
         result.status = 'PASS';
@@ -85,7 +121,7 @@ async function runTest(testId, description, type, testFn) {
     }
 
     testResults.push(result);
-    if (STOP_ON_FIRST_FAIL && result.status === 'FAIL') {
+    if (runtimeConfig.STOP_ON_FIRST_FAIL && result.status === 'FAIL') {
         throw new Error(`STOP_AT_${testId}: ${result.failReason}`);
     }
     return result;
@@ -93,7 +129,7 @@ async function runTest(testId, description, type, testFn) {
 
 // Utility: Login GUI
 async function loginGUI(page, username, password) {
-    await page.goto(BASE_URL);
+    await page.goto(runtimeConfig.BASE_URL);
     await page.locator('#username').fill(username);
     await page.locator('#password').fill(password);
     await page.locator('button[type="submit"]').click();
@@ -193,14 +229,14 @@ async function deleteUserGUI(page, username) {
 
 // Utility: API call to get users
 async function getUsersAPI() {
-    const response = await fetch(`${API_BASE}/auth/login`, {
+    const response = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ADMIN_USER)
     });
     const { token } = await response.json();
     
-    const usersResponse = await fetch(`${API_BASE}/users`, {
+    const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await usersResponse.json();
@@ -208,14 +244,14 @@ async function getUsersAPI() {
 }
 
 async function cleanupResidualTestUsersAPI() {
-    const response = await fetch(`${API_BASE}/auth/login`, {
+    const response = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ADMIN_USER)
     });
     const { token } = await response.json();
 
-    const usersResponse = await fetch(`${API_BASE}/users`, {
+    const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await usersResponse.json();
@@ -229,7 +265,7 @@ async function cleanupResidualTestUsersAPI() {
 
     for (const user of data.users || []) {
         if (testUsers.has(user.username)) {
-            await fetch(`${API_BASE}/users/${encodeURIComponent(user.id)}`, {
+            await fetch(`${runtimeConfig.API_BASE}/users/${encodeURIComponent(user.id)}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -243,21 +279,21 @@ async function waitForBondGrid(page) {
 }
 
 async function ensureUserExistsAPI({ username, email, password, role }) {
-    const loginResponse = await fetch(`${API_BASE}/auth/login`, {
+    const loginResponse = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ADMIN_USER)
     });
     const { token } = await loginResponse.json();
 
-    const usersResponse = await fetch(`${API_BASE}/users`, {
+    const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     const usersData = await usersResponse.json();
     const exists = (usersData.users || []).some(u => u.username === username);
 
     if (!exists) {
-        await fetch(`${API_BASE}/users`, {
+        await fetch(`${runtimeConfig.API_BASE}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -502,7 +538,7 @@ async function runSection1(browser) {
         await logoutGUI(page);
         
         // Try login as disabled admin-test
-        await page.goto(BASE_URL);
+        await page.goto(runtimeConfig.BASE_URL);
         await page.locator('#username').fill('admin-test');
         await page.locator('#password').fill('Admin123!');
         await page.locator('button[type="submit"]').click();
@@ -616,7 +652,7 @@ async function runSection1(browser) {
         await logoutGUI(page);
         
         // Try login trader-test (should fail)
-        await page.goto(BASE_URL);
+        await page.goto(runtimeConfig.BASE_URL);
         await page.locator('#username').fill('trader-test');
         await page.locator('#password').fill('Trader123!');
         await page.locator('button[type="submit"]').click();
@@ -702,7 +738,7 @@ async function runSection1(browser) {
         await page.locator('.admin-modal .close-btn').click();
         await logoutGUI(page);
         
-        await page.goto(BASE_URL);
+        await page.goto(runtimeConfig.BASE_URL);
         await page.locator('#username').fill('viewer-test');
         await page.locator('#password').fill('Viewer123!');
         await page.locator('button[type="submit"]').click();
@@ -744,7 +780,7 @@ async function runSection1(browser) {
     // --- Subsection D: Cleanup Verification (T22-T24) ---
     console.log('\n--- Subsection D: Cleanup Verification ---');
 
-    if (START_FROM >= 22) {
+    if (runtimeConfig.START_FROM >= 22) {
         await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
         await openAdminPanel(page);
     }
@@ -1434,28 +1470,47 @@ async function runSection3(browser) {
 // ============================================================================
 
 async function main() {
+    return runE2ESuite();
+}
+
+export async function runE2ESuite(overrides = {}) {
+    runtimeConfig = getRuntimeConfig(overrides);
+    testResults.length = 0;
+    startTime = new Date();
+
     console.log('='.repeat(60));
     console.log('MTS-STRATOS E2E TEST SUITE FINALE');
     console.log('='.repeat(60));
     console.log(`Start: ${startTime.toISOString()}`);
-    console.log(`Base URL: ${BASE_URL}`);
-    console.log(`API URL: ${API_BASE}`);
-    console.log(`Timeout per test: ${TEST_TIMEOUT}ms`);
+    console.log(`Base URL: ${runtimeConfig.BASE_URL}`);
+    console.log(`API URL: ${runtimeConfig.API_BASE}`);
+    console.log(`Timeout per test: ${runtimeConfig.TEST_TIMEOUT}ms`);
+    console.log(`Headless: ${runtimeConfig.HEADLESS}`);
+    console.log(`SlowMo: ${runtimeConfig.SLOW_MO}ms`);
+    if (process.env.PWDEBUG) {
+        console.log(`PWDEBUG: ${process.env.PWDEBUG}`);
+    }
     console.log('='.repeat(60));
-    
-    const browser = await chromium.launch({ 
-        headless: true,
-        args: ['--no-sandbox', '--disable-dev-shm-usage']
+
+    const launchArgs = [];
+    if (IN_DOCKER) {
+        launchArgs.push('--no-sandbox', '--disable-dev-shm-usage');
+    }
+
+    const browser = await chromium.launch({
+        headless: runtimeConfig.HEADLESS,
+        slowMo: Number.isNaN(runtimeConfig.SLOW_MO) ? 0 : runtimeConfig.SLOW_MO,
+        args: launchArgs
     });
     
     try {
-        if (START_FROM <= 24) {
+        if (runtimeConfig.START_FROM <= 24) {
             await runSection1(browser);
         }
-        if (START_FROM <= 40) {
+        if (runtimeConfig.START_FROM <= 40) {
             await runSection2(browser);
         }
-        if (START_FROM <= 47) {
+        if (runtimeConfig.START_FROM <= 47) {
             await runSection3(browser);
         }
     } catch (error) {
@@ -1465,7 +1520,7 @@ async function main() {
     }
     
     // Generate reports
-    generateReports();
+    return generateReports();
 }
 
 // ============================================================================
@@ -1587,7 +1642,34 @@ function generateReports() {
     console.log(`✅ JSON report: ${jsonPath}`);
     
     console.log('\n='.repeat(60));
+
+    return {
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        durationMs: duration,
+        total,
+        passed,
+        failed,
+        skipped,
+        passRate: `${passRate}%`
+    };
 }
 
 // Run
-main().catch(console.error);
+const isExecutedDirectly = (() => {
+    if (!process.argv[1]) return false;
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+})();
+
+if (isExecutedDirectly) {
+    main()
+        .then((summary) => {
+            if (summary && summary.failed > 0) {
+                process.exitCode = 1;
+            }
+        })
+        .catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+        });
+}
