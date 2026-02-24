@@ -288,7 +288,7 @@ const MainContent = () => {
     const popup = window.open(
       '', 
       `rfq-outright-window-${rfqId}`, 
-      `width=1100,height=950,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
+      `width=1400,height=950,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
     )
     if (!popup) {
       console.error('Failed to open RFQ window')
