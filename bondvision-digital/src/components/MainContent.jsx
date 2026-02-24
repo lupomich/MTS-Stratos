@@ -281,8 +281,8 @@ const MainContent = () => {
     // Calculate offset based on number of existing windows to avoid overlapping
     // Count existing open windows from the ref map
     const existingWindowCount = rfqWindowsRef.current.size
-    const offsetLeft = 300 + (existingWindowCount * 30)  // Move 30px to the right
-    const offsetTop = 100 + (existingWindowCount * 10)  // Move 10px down, same cascading as inline modals
+    const offsetLeft = 350 + (existingWindowCount * 30)  // Move 30px to the right, starting at 350
+    const offsetTop = 300 + (existingWindowCount * 10)  // Move 10px down, starting at 300
 
     // Dimensioni ottimizzate per mostrare il modal senza scrollbar indesiderate
     const popup = window.open(
@@ -315,13 +315,13 @@ const MainContent = () => {
     root.style.flexDirection = 'column'
     popup.document.body.appendChild(root)
 
+    popup.focus()
+
     popup.onbeforeunload = () => {
-      // Remove from map and state when window is closed
+      // Clean up when window is closed
       rfqWindowsRef.current.delete(rfqId)
       setRfqModals(prev => prev.filter(m => m.id !== rfqId))
     }
-
-    popup.focus()
 
     const newWindowInfo = { window: popup, container: root }
     rfqWindowsRef.current.set(rfqId, newWindowInfo)
