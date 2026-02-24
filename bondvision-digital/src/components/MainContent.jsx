@@ -278,15 +278,17 @@ const MainContent = () => {
       return windowInfo
     }
 
-    // Calculate offset based on number of existing modals to avoid overlapping
-    const offsetX = 100 + (rfqModals.length * 30)
-    const offsetY = 60 + (rfqModals.length * 30)
+    // Calculate offset based on number of existing windows to avoid overlapping
+    // Count existing open windows from the ref map
+    const existingWindowCount = rfqWindowsRef.current.size
+    const offsetLeft = 100 + (existingWindowCount * 30)  // Move 30px to the right
+    const offsetTop = Math.max(50, 500 - (existingWindowCount * 30))  // Move 30px up, min 50px from top
 
-    // Aumentate dimensioni della finestra per evitare scrollbar
+    // Dimensioni ottimizzate per mostrare il modal senza scrollbar indesiderate
     const popup = window.open(
       '', 
       `rfq-outright-window-${rfqId}`, 
-      `width=1600,height=1100,left=${offsetX},top=${offsetY},resizable=yes,scrollbars=no`
+      `width=1100,height=800,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
     )
     if (!popup) {
       console.error('Failed to open RFQ window')
@@ -324,7 +326,7 @@ const MainContent = () => {
     const newWindowInfo = { window: popup, container: root }
     rfqWindowsRef.current.set(rfqId, newWindowInfo)
     return newWindowInfo
-  }, [rfqModals.length])
+  }, [])
 
   const closeRfqWindow = useCallback((rfqId) => {
     const windowInfo = rfqWindowsRef.current.get(rfqId)
