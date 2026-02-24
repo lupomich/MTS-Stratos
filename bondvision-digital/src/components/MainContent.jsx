@@ -288,7 +288,7 @@ const MainContent = () => {
     const popup = window.open(
       '', 
       `rfq-outright-window-${rfqId}`, 
-      `width=1100,height=800,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
+      `width=1100,height=950,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
     )
     if (!popup) {
       console.error('Failed to open RFQ window')
@@ -455,10 +455,20 @@ const MainContent = () => {
       if (data && data.dealers && data.quotes) {
         // Create new RFQ modal with unique ID
         const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        
+        // Calculate cascading position for both popup and inline modals
+        // Use total modal count (popup + inline) for consistent cascading
+        const totalModalCount = rfqModals.length
+        const initialPosition = {
+          x: 140 + (totalModalCount * 30),
+          y: 90 + (totalModalCount * 30)
+        }
+        
         const newModal = {
           id: rfqId,
           bond: selectedBond,
-          pricingData: data
+          pricingData: data,
+          initialPosition
         }
 
         // If popup mode, create window first
@@ -713,6 +723,7 @@ const MainContent = () => {
             bond={modal.bond}
             pricingData={modal.pricingData}
             hostWindow={modal.window || window}
+            initialPosition={modal.initialPosition}
             onClose={() => closeRfqWindow(modal.id)}
             onSubmit={handleRfqSubmit}
           />
