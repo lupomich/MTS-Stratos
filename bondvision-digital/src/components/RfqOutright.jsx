@@ -26,7 +26,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './RfqOutright.css';
 
-const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition }) => {
+const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup }) => {
   const [side, setSide] = useState('BUY');
   const [size, setSize] = useState('');
   const [minSize, setMinSize] = useState('');
@@ -287,7 +287,10 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
 
   if (isLoading) {
     return (
-      <div className="rfq-window-layer">
+      <div 
+        className="rfq-window-layer" 
+        style={!isPopup ? { position: 'absolute', inset: 'auto' } : undefined}
+      >
         <div ref={windowRef} className="rfq-modal rfq-floating-window" style={{ left: `${position.x}px`, top: `${position.y}px` }}>
           <div className="rfq-loading">Loading...</div>
         </div>
@@ -296,7 +299,10 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   }
 
   return (
-    <div className="rfq-window-layer">
+    <div 
+      className="rfq-window-layer"
+      style={!isPopup ? { position: 'absolute', inset: 'auto' } : undefined}
+    >
       <div
         ref={windowRef}
         className="rfq-modal rfq-floating-window"

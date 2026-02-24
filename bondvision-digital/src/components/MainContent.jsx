@@ -717,6 +717,7 @@ const MainContent = () => {
 
       {/* Render multiple RFQ modals */}
       {rfqModals.map((modal) => {
+        const isPopup = !!modal.container
         const rfqNode = (
           <RfqOutright
             key={modal.id}
@@ -724,6 +725,7 @@ const MainContent = () => {
             pricingData={modal.pricingData}
             hostWindow={modal.window || window}
             initialPosition={modal.initialPosition}
+            isPopup={isPopup}
             onClose={() => closeRfqWindow(modal.id)}
             onSubmit={handleRfqSubmit}
           />
