@@ -282,7 +282,7 @@ const MainContent = () => {
     // Count existing open windows from the ref map
     const existingWindowCount = rfqWindowsRef.current.size
     const offsetLeft = 300 + (existingWindowCount * 30)  // Move 30px to the right
-    const offsetTop = Math.max(50, 100 - (existingWindowCount * 30))  // Move 30px up, min 50px from top
+    const offsetTop = 100 + (existingWindowCount * 10)  // Move 10px down, same cascading as inline modals
 
     // Dimensioni ottimizzate per mostrare il modal senza scrollbar indesiderate
     const popup = window.open(
