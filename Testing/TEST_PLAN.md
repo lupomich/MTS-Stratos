@@ -1,6 +1,6 @@
-# MTS-Stratos Test Plan FINALE - GUI Focused
+﻿# MTS-Stratos Test Plan FINALE - GUI Focused
 
-**Data**: 2026-02-20  
+**Data**: 2026-02-23  
 **Versione**: FINAL  
 **Timeout**: 10 secondi per test  
 **Focus**: GUI (con API secondarie)  
@@ -11,12 +11,12 @@
 - **Suite eseguita**: TC01-TC41
 - **Risultato**: 41 PASS, 0 FAIL
 - **Pass rate**: 100.0%
-- **Durata totale**: 79.39s
+- **Durata totale**: 90,64s
 - **Report generati**:
-   - `Testing/test-report.html`
-   - `Testing/test-results.csv`
-   - `Testing/test-results.json`
-   - `Testing/TEST_RESULTS.xlsx`
+   - Testing/test-report.html
+   - Testing/test-results.csv
+   - Testing/test-results.json
+   - Testing/TEST_RESULTS.xlsx
 
 ### Stato Run / Pass-Fail
 
@@ -32,242 +32,145 @@
 
 ## SECTION 1: GESTIONE UTENTI - GUI ADMIN PANEL (Tests 1-24)
 
-### Tests 1-8: Profilo ADMIN
+**Access path update (UI simplification)**: l'accesso al pannello Admin avviene esclusivamente da `MENU → ADMIN` (overlay menu). Il pulsante Admin nella parte bassa della sidebar non è più previsto.
 
+### Tests 1-11: Profilo ADMIN
 **T01: Login Admin (GUI)**
-- Naviga a /login
-- Compila username: admin, password: admin123
-- Click submit
-- Verifica redirect a dashboard
-- **Expected**: Dashboard visibile, badge ADMIN
-
-**T02: Apertura Admin Panel (GUI)**
-- Click su "Admin Panel" in Sidebar
-- Verifica modal/page si apre
-- **Expected**: Lista utenti visibile
-
-**T03: Creazione utente Admin (GUI)**
-- Click "Add User" in Admin Panel
-- Compila form: username=admin-test, email=admin-test@stratos.local, password=Admin123!, role=admin
-- Click Submit
-- **Expected**: Success message, utente in lista
-
-**T04: Login nuovo Admin (GUI)**
-- Logout da admin
-- Login con admin-test / Admin123!
-- **Expected**: Dashboard visibile, badge ADMIN, accesso a Admin Panel
-
-**T05: Logout Admin-test (GUI)**
-- Click logout
-- Verifica redirect a /login
-- **Expected**: Redirect a login, no dashboard access senza auth
-
-**T06: Disattivazione Admin-test (GUI)**
-- Login come admin originale
-- Apri Admin Panel
-- Trova admin-test nella lista
-- Click "Disable" o toggle status
-- **Expected**: Status = Disabled/Inactive
-
-**T07: Tentato login utente disattivato (GUI)**
-- Logout
-- Tenta login admin-test / Admin123!
-- **Expected**: Errore "User disabled" o "Account inactive", rimane su /login
-
-**T08: Riattivazione Admin-test (GUI)**
-- Login come admin
-- Admin Panel → trova admin-test
-- Click "Enable" o toggle status
-- **Expected**: Status = Active/Enabled
-
-**T09: Login post-riattivazione (GUI)**
-- Logout
-- Login admin-test / Admin123!
-- **Expected**: Login riuscito, dashboard visibile
-
-**T10: Cancellazione Admin-test (GUI)**
-- Login come admin
-- Admin Panel → admin-test → Delete
-- Conferma cancellazione
-- **Expected**: Utente rimosso dalla lista
-
-**T11: Verifica cancellazione (API)**
-- GET /api/users con token admin
-- Verifica admin-test non presente
-- **Expected**: Lista utenti non contiene admin-test
-
+- Duration: 5467 ms
+- Status: PASS
+**T02: Open Admin Panel**
+- Navigation: `MENU → ADMIN`
+- Duration: 430 ms
+- Status: PASS
+**T03: Create Admin user**
+- Duration: 902 ms
+- Status: PASS
+**T04: Login nuovo Admin**
+- Duration: 2707 ms
+- Status: PASS
+**T05: Logout Admin-test**
+- Duration: 322 ms
+- Status: PASS
+**T06: Disable Admin-test**
+- Duration: 2552 ms
+- Status: PASS
+**T07: Login utente disabilitato**
+- Duration: 2411 ms
+- Status: PASS
+**T08: Riattivazione Admin-test**
+- Duration: 2125 ms
+- Status: PASS
+**T09: Login post-riattivazione**
+- Duration: 1882 ms
+- Status: PASS
+**T10: Delete Admin-test**
+- Duration: 3501 ms
+- Status: PASS
+**T11: Verify DB clean (API)**
+- Duration: 130 ms
+- Status: PASS
 ### Tests 12-16: Profilo TRADER
-
-**T12: Creazione Trader (GUI)**
-- Login admin → Admin Panel → Add User
-- Form: username=trader-test, email=trader-test@stratos.local, password=Trader123!, role=trader
-- Submit
-- **Expected**: Success, trader-test in lista
-
-**T13: Login Trader (GUI)**
-- Logout → Login trader-test / Trader123!
-- **Expected**: Dashboard, badge TRADER, NO Admin Panel in Sidebar
-
-**T14: Logout Trader (GUI)**
-- Click logout
-- **Expected**: Redirect a /login
-
-**T15: Disattivazione + Riattivazione Trader (GUI)**
-- Login admin → Disable trader-test → Tenta login (FAIL) → Enable → Login (SUCCESS)
-- **Expected**: Disable blocca login, Enable ripristina
-
-**T16: Cancellazione Trader (GUI)**
-- Login admin → Delete trader-test
-- **Expected**: Trader-test rimosso
-
+**T12: Create Trader user**
+- Duration: 424 ms
+- Status: PASS
+**T13: Login Trader**
+- Duration: 1742 ms
+- Status: PASS
+**T14: Logout Trader**
+- Duration: 241 ms
+- Status: PASS
+**T15: Disable/Enable Trader cycle**
+- Duration: 9421 ms
+- Status: PASS
+**T16: Delete Trader**
+- Duration: 3365 ms
+- Status: PASS
 ### Tests 17-21: Profilo VIEWER
-
-**T17: Creazione Viewer (GUI)**
-- Login admin → Add User → viewer-test / Viewer123! / role=viewer
-- **Expected**: Success
-
-**T18: Login Viewer (GUI)**
-- Login viewer-test / Viewer123!
-- **Expected**: Dashboard, badge VIEWER, NO Admin Panel
-
-**T19: Logout Viewer (GUI)**
-- Logout
-- **Expected**: Redirect a /login
-
-**T20: Disable/Enable Viewer (GUI)**
-- Login admin → Disable viewer-test → Login FAIL → Enable → Login SUCCESS
-- **Expected**: Come T15
-
-**T21: Cancellazione Viewer (GUI)**
-- Delete viewer-test
-- **Expected**: Viewer-test rimosso
-
-### Tests 22-24: Verifica Finale Utenti
-
-**T22: Verifica DB pulito (API)**
-- GET /api/users
-- **Expected**: Solo utenti baseline presenti (`admin`, `demo`)
-
-**T23: Verifica nessun utente di test (GUI)**
-- Admin Panel → lista utenti
-- **Expected**: Solo `admin` e `demo` visibili
-
-**T24: Ricrea utenti per prossimi test (GUI)**
-- Crea trader-final (trader) e viewer-final (viewer) per Section 2
-- **Expected**: 2 nuovi utenti per test persistenza
-
+**T17: Create Viewer user**
+- Duration: 458 ms
+- Status: PASS
+**T18: Login Viewer**
+- Duration: 1654 ms
+- Status: PASS
+**T19: Logout Viewer**
+- Duration: 296 ms
+- Status: PASS
+**T20: Disable/Enable Viewer cycle**
+- Duration: 9159 ms
+- Status: PASS
+**T21: Delete Viewer**
+- Duration: 3051 ms
+- Status: PASS
+### Tests 22-24: Cleanup Verification
+**T22: Verify DB clean (API)**
+- Duration: 116 ms
+- Status: PASS
+**T23: Verify GUI clean**
+- Duration: 15 ms
+- Status: PASS
+**T24: Create users for Section 2**
+- Duration: 927 ms
+- Status: PASS
 ---
 
-## SECTION 2: PERSISTENZA SETTINGS GUI (Tests 25-37)
+## SECTION 2: PERSISTENZA IMPOSTAZIONI - GUI (Tests 25-37)
 
-**Setup**: Login come trader-final, naviga a BondTable
-
-### Tests 25-28: Colonne
-
-**T25: Spostamento colonna (GUI)**
-- Sposta colonna `CCY` dopo `MATURITY`
-- **Expected**: Ordine colonne aggiornato e persistito in preferenze
-
-**T26: Hide colonna (GUI)**
-- Nascondi colonna `CCY`
-- **Expected**: `CCY` non visibile in griglia
-
-**T27: Show colonna (GUI)**
-- Riporta visibile la colonna `CCY`
-- **Expected**: `CCY` nuovamente visibile
-
-**T28: Reset All Columns (GUI)**
-- Menu colonna `ISIN` → azione `Reset All`
-- **Expected**: ordine default (`DESCRIPTION`, `ISIN`, `CCY`), filtri/sort azzerati
-
-### Tests 29-33: Ordinamento
-
-**T29: Ordinamento singolo (GUI)**
-- Menu colonna `ISIN` → `Sort Asc`
-- **Expected**: `isin` in sort ascending
-
-**T30: Reverse sort (GUI)**
-- Menu colonna `ISIN` → `Sort Desc`
-- **Expected**: `isin` in sort descending
-
-**T31: Ordinamento altra colonna (GUI)**
-- Menu colonna `MATURITY` → `Sort Asc`
-- **Expected**: sort su `description`, sort precedente su `isin` rimosso
-
-**T32: Logout e verifica country tab (GUI)**
-- Se tab attivo = `DE`, seleziona `IT`; altrimenti seleziona `DE`
-- Logout → Re-login trader-final
-- **Expected**: il tab selezionato resta lo stesso dopo relogin (persistenza country)
-
-**T33: Logout e verifica sort (GUI)**
-- Logout → Re-login trader-final
-- **Expected**: ultimo sort (`description asc`) mantenuto
-
-### Tests 34-37: Filtri
-
-**T34: Filtro singolo (GUI)**
-- Applica filtro `isin = <valore prima riga>`
-- **Expected**: 1 sola riga visibile
-
-**T35: Filtro multiplo (GUI)**
-- Mantieni filtro `isin` + aggiungi filtro `maturity = <valore prima riga>`
-- **Expected**: 2 filtri attivi, almeno 1 riga risultante
-
-**T36: Rimozione filtro (GUI)**
-- Rimuovi filtro `isin`
-- **Expected**: resta solo filtro `maturity`
-
-**T37: Clear all filtri (GUI)**
-- Menu colonna `MATURITY` → `Clear Filters`
-- **Expected**: nessun filtro attivo, tabella completa
-
+### Tests 25-28: Column Management
+**T25: Drag & Drop column**
+- Duration: 610 ms
+- Status: PASS
+**T26: Hide column**
+- Duration: 540 ms
+- Status: PASS
+**T27: Show column**
+- Duration: 531 ms
+- Status: PASS
+**T28: Reset All Columns**
+- Duration: 1380 ms
+- Status: PASS
+### Tests 29-33: Sorting
+**T29: Sort ascending**
+- Duration: 575 ms
+- Status: PASS
+**T30: Sort descending**
+- Duration: 551 ms
+- Status: PASS
+**T31: Sort different column**
+- Duration: 571 ms
+- Status: PASS
+**T32: Persist country tab after logout**
+- Duration: 3225 ms
+- Status: PASS
+**T33: Persist sort after logout**
+- Duration: 4173 ms
+- Status: PASS
+### Tests 34-37: Filtering
+**T34: Single filter**
+- Duration: 451 ms
+- Status: PASS
+**T35: Multiple filters**
+- Duration: 436 ms
+- Status: PASS
+**T36: Remove one filter**
+- Duration: 450 ms
+- Status: PASS
+**T37: Clear all filters**
+- Duration: 545 ms
+- Status: PASS
 ---
 
-## SECTION 3: PERSISTENZA COMPLETA (Tests 38-41)
+## SECTION 3: FULL PERSISTENCE & CLEANUP (Tests 38-41)
 
-**T38: Modifica miste (GUI)**
-- Login trader-final
-- Sposta `CCY` in testa + nascondi `CCY` + sort `ISIN desc` + filtro `description contains <word>`
-- **Expected**: Tutte modifiche applicate
-
-**T39: Logout e reload (GUI)**
-- Logout → Login trader-final
-- **Expected**: hidden/sort/filtro del T38 ripristinati
-
-**T40: Reset completo (GUI)**
-- Click "Reset All Columns"
-- **Expected**: Tutto ripristinato (colonne, sort, filtri)
-
-**T41: Cleanup finale (GUI)**
-- Login admin → Delete trader-final e viewer-final
-- Verifica baseline utenti in DB
-- **Expected**: Database in stato iniziale (`admin`, `demo`)
-
----
-
-## EXECUTION & REPORTING
-
-### Timeout
-- **10 secondi** per ogni test
-- Se timeout, test = FAIL con motivo "Timeout 10s"
-
-### Report Structure
-```
-Test ID | Description | Type | Start Time | Duration (ms) | Status | Fail Reason
-T01     | Login Admin | GUI  | 10:15:23   | 1234          | PASS   | -
-T02     | Open AdminPanel | GUI | 10:15:25 | 567        | FAIL   | Button not found
-```
-
-### Output Files
-1. **Testing/test-report.html** - Report visuale
-2. **Testing/test-results.csv** - Dati grezzi
-3. **Testing/TEST_RESULTS.xlsx** - Excel con 2 sheets:
-   - Summary: Pass rate, durata totale, breakdown per sezione
-   - Details: Tutti i 41 test con timestamp e motivi fail
-
-### Success Criteria
-- ✅ Tutti i test automatizzati PASS
-- ✅ Tempo totale < 8 minuti
-- ✅ Database = stato iniziale
-- ✅ No memory leaks (check DevTools)
-
+### Tests 38-41: Integration Tests
+**T38: Mixed modifications**
+- Duration: 1995 ms
+- Status: PASS
+**T39: Persist all after reload**
+- Duration: 6229 ms
+- Status: PASS
+**T40: Complete reset**
+- Duration: 2660 ms
+- Status: PASS
+**T41: Final cleanup**
+- Duration: 4690 ms
+- Status: PASS

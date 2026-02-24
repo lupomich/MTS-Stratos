@@ -107,9 +107,19 @@ async function logoutGUI(page) {
     await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
 }
 
+async function openOverlayMenu(page) {
+    await page.locator('.sidebar-item').first().click();
+    await page.locator('.sidebar-overlay-panel').waitFor({ state: 'visible', timeout: 5000 });
+}
+
+function getAdminOverlayItem(page) {
+    return page.locator('.sidebar-overlay-item', { hasText: /^ADMIN$/ }).first();
+}
+
 // Utility: Open Admin Panel
 async function openAdminPanel(page) {
-    await page.locator('.sidebar-item.sidebar-admin').click();
+    await openOverlayMenu(page);
+    await getAdminOverlayItem(page).click();
     await page.locator('.admin-modal').waitFor({ state: 'visible', timeout: 5000 });
 }
 
@@ -209,7 +219,7 @@ async function cleanupResidualTestUsersAPI() {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await usersResponse.json();
-    const usernamesToDelete = new Set([
+    const testUsers = new Set([
         'admin-test',
         'trader-test',
         'viewer-test',
@@ -218,8 +228,8 @@ async function cleanupResidualTestUsersAPI() {
     ]);
 
     for (const user of data.users || []) {
-        if (usernamesToDelete.has(user.username)) {
-            await fetch(`${API_BASE}/users/by-username/${encodeURIComponent(user.username)}`, {
+        if (testUsers.has(user.username)) {
+            await fetch(`${API_BASE}/users/${encodeURIComponent(user.id)}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -230,6 +240,32 @@ async function cleanupResidualTestUsersAPI() {
 async function waitForBondGrid(page) {
     await page.locator('.bond-grid .custom-header-wrapper').first().waitFor({ state: 'visible', timeout: 5000 });
     await page.waitForTimeout(300);
+}
+
+async function ensureUserExistsAPI({ username, email, password, role }) {
+    const loginResponse = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ADMIN_USER)
+    });
+    const { token } = await loginResponse.json();
+
+    const usersResponse = await fetch(`${API_BASE}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const usersData = await usersResponse.json();
+    const exists = (usersData.users || []).some(u => u.username === username);
+
+    if (!exists) {
+        await fetch(`${API_BASE}/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ username, email, password, role })
+        });
+    }
 }
 
 async function waitForGridApi(page) {
@@ -430,9 +466,13 @@ async function runSection1(browser) {
         const badgeExists = await page.locator('text=/ADMIN/i').count() > 0;
         if (!badgeExists) throw new Error('Admin badge not found for admin-test');
         
-        // Verify Admin Panel available
-        const adminBtnExists = await page.locator('.sidebar-item.sidebar-admin').count() > 0;
-        if (!adminBtnExists) throw new Error('Admin Panel button not visible');
+        // Verify Admin Panel available in overlay menu
+        await openOverlayMenu(page);
+        const adminMenuItem = getAdminOverlayItem(page);
+        const isVisible = await adminMenuItem.count() > 0;
+        const isDisabled = await adminMenuItem.isDisabled();
+        if (!isVisible || isDisabled) throw new Error('Admin menu item not available for admin user');
+        await page.keyboard.press('Escape');
     });
     
     await runTest('T05', 'Logout Admin-test', 'GUI', async () => {
@@ -548,9 +588,13 @@ async function runSection1(browser) {
         const badgeExists = await page.locator('text=/TRADER/i').count() > 0;
         if (!badgeExists) throw new Error('Trader badge not found');
         
-        // Verify NO Admin Panel
-        const adminBtnExists = await page.locator('.sidebar-item.sidebar-admin').count() > 0;
-        if (adminBtnExists) throw new Error('Admin Panel should NOT be visible for trader');
+        // Verify Admin menu item is disabled for trader
+        await openOverlayMenu(page);
+        const adminMenuItem = getAdminOverlayItem(page);
+        const isVisible = await adminMenuItem.count() > 0;
+        const isDisabled = await adminMenuItem.isDisabled();
+        if (!isVisible || !isDisabled) throw new Error('Admin menu item should be disabled for trader');
+        await page.keyboard.press('Escape');
     });
     
     await runTest('T14', 'Logout Trader', 'GUI', async () => {
@@ -631,9 +675,13 @@ async function runSection1(browser) {
         const badgeExists = await page.locator('text=/VIEWER/i').count() > 0;
         if (!badgeExists) throw new Error('Viewer badge not found');
         
-        // Verify NO Admin Panel
-        const adminBtnExists = await page.locator('.sidebar-item.sidebar-admin').count() > 0;
-        if (adminBtnExists) throw new Error('Admin Panel should NOT be visible for viewer');
+        // Verify Admin menu item is disabled for viewer
+        await openOverlayMenu(page);
+        const adminMenuItem = getAdminOverlayItem(page);
+        const isVisible = await adminMenuItem.count() > 0;
+        const isDisabled = await adminMenuItem.isDisabled();
+        if (!isVisible || !isDisabled) throw new Error('Admin menu item should be disabled for viewer');
+        await page.keyboard.press('Escape');
     });
     
     await runTest('T19', 'Logout Viewer', 'GUI', async () => {
@@ -755,6 +803,13 @@ async function runSection2(browser) {
     
     const context = await browser.newContext();
     const page = await context.newPage();
+
+    await ensureUserExistsAPI({
+        username: 'trader-final',
+        email: 'trader-final@stratos.local',
+        password: 'Trader123!',
+        role: 'trader'
+    });
     
     // Login as trader-final
     await loginGUI(page, 'trader-final', 'Trader123!');
@@ -861,9 +916,24 @@ async function runSection2(browser) {
         });
 
         const targetCountry = activeCountry === 'DE' ? 'IT' : 'DE';
-        const countryButton = page.locator('.country-tabs .country-tab').filter({ hasText: targetCountry }).first();
-        await countryButton.click();
-        await page.waitForTimeout(800);
+        const countryButton = page
+            .locator('.country-tabs .country-tab .code')
+            .filter({ hasText: new RegExp(`^${targetCountry}$`) })
+            .first()
+            .locator('xpath=ancestor::button[contains(@class,"country-tab")]');
+
+        await countryButton.scrollIntoViewIfNeeded();
+        await countryButton.click({ force: true });
+        await page.waitForFunction(
+            ({ code }) => {
+                const codes = Array.from(document.querySelectorAll('.country-tabs .country-tab .code'));
+                const match = codes.find(el => el.textContent?.trim() === code);
+                const button = match?.closest('.country-tab');
+                return Boolean(button?.classList.contains('active'));
+            },
+            { code: targetCountry },
+            { timeout: 5000 }
+        );
 
         const selectedBeforeLogout = await countryButton.evaluate((el) => el.classList.contains('active'));
         if (!selectedBeforeLogout) {
@@ -1053,19 +1123,165 @@ async function runSection3(browser) {
         }
     });
     
-    await runTest('T41', 'Final cleanup', 'GUI', async () => {
-        // Logout trader-final
-        await logoutGUI(page);
+    // --- Subsection F: RFQ OUTRIGHT Feature (T42-T46) ---
+    console.log('\n--- Subsection F: RFQ OUTRIGHT Feature ---');
+    
+    // Ensure trader-final is logged in for RFQ tests
+    await runTest('T42', 'Login trader for RFQ tests', 'GUI', async () => {
+        await ensureUserExistsAPI({
+            username: 'trader-final',
+            email: 'trader-final@stratos.local',
+            password: 'Trader123!',
+            role: 'trader'
+        });
+
+        // Check if already logged in
+        const mainContent = await page.locator('.main-content').count();
         
-        // Login as admin
-        await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
-        await openAdminPanel(page);
+        if (mainContent === 0) {
+            // Not logged in, need to login
+            console.log('  [T42] Not logged in, logging in trader-final...');
+            await loginGUI(page, 'trader-final', 'Trader123!');
+        }
         
-        // Delete trader-final and viewer-final
-        await deleteUserGUI(page, 'trader-final');
-        await deleteUserGUI(page, 'viewer-final');
+        // Verify main content is visible
+        await page.locator('.main-content').waitFor({ state: 'visible', timeout: 5000 });
         
-        // Verify only admin
+        // Wait for grid to load
+        await page.waitForSelector('.ag-root-wrapper', { timeout: 5000 });
+        await page.waitForTimeout(1000);
+        
+        // Verify bond table is visible
+        const gridRoot = await page.locator('.ag-root-wrapper').first();
+        await gridRoot.waitFor({ state: 'visible', timeout: 3000 });
+        
+        console.log('  [T42] Trader logged in and grid visible');
+    });
+    
+    await runTest('T43', 'Double-click bond row opens RFQ modal', 'GUI', async () => {
+        // Ensure grid is fully loaded
+        await page.waitForTimeout(500);
+        
+        // ag-grid double-click: target first visible data cell
+        const firstCell = page.locator('.ag-row').first().locator('.ag-cell').first();
+        const firstRow = page.locator('.ag-row').first();
+        const rowCount = await page.locator('.ag-row').count();
+        
+        console.log(`  [T43] Found ${rowCount} rows in grid`);
+        
+        if (rowCount === 0) {
+            throw new Error('No rows found in ag-grid');
+        }
+
+        // Double-click on the cell element (ag-grid listens to cell events)
+        await firstCell.dblclick({ force: true });
+        console.log('  [T43] Double-click executed on first cell');
+        
+        // Wait for RFQ window to appear
+        const rfqModal = page.locator('.rfq-modal').first();
+        try {
+            await rfqModal.waitFor({ state: 'visible', timeout: 5000 });
+        } catch {
+            await firstRow.dblclick({ force: true });
+            console.log('  [T43] Fallback: double-click executed on first row');
+            await rfqModal.waitFor({ state: 'visible', timeout: 10000 });
+        }
+        
+        console.log('  [T43] Modal appeared!');
+    });
+    
+    await runTest('T44', 'RFQ modal displays pricing data', 'GUI', async () => {
+        const modal = page.locator('.rfq-modal').first();
+        const modalText = await modal.textContent();
+        
+        console.log(`  [T44] Modal text length: ${modalText?.length || 0}`);
+        
+        if (!modalText || modalText.trim().length < 50) {
+            throw new Error('Modal appears empty');
+        }
+        
+        console.log('  [T44] Modal has pricing data');
+    });
+    
+    await runTest('T45', 'RFQ window draggable and closable', 'GUI', async () => {
+        const modal = page.locator('.rfq-modal').first();
+        await modal.waitFor({ state: 'visible', timeout: 5000 });
+
+        const header = page.locator('.rfq-modal .rfq-drag-handle').first();
+        const before = await modal.boundingBox();
+        if (!before) {
+            throw new Error('RFQ window not measurable before drag');
+        }
+
+        await header.hover();
+        await page.mouse.down();
+        await page.mouse.move(before.x + 120, before.y + 80);
+        await page.mouse.up();
+
+        const after = await modal.boundingBox();
+        if (!after) {
+            throw new Error('RFQ window not measurable after drag');
+        }
+
+        if (Math.abs(after.x - before.x) < 5 && Math.abs(after.y - before.y) < 5) {
+            throw new Error('RFQ window did not move after drag');
+        }
+
+        await page.locator('.rfq-close-btn').first().click();
+        await modal.waitFor({ state: 'hidden', timeout: 5000 });
+        console.log('  [T45] RFQ window dragged and closed');
+    });
+    
+    await runTest('T46', 'Open RFQ from OPEN RFQ button', 'GUI', async () => {
+        // Ensure grid is ready
+        await page.waitForTimeout(300);
+        
+        // Get first row and click it
+        const firstRow = page.locator('.ag-row').first();
+        await firstRow.click();
+        console.log('  [T46] Clicked first row');
+        
+        await page.waitForTimeout(500);
+        
+        // Open RFQ menu
+        const rfqBtn = page.locator('button:has-text("OPEN RFQ")').first();
+        const btnCount = await rfqBtn.count();
+        
+        console.log(`  [T46] Found ${btnCount} OPEN RFQ buttons`);
+        
+        if (btnCount === 0) {
+            throw new Error('OPEN RFQ button not found');
+        }
+        
+        await rfqBtn.click();
+        console.log('  [T46] Clicked OPEN RFQ button');
+
+        const outrightOption = page.locator('.rfq-menu .rfq-option', { hasText: 'RFQ OUTRIGHT' }).first();
+        await outrightOption.waitFor({ state: 'visible', timeout: 5000 });
+
+        await outrightOption.click();
+        console.log('  [T46] Clicked RFQ OUTRIGHT option');
+        
+        // Wait for RFQ window
+        const modal = page.locator('.rfq-modal').first();
+        await modal.waitFor({ state: 'visible', timeout: 10000 });
+        
+        console.log('  [T46] Modal opened from button!');
+        
+        // Close modal
+        const closeBtn = page.locator('.rfq-close-btn').first();
+        if (await closeBtn.count() > 0) {
+            await closeBtn.click();
+        }
+        
+        await modal.waitFor({ state: 'hidden', timeout: 5000 });
+        console.log('  [T46] Modal closed');
+    });;
+    
+    await runTest('T47', 'Final cleanup', 'GUI', async () => {
+        await cleanupResidualTestUsersAPI();
+
+        // Verify only admin + demo left
         const users = await getUsersAPI();
         const usernames = users.map(u => u.username).sort();
         if (!(users.length === 2 && usernames.includes('admin') && usernames.includes('demo'))) {
@@ -1096,9 +1312,15 @@ async function main() {
     });
     
     try {
-        await runSection1(browser);
-        await runSection2(browser);
-        await runSection3(browser);
+        if (START_FROM <= 24) {
+            await runSection1(browser);
+        }
+        if (START_FROM <= 40) {
+            await runSection2(browser);
+        }
+        if (START_FROM <= 47) {
+            await runSection3(browser);
+        }
     } catch (error) {
         console.error('\n\n❌ FATAL ERROR:', error);
     } finally {

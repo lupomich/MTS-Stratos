@@ -178,6 +178,8 @@ function Update-TestMarkdownFiles {
 
 ## SECTION 1: USER MANAGEMENT - Admin Panel (24 tests)
 
+**Access path update**: Admin panel access is only through `MENU → ADMIN` in the overlay menu. The old Admin shortcut in the left sidebar footer has been removed.
+
 ### Subsection A: Admin Profile (11 tests)
 
 | ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
@@ -371,6 +373,8 @@ $(if ($summary.failed -gt 0) { "Test falliti: vedi Testing/test-results.json" } 
 ---
 
 ## SECTION 1: GESTIONE UTENTI - GUI ADMIN PANEL (Tests 1-24)
+
+**Access path update (UI simplification)**: l'accesso al pannello Admin avviene esclusivamente da `MENU → ADMIN` (overlay menu). Il pulsante Admin nella parte bassa della sidebar non è più previsto.
 
 ### Tests 1-11: Profilo ADMIN
 "@

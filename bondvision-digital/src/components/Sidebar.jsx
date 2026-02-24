@@ -1,15 +1,42 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import { useAuth } from '../context/AuthContext'
 import './Sidebar.css'
 
-const Sidebar = ({ onAdminClick }) => {
+const Sidebar = ({ onAdminClick, onOpenSettings }) => {
   const { t } = useLanguage()
   const { logout, user } = useAuth()
+  const [showOverlayMenu, setShowOverlayMenu] = useState(false)
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setShowOverlayMenu(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [])
   
   const handleLogout = async () => {
+    setShowOverlayMenu(false)
     if (window.confirm('Are you sure you want to logout?')) {
       await logout()
+    }
+  }
+
+  const handleOpenSettings = () => {
+    setShowOverlayMenu(false)
+    if (onOpenSettings) {
+      onOpenSettings()
+    }
+  }
+
+  const handleAdminClick = () => {
+    setShowOverlayMenu(false)
+    if (onAdminClick && user?.role === 'admin') {
+      onAdminClick()
     }
   }
   
@@ -49,35 +76,47 @@ const Sidebar = ({ onAdminClick }) => {
   return (
     <div className="sidebar">
       {menuItems.map((item, index) => (
-        <div key={index} className={`sidebar-item ${item.active ? 'active' : ''}`}>
+        <div
+          key={index}
+          className={`sidebar-item ${item.active ? 'active' : ''}`}
+          onClick={index === 0 ? () => setShowOverlayMenu(true) : undefined}
+        >
           <div className="sidebar-icon">{item.icon}</div>
           <div className="sidebar-label">{item.label}</div>
         </div>
       ))}
+
+      {showOverlayMenu && (
+        <>
+          <div className="sidebar-overlay-backdrop" onClick={() => setShowOverlayMenu(false)} />
+          <aside className="sidebar-overlay-panel" role="menu" aria-label="Main menu">
+            <button className="sidebar-overlay-close" onClick={() => setShowOverlayMenu(false)} aria-label="Close menu">×</button>
+
+            <button className="sidebar-overlay-item" onClick={handleOpenSettings} role="menuitem">
+              SETTINGS
+            </button>
+
+            <button
+              className={`sidebar-overlay-item ${user?.role === 'admin' ? '' : 'disabled'}`}
+              onClick={handleAdminClick}
+              role="menuitem"
+              disabled={user?.role !== 'admin'}
+            >
+              ADMIN
+            </button>
+
+            <button className="sidebar-overlay-item sidebar-overlay-item-logout" onClick={handleLogout} role="menuitem">
+              LOG OUT
+            </button>
+          </aside>
+        </>
+      )}
       
       {/* User info and logout at the bottom */}
       <div className="sidebar-spacer"></div>
       
       {user && (
         <div className="sidebar-user-section">
-          {/* Admin panel button - only for admin role */}
-          {user.role === 'admin' && (
-            <div className="sidebar-item sidebar-admin" onClick={onAdminClick}>
-              <div className="sidebar-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 15v2"/>
-                  <path d="M12 7v2"/>
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M16.24 7.76l-1.41 1.41"/>
-                  <path d="M9.17 14.83l-1.41 1.41"/>
-                  <path d="M7.76 7.76l1.41 1.41"/>
-                  <path d="M14.83 14.83l1.41 1.41"/>
-                </svg>
-              </div>
-              <div className="sidebar-label">ADMIN</div>
-            </div>
-          )}
-          
           <div className="sidebar-item sidebar-user-info">
             <div className="sidebar-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
