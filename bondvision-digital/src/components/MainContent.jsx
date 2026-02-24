@@ -461,7 +461,7 @@ const MainContent = () => {
         const totalModalCount = rfqModals.length
         const initialPosition = {
           x: 140 + (totalModalCount * 30),
-          y: 50 + (totalModalCount * 10)  // Minimal vertical cascade offset to keep windows visible
+          y: 150 + (totalModalCount * 10)  // Start at 150px (below top bar) + minimal offset
         }
         
         const newModal = {
