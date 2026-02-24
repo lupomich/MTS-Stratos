@@ -552,21 +552,6 @@ const MainContent = () => {
       .catch(error => console.error('Error submitting RFQ:', error))
   }, [])
 
-  // Handle RFQ submission
-  const handleRfqSubmit = useCallback((rfqData) => {
-    // Send to backend
-    fetch('/api/rfq/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rfqData)
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Could add success notification here
-      })
-      .catch(error => console.error('Error submitting RFQ:', error))
-  }, [])
-
   return (
     <div className="main-content" ref={mainContentRef}>
       <div className="rfq-toolbar">
