@@ -457,19 +457,11 @@ const MainContent = () => {
         const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         
         // Calculate cascading position for both popup and inline modals
+        // Use total modal count (popup + inline) for consistent cascading
         const totalModalCount = rfqModals.length
-        
-        // For inline modals: center on first, then cascade right and UP
-        // Centering calculation: (viewport width - window width) / 2
-        const centerX = Math.max(10, (window.innerWidth - 1150) / 2)
-        const centerY = 120  // Position a bit below top
-        
-        const offsetX = totalModalCount * 30  // Cascade to the right
-        const offsetY = -(totalModalCount * 30)  // Cascade UP (negative = up)
-        
         const initialPosition = {
-          x: Math.max(10, centerX + offsetX),
-          y: Math.max(50, centerY + offsetY)
+          x: 140 + (totalModalCount * 30),
+          y: 90 + (totalModalCount * 30)
         }
         
         const newModal = {
