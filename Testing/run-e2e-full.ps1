@@ -1,7 +1,8 @@
 param(
     [switch]$SkipDbBackupRestore,
     [switch]$KeepDbSnapshots,
-    [switch]$KeepPostTestDbOnFailure
+    [switch]$KeepPostTestDbOnFailure,
+    [int]$StartFromOverride
 )
 
 Set-StrictMode -Version Latest
@@ -9,6 +10,15 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
+
+$checkpointPath = Join-Path $root 'Testing/e2e-next-test.txt'
+$startFrom = if ($PSBoundParameters.ContainsKey('StartFromOverride')) {
+    $StartFromOverride
+} elseif (Test-Path $checkpointPath) {
+    [int](Get-Content -Raw -Path $checkpointPath)
+} else {
+    1
+}
 
 $snapshotDir = Join-Path $root 'Testing/db-snapshots'
 $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -127,6 +137,32 @@ function Get-FailedTestsFromReport {
     throw "Formato report non riconosciuto in: $ReportPath"
 }
 
+function Get-FirstFailedTestId {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ReportPath
+    )
+
+    if (-not (Test-Path $ReportPath)) {
+        throw "Test report non trovato: $ReportPath"
+    }
+
+    $report = Get-Content -Raw -Path $ReportPath | ConvertFrom-Json
+    if ($null -eq $report.tests) {
+        return $null
+    }
+
+    $failed = $report.tests | Where-Object { $_.status -eq 'FAIL' } |
+        Sort-Object { [int]$_.id.Substring(1) } |
+        Select-Object -First 1
+
+    if ($null -eq $failed) {
+        return $null
+    }
+
+    return [int]$failed.id.Substring(1)
+}
+
 function Remove-ContainerIfExists {
     param(
         [Parameter(Mandatory = $true)]
@@ -171,7 +207,7 @@ function Update-TestMarkdownFiles {
 **Data creazione**: 2026-02-20  
 **Ultima esecuzione**: $($summary.startTime -replace 'T.*', '')  
 **Timeout per test**: 10 secondi  
-**Totale test**: 41  
+**Totale test**: $($summary.totalTests)  
 **Focus**: GUI con API secondarie
 
 ---
@@ -290,6 +326,28 @@ function Update-TestMarkdownFiles {
             $checklist += "`n| $($t.id) | $($t.description) | $($t.type) | ✅ RUN | $($t.status) | $($t.duration) ms | - |"
         }
 
+        $checklist += @"
+
+---
+
+## SECTION 4: RFQ OUTRIGHT - Window (6 tests)
+
+| ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
+|----|----|-----|--------|-----------|----------|--------|
+"@
+
+        for ($i = 41; $i -lt 47; $i++) {
+            $t = $tests[$i]
+            $checklist += "`n| $($t.id) | $($t.description) | $($t.type) | ✅ RUN | $($t.status) | $($t.duration) ms | - |"
+        }
+
+        $section4 = $tests | Where-Object { [int]$_.id.Substring(1) -ge 42 -and [int]$_.id.Substring(1) -le 47 }
+        $section4Total = 6
+        $section4Passed = @($section4 | Where-Object { $_.status -eq 'PASS' }).Count
+        $section4Failed = @($section4 | Where-Object { $_.status -eq 'FAIL' }).Count
+        $section4NotRun = $section4Total - $section4Passed - $section4Failed
+        $summaryNotRun = $summary.totalTests - $summary.passed - $summary.failed
+
         $durationMs = [double]$summary.durationMs
         $durationSec = [math]::Round($durationMs / 1000, 2)
         $avgDuration = [math]::Round($durationMs / $summary.totalTests)
@@ -307,7 +365,8 @@ function Update-TestMarkdownFiles {
 | Section 1: User Management | 24 | 24 | 0 | 0 | 100% |
 | Section 2: Settings Persistence | 13 | 13 | 0 | 0 | 100% |
 | Section 3: Integration | 4 | 4 | 0 | 0 | 100% |
-| **TOTAL** | **41** | $($summary.passed) | $($summary.failed) | 0 | $($summary.passRate) |
+| Section 4: RFQ Outright | 6 | $section4Passed | $section4Failed | $section4NotRun | $($summary.passRate) |
+| **TOTAL** | **$($summary.totalTests)** | $($summary.passed) | $($summary.failed) | $summaryNotRun | $($summary.passRate) |
 
 ### Execution Details
 
@@ -346,11 +405,11 @@ $(if ($summary.failed -gt 0) { "Test falliti: vedi Testing/test-results.json" } 
 **Versione**: FINAL  
 **Timeout**: 10 secondi per test  
 **Focus**: GUI (con API secondarie)  
-**Totale Test**: 41
+**Totale Test**: $($summary.totalTests)
 
 ## Ultimo Esito Esecuzione ($(Get-Date -Format 'yyyy-MM-dd'))
 
-- **Suite eseguita**: TC01-TC41
+- **Suite eseguita**: TC01-TC47
 - **Risultato**: $($summary.passed) PASS, $($summary.failed) FAIL
 - **Pass rate**: $($summary.passRate)
 - **Durata totale**: ${durationDisplay}s
@@ -489,13 +548,31 @@ $(if ($summary.failed -gt 0) { "Test falliti: vedi Testing/test-results.json" } 
 ### Tests 38-41: Integration Tests
 "@
 
-        foreach ($test in ($tests | Where-Object { [int]$_.id.Substring(1) -ge 38 })) {
+        foreach ($test in ($tests | Where-Object { [int]$_.id.Substring(1) -ge 38 -and [int]$_.id.Substring(1) -le 41 })) {
             $planContent += @"
 
 **$($test.id): $($test.description)**
 - Duration: $($test.duration) ms
 - Status: $($test.status)
 "@
+        }
+
+        $planContent += @"
+
+    ---
+
+    ## SECTION 4: RFQ OUTRIGHT (Tests 42-47)
+
+    ### Tests 42-47: RFQ Window Flow
+    "@
+
+        foreach ($test in ($tests | Where-Object { [int]$_.id.Substring(1) -ge 42 -and [int]$_.id.Substring(1) -le 47 })) {
+            $planContent += @"
+
+    **$($test.id): $($test.description)**
+    - Duration: $($test.duration) ms
+    - Status: $($test.status)
+    "@
         }
 
         $planContent | Out-File -Encoding UTF8 -FilePath (Join-Path $OutputDir 'TEST_PLAN.md')
@@ -507,7 +584,7 @@ $(if ($summary.failed -gt 0) { "Test falliti: vedi Testing/test-results.json" } 
 }
 
 try {
-    Write-Host '=== MTS-Stratos E2E Full Run (TC01-TC41) ===' -ForegroundColor Cyan
+    Write-Host '=== MTS-Stratos E2E Full Run (TC01-TC47) ===' -ForegroundColor Cyan
 
     if (-not $SkipDbBackupRestore) {
         Write-Host 'Step 0/9 - Backup current database state (pre-test snapshot)' -ForegroundColor Yellow
@@ -530,9 +607,9 @@ try {
     Write-Host 'Step 3/9 - Wait services warm-up' -ForegroundColor Yellow
     Start-Sleep -Seconds 12
 
-    Write-Host 'Step 4/9 - Run full E2E suite from TC01' -ForegroundColor Yellow
+    Write-Host "Step 4/9 - Run E2E suite from TC$startFrom (stop on first fail)" -ForegroundColor Yellow
     Remove-ContainerIfExists -Name 'mts-e2e-full-run'
-    docker-compose -f docker-compose.master.yml run --build --name mts-e2e-full-run -e START_FROM=1 e2e node scripts/e2e-final.mjs
+    docker-compose -f docker-compose.master.yml run --build --name mts-e2e-full-run -e START_FROM=$startFrom -e STOP_ON_FIRST_FAIL=true e2e node scripts/e2e-final.mjs
 
     Write-Host 'Step 5/9 - Export reports to Testing/' -ForegroundColor Yellow
     docker cp mts-e2e-full-run:/app/test-results.csv Testing/test-results.csv
@@ -542,7 +619,16 @@ try {
     $resultsJsonPath = Join-Path $root 'Testing/test-results.json'
     $failedTests = Get-FailedTestsFromReport -ReportPath $resultsJsonPath
     if ($failedTests -gt 0) {
+        $firstFailedTest = Get-FirstFailedTestId -ReportPath $resultsJsonPath
+        if ($null -ne $firstFailedTest) {
+            Set-Content -Path $checkpointPath -Value $firstFailedTest
+            Write-Host "Checkpoint set: next run starts from T$firstFailedTest" -ForegroundColor Yellow
+        }
         throw "La suite E2E ha riportato $failedTests test falliti (vedi Testing/test-results.json)."
+    }
+
+    if (Test-Path $checkpointPath) {
+        Remove-Item $checkpointPath -Force
     }
 
     Write-Host 'Step 6/10 - Update test markdown files from latest run' -ForegroundColor Yellow

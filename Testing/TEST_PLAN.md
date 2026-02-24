@@ -4,11 +4,11 @@
 **Versione**: FINAL  
 **Timeout**: 10 secondi per test  
 **Focus**: GUI (con API secondarie)  
-**Totale Test**: 41
+**Totale Test**: 47
 
 ## Ultimo Esito Esecuzione (2026-02-23)
 
-- **Suite eseguita**: TC01-TC41
+- **Suite eseguita**: TC01-TC41 (RFQ T42-T47 not yet executed)
 - **Risultato**: 41 PASS, 0 FAIL
 - **Pass rate**: 100.0%
 - **Durata totale**: 90,64s
@@ -24,7 +24,7 @@
 |-------|--------|
 | Status | RUN |
 | Pass/Fail | PASS |
-| Test eseguiti | 41/41 |
+| Test eseguiti | 41/47 |
 | Test PASS | 41 |
 | Test FAIL | 0 |
 
@@ -174,3 +174,21 @@
 **T41: Final cleanup**
 - Duration: 4690 ms
 - Status: PASS
+
+---
+
+## SECTION 4: RFQ OUTRIGHT (Tests 42-47)
+
+### Tests 42-47: RFQ Window Flow
+**T42: Login trader for RFQ tests**
+- Status: NOT RUN
+**T43: Double-click bond row opens RFQ window**
+- Status: NOT RUN
+**T44: RFQ window displays pricing data**
+- Status: NOT RUN
+**T45: RFQ window draggable and closable**
+- Status: NOT RUN
+**T46: Open RFQ from OPEN RFQ button**
+- Status: NOT RUN
+**T47: Final cleanup (RFQ section)**
+- Status: NOT RUN

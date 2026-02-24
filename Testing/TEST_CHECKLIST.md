@@ -3,7 +3,7 @@
 **Data creazione**: 2026-02-20  
 **Ultima esecuzione**: 2026-02-23  
 **Timeout per test**: 10 secondi  
-**Totale test**: 41  
+**Totale test**: 47  
 **Focus**: GUI con API secondarie
 
 ---
@@ -93,8 +93,16 @@
 | T39 | Persist all after reload | GUI | âœ… RUN | PASS | 6229 ms | - |
 | T40 | Complete reset | GUI | âœ… RUN | PASS | 2660 ms | - |
 | T41 | Final cleanup | GUI | âœ… RUN | PASS | 4690 ms | - |
----
+## SECTION 4: RFQ OUTRIGHT - Window (6 tests)
 
+| ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
+|----|----|-----|--------|-----------|----------|--------|
+| T42 | Login trader for RFQ tests | GUI | NOT RUN | - | - | - |
+| T43 | Double-click bond row opens RFQ window | GUI | NOT RUN | - | - | - |
+| T44 | RFQ window displays pricing data | GUI | NOT RUN | - | - | - |
+| T45 | RFQ window draggable and closable | GUI | NOT RUN | - | - | - |
+| T46 | Open RFQ from OPEN RFQ button | GUI | NOT RUN | - | - | - |
+| T47 | Final cleanup (RFQ section) | GUI | NOT RUN | - | - | - |
 ## SUMMARY
 
 ### Section Scores
@@ -104,7 +112,8 @@
 | Section 1: User Management | 24 | 24 | 0 | 0 | 100% |
 | Section 2: Settings Persistence | 13 | 13 | 0 | 0 | 100% |
 | Section 3: Integration | 4 | 4 | 0 | 0 | 100% |
-| **TOTAL** | **41** | 41 | 0 | 0 | 100.0% |
+| Section 4: RFQ Outright | 6 | 0 | 0 | 6 | 0% |
+| **TOTAL** | **47** | 41 | 0 | 6 | 87.2% |
 
 ### Execution Details
 
@@ -121,8 +130,8 @@ Nessun fallimento rilevato nell'ultima esecuzione.
 
 ### Validation Checklist
 
-- [x] All 41 tests executed
-- [x] Pass rate = 100.0%
+- [ ] All 47 tests executed
+- [ ] Pass rate = 100.0%
 - [x] Database restored to initial state (admin + demo)
 - [x] No JavaScript console errors
 - [x] Report files generated

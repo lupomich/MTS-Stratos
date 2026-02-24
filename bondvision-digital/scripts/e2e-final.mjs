@@ -5,7 +5,7 @@
  * Data: 2026-02-20
  * Focus: GUI primario, API secondario
  * Timeout: 10 secondi per test
- * Tests totali: 41
+ * Tests totali: 47
  */
 
 import { chromium } from 'playwright';
@@ -1123,7 +1123,7 @@ async function runSection3(browser) {
         }
     });
     
-    // --- Subsection F: RFQ OUTRIGHT Feature (T42-T46) ---
+    // --- Subsection F: RFQ OUTRIGHT Feature (T42-T47) ---
     console.log('\n--- Subsection F: RFQ OUTRIGHT Feature ---');
     
     // Ensure trader-final is logged in for RFQ tests
@@ -1158,63 +1158,41 @@ async function runSection3(browser) {
         console.log('  [T42] Trader logged in and grid visible');
     });
     
-    await runTest('T43', 'Double-click bond row opens RFQ modal', 'GUI', async () => {
+    await runTest('T43', 'Double-click bond row opens RFQ window', 'GUI', async () => {
         // Ensure grid is fully loaded
         await page.waitForTimeout(1000);
-        
-        // Click on first row to select it
+
         const firstRow = page.locator('.ag-row').first();
         const rowCount = await page.locator('.ag-row').count();
-        
+
         console.log(`  [T43] Found ${rowCount} rows in grid`);
-        
+
         if (rowCount === 0) {
             throw new Error('No rows found in ag-grid');
         }
 
-        // Single click to select the row with longer timeout
-        console.log('  [T43] About to click first row...');
-        await firstRow.click({ timeout: 3000 });
-        await page.waitForTimeout(500);
-        console.log('  [T43] Row clicked and selected');
-        
-        // Click OPEN RFQ dropdown button
-        console.log('  [T43] Looking for OPEN RFQ button...');
-        const openRfqBtn = page.locator('button:has-text("OPEN RFQ")').first();
-        const btnVisible = await openRfqBtn.isVisible({ timeout: 2000 });
-        console.log(`  [T43] Button visible: ${btnVisible}`);
-        
-        await openRfqBtn.click({ timeout: 3000 });
-        await page.waitForTimeout(300);
-        console.log('  [T43] OPEN RFQ menu clicked');
-        
-        // Click RFQ OUTRIGHT option
-        console.log('  [T43] Looking for RFQ OUTRIGHT option...');
-        const rfqOutrightOption = page.locator('text=RFQ OUTRIGHT').first();
-        const optionVisible = await rfqOutrightOption.isVisible({ timeout: 2000 });
-        console.log(`  [T43] Option visible: ${optionVisible}`);
-        
-        await rfqOutrightOption.click({ timeout: 3000 });
-        console.log('  [T43] RFQ OUTRIGHT clicked, waiting for modal...');
-        
+        console.log('  [T43] Double-clicking first row...');
+        await firstRow.dblclick({ timeout: 3000 });
+        console.log('  [T43] Row double-clicked, waiting for RFQ window...');
+
         // Wait for RFQ window to appear
-        const rfqModal = page.locator('.rfq-modal').first();
-        await rfqModal.waitFor({ state: 'visible', timeout: 5000 });
-        
-        console.log('  [T43] Modal appeared!');
+        const rfqWindow = page.locator('.rfq-modal').first();
+        await rfqWindow.waitFor({ state: 'visible', timeout: 5000 });
+
+        console.log('  [T43] RFQ window appeared!');
     });
     
-    await runTest('T44', 'RFQ modal displays pricing data', 'GUI', async () => {
-        const modal = page.locator('.rfq-modal').first();
-        const modalText = await modal.textContent();
-        
-        console.log(`  [T44] Modal text length: ${modalText?.length || 0}`);
-        
-        if (!modalText || modalText.trim().length < 50) {
-            throw new Error('Modal appears empty');
+    await runTest('T44', 'RFQ window displays pricing data', 'GUI', async () => {
+        const rfqWindow = page.locator('.rfq-modal').first();
+        const windowText = await rfqWindow.textContent();
+
+        console.log(`  [T44] RFQ window text length: ${windowText?.length || 0}`);
+
+        if (!windowText || windowText.trim().length < 50) {
+            throw new Error('RFQ window appears empty');
         }
-        
-        console.log('  [T44] Modal has pricing data');
+
+        console.log('  [T44] RFQ window has pricing data');
     });
     
     await runTest('T45', 'RFQ window draggable and closable', 'GUI', async () => {
@@ -1280,16 +1258,16 @@ async function runSection3(browser) {
         const modal = page.locator('.rfq-modal').first();
         await modal.waitFor({ state: 'visible', timeout: 10000 });
         
-        console.log('  [T46] Modal opened from button!');
+        console.log('  [T46] RFQ window opened from button!');
         
-        // Close modal
+        // Close RFQ window
         const closeBtn = page.locator('.rfq-close-btn').first();
         if (await closeBtn.count() > 0) {
             await closeBtn.click();
         }
         
         await modal.waitFor({ state: 'hidden', timeout: 5000 });
-        console.log('  [T46] Modal closed');
+        console.log('  [T46] RFQ window closed');
     });;
     
     await runTest('T47', 'Final cleanup', 'GUI', async () => {

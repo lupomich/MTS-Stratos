@@ -39,3 +39,9 @@
 | T39 | Persist all after reload | GUI |  PASS | PASS | 4728 | - |
 | T40 | Complete reset | GUI |  PASS | PASS | 1724 | - |
 | T41 | Final cleanup | GUI |  PASS | PASS | 4920 | - |
+| T42 | Login trader for RFQ tests | GUI |  NOT RUN | - | - | - |
+| T43 | Double-click bond row opens RFQ window | GUI |  NOT RUN | - | - | - |
+| T44 | RFQ window displays pricing data | GUI |  NOT RUN | - | - | - |
+| T45 | RFQ window draggable and closable | GUI |  NOT RUN | - | - | - |
+| T46 | Open RFQ from OPEN RFQ button | GUI |  NOT RUN | - | - | - |
+| T47 | Final cleanup (RFQ section) | GUI |  NOT RUN | - | - | - |
