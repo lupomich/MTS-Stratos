@@ -46,3 +46,12 @@ venv/
 # Build artifacts
 *.pyc
 *.pyo
+
+# E2E / Playwright generated artifacts (do not version)
+bondvision-digital/playwright-report/
+bondvision-digital/test-results/
+bondvision-digital/test-report.html
+bondvision-digital/test-results.csv
+bondvision-digital/test-results.json
+Testing/e2e-full-live*.log
+Testing/db-snapshots/
