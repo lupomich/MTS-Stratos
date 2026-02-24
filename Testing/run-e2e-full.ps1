@@ -2,11 +2,13 @@ param(
     [switch]$SkipDbBackupRestore,
     [switch]$KeepDbSnapshots,
     [switch]$KeepPostTestDbOnFailure,
-    [int]$StartFromOverride
+    [int]$StartFromOverride,
+    [switch]$ResetTestVolumes
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
@@ -57,6 +59,26 @@ function Wait-PostgresReady {
     throw "PostgreSQL non è pronto nel container '$ContainerName' entro ${TimeoutSeconds}s"
 }
 
+function Invoke-Compose {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Args,
+        [switch]$Quiet
+    )
+
+    $cmd = "docker-compose -f docker-compose.master.yml $Args 2>nul"
+    if ($Quiet) {
+        cmd /c $cmd | Out-Null
+    }
+    else {
+        cmd /c $cmd
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "docker-compose failed: $Args"
+    }
+}
+
 function Ensure-SnapshotDirectory {
     if (-not (Test-Path $snapshotDir)) {
         New-Item -ItemType Directory -Path $snapshotDir | Out-Null
@@ -76,7 +98,7 @@ function Write-DatabaseSnapshot {
     Ensure-SnapshotDirectory
 
     Write-Host "Preparing postgres for $Label snapshot..." -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml up -d postgres
+    Invoke-Compose -Args 'up -d postgres' -Quiet
     Wait-PostgresReady -ContainerName $ContainerName -TimeoutSeconds 90
 
     if (Test-Path $OutputPath) {
@@ -101,7 +123,7 @@ function Restore-DatabaseState {
     }
 
     Write-Host 'Stopping backend before restore...' -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml stop bondvision-backend | Out-Null
+    Invoke-Compose -Args 'stop bondvision-backend' -Quiet
 
     Write-Host 'Waiting postgres before restore...' -ForegroundColor Yellow
     Wait-PostgresReady -ContainerName $ContainerName -TimeoutSeconds 90
@@ -111,7 +133,7 @@ function Restore-DatabaseState {
     docker exec $ContainerName sh -lc "PGPASSWORD='$dbPassword' pg_restore -U '$dbUser' -d '$dbName' --clean --if-exists --no-owner --no-privileges '$containerDumpPath'"
 
     Write-Host 'Restarting backend after restore...' -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml up -d bondvision-backend
+    Invoke-Compose -Args 'up -d bondvision-backend' -Quiet
 }
 
 function Get-FailedTestsFromReport {
@@ -184,6 +206,49 @@ function Remove-VolumeIfExists {
     $existing = docker volume ls --format "{{.Name}}" | Where-Object { $_ -eq $Name }
     if ($existing) {
         docker volume rm $Name | Out-Null
+    }
+}
+
+function Get-RunningComposeServices {
+    $running = docker-compose -f docker-compose.master.yml ps --services --filter status=running
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Impossibile leggere lo stato dei servizi docker-compose.'
+    }
+
+    if ($null -eq $running) {
+        return @()
+    }
+
+    return @($running | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+function Ensure-ComposeServicesRunning {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Services,
+        [switch]$EnsureE2EImage
+    )
+
+    $running = Get-RunningComposeServices
+    $missing = @($Services | Where-Object { $_ -and ($_ -notin $running) })
+
+    if ($missing.Count -gt 0) {
+        Write-Host ("Starting missing services: " + ($missing -join ', ')) -ForegroundColor Yellow
+        Invoke-Compose -Args ("up -d --build " + ($missing -join ' ')) -Quiet
+    }
+    else {
+        Write-Host 'All required core services are already running.' -ForegroundColor Green
+    }
+
+    if ($EnsureE2EImage) {
+        docker image inspect 'mts-stratos-e2e:latest' *> $null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host 'E2E image not found, building e2e service image...' -ForegroundColor Yellow
+            Invoke-Compose -Args 'build e2e'
+        }
+        else {
+            Write-Host 'E2E image already available.' -ForegroundColor Green
+        }
     }
 }
 
@@ -564,15 +629,15 @@ $(if ($summary.failed -gt 0) { "Test falliti: vedi Testing/test-results.json" } 
     ## SECTION 4: RFQ OUTRIGHT (Tests 42-47)
 
     ### Tests 42-47: RFQ Window Flow
-    "@
+"@
 
         foreach ($test in ($tests | Where-Object { [int]$_.id.Substring(1) -ge 42 -and [int]$_.id.Substring(1) -le 47 })) {
             $planContent += @"
 
-    **$($test.id): $($test.description)**
-    - Duration: $($test.duration) ms
-    - Status: $($test.status)
-    "@
+**$($test.id): $($test.description)**
+- Duration: $($test.duration) ms
+- Status: $($test.status)
+"@
         }
 
         $planContent | Out-File -Encoding UTF8 -FilePath (Join-Path $OutputDir 'TEST_PLAN.md')
@@ -596,20 +661,27 @@ try {
         Write-Host 'Step 0/9 - Backup skipped (--SkipDbBackupRestore)' -ForegroundColor Yellow
     }
 
-    Write-Host 'Step 1/9 - Clean containers/network and reset test volumes (preserve pgAdmin data)' -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml down --remove-orphans
-    Remove-VolumeIfExists -Name 'mts-stratos_postgres-data'
-    Remove-VolumeIfExists -Name 'mts-stratos_redis-data'
+    Write-Host 'Step 1/9 - Clean containers/network' -ForegroundColor Yellow
+    Invoke-Compose -Args 'down --remove-orphans' -Quiet
 
-    Write-Host 'Step 2/9 - Build and recreate core services' -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml up -d --build --force-recreate postgres redis bondvision-backend bondvision-digital
+    if ($ResetTestVolumes) {
+        Write-Host 'ResetTestVolumes enabled: resetting postgres/redis volumes' -ForegroundColor Yellow
+        Remove-VolumeIfExists -Name 'mts-stratos_postgres-data'
+        Remove-VolumeIfExists -Name 'mts-stratos_redis-data'
+    }
+    else {
+        Write-Host 'Preserving postgres/redis volumes (default behavior)' -ForegroundColor Green
+    }
+
+    Write-Host 'Step 2/9 - Ensure core services are running (start missing only) + prepare e2e image' -ForegroundColor Yellow
+    Ensure-ComposeServicesRunning -Services @('postgres', 'redis', 'bondvision-backend', 'bondvision-digital') -EnsureE2EImage
 
     Write-Host 'Step 3/9 - Wait services warm-up' -ForegroundColor Yellow
     Start-Sleep -Seconds 12
 
     Write-Host "Step 4/9 - Run E2E suite from TC$startFrom (stop on first fail)" -ForegroundColor Yellow
     Remove-ContainerIfExists -Name 'mts-e2e-full-run'
-    docker-compose -f docker-compose.master.yml run --build --name mts-e2e-full-run -e START_FROM=$startFrom -e STOP_ON_FIRST_FAIL=true e2e node scripts/e2e-final.mjs
+    Invoke-Compose -Args "run --build --name mts-e2e-full-run -e START_FROM=$startFrom -e STOP_ON_FIRST_FAIL=true e2e node scripts/e2e-final.mjs"
 
     Write-Host 'Step 5/9 - Export reports to Testing/' -ForegroundColor Yellow
     docker cp mts-e2e-full-run:/app/test-results.csv Testing/test-results.csv
