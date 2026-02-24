@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
@@ -7,6 +8,7 @@ import MarketDepth from './MarketDepth'
 import RfqOutright from './RfqOutright'
 import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
 import { usePreferences } from '../context/PreferencesContext'
+import { useLanguage } from '../context/LanguageContext'
 import './MainContent.css'
 import sortAscendingIcon from '../icons/sortAscending.svg'
 import sortDescendingIcon from '../icons/sortDescending.svg'
@@ -147,6 +149,7 @@ const dataTableRows = [
 
 const MainContent = () => {
   const { preferences, loading: preferencesLoading, setSelectedCountryTab } = usePreferences()
+  const { t } = useLanguage()
   const [selectedBond, setSelectedBond] = useState(null)
   const [selectedTopTab, setSelectedTopTab] = useState('ALL')
   const [selectedCountry, setSelectedCountry] = useState('IT')
@@ -155,9 +158,12 @@ const MainContent = () => {
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
   const [searchTerm, setSearchTerm] = useState('')
   const [dataTableRows, setDataTableRows] = useState([])
-  const [showRfqOutright, setShowRfqOutright] = useState(false)
-  const [rfqPricingData, setRfqPricingData] = useState(null)
-  const [rfqLoading, setRfqLoading] = useState(false)
+  
+  // Multiple RFQ modals support
+  const [rfqModals, setRfqModals] = useState([]) // Array of {id, bond, pricingData, window, container}
+  const rfqWindowsRef = useRef(new Map()) // Map id -> {window, container}
+  const [errorMessage, setErrorMessage] = useState(null)
+  
   const priceUpdateIntervalRef = useRef(null)
   
   // State per il resize dinamico
@@ -265,6 +271,78 @@ const MainContent = () => {
     }
   }, [handleMouseMoveHorizontal, handleMouseUpHorizontal])
 
+  // New RFQ modal management (multiple windows support)
+  const createRfqWindow = useCallback((rfqId) => {
+    const windowInfo = rfqWindowsRef.current.get(rfqId)
+    if (windowInfo && !windowInfo.window.closed) {
+      return windowInfo
+    }
+
+    // Aumentate dimensioni della finestra per evitare scrollbar
+    const popup = window.open(
+      '', 
+      `rfq-outright-window-${rfqId}`, 
+      'width=1600,height=1100,left=100,top=60,resizable=yes,scrollbars=no'
+    )
+    if (!popup) {
+      console.error('Failed to open RFQ window')
+      return null
+    }
+
+    popup.document.title = 'RFQ OUTRIGHT'
+    popup.document.body.style.margin = '0'
+    popup.document.body.style.padding = '0'
+    popup.document.body.style.background = '#0a1f1f'
+    popup.document.body.style.overflow = 'hidden'
+
+    // Clone stylesheets
+    popup.document.head.innerHTML = ''
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((node) => {
+      popup.document.head.appendChild(node.cloneNode(true))
+    })
+
+    const root = popup.document.createElement('div')
+    root.id = 'rfq-popup-root'
+    root.style.width = '100%'
+    root.style.height = '100%'
+    root.style.display = 'flex'
+    root.style.flexDirection = 'column'
+    popup.document.body.appendChild(root)
+
+    popup.onbeforeunload = () => {
+      // Remove from map and state when window is closed
+      rfqWindowsRef.current.delete(rfqId)
+      setRfqModals(prev => prev.filter(m => m.id !== rfqId))
+    }
+
+    popup.focus()
+
+    const newWindowInfo = { window: popup, container: root }
+    rfqWindowsRef.current.set(rfqId, newWindowInfo)
+    return newWindowInfo
+  }, [])
+
+  const closeRfqWindow = useCallback((rfqId) => {
+    const windowInfo = rfqWindowsRef.current.get(rfqId)
+    if (windowInfo && !windowInfo.window.closed) {
+      windowInfo.window.close()
+    }
+    rfqWindowsRef.current.delete(rfqId)
+    setRfqModals(prev => prev.filter(m => m.id !== rfqId))
+  }, [])
+
+  // Cleanup all windows on unmount
+  useEffect(() => {
+    return () => {
+      rfqWindowsRef.current.forEach((info) => {
+        if (info.window && !info.window.closed) {
+          info.window.close()
+        }
+      })
+      rfqWindowsRef.current.clear()
+    }
+  }, [])
+
   // Previeni selezione testo durante drag
   React.useEffect(() => {
     if (isDraggingVertical || isDraggingHorizontal) {
@@ -354,29 +432,113 @@ const MainContent = () => {
       return
     }
 
-    setRfqLoading(true)
+    // Check max 5 windows limit
+    if (rfqModals.length >= 5) {
+      setErrorMessage(t('rfq.maxWindowsError'))
+      setTimeout(() => setErrorMessage(null), 5000)
+      return
+    }
+
     try {
       // Fetch pricing data from backend
       const response = await fetch(`/api/bonds/${selectedBond.isin}/rfq-data`)
+      if (!response.ok) throw new Error(t('rfq.fetchError'))
+      
       const data = await response.json()
       
       if (data && data.dealers && data.quotes) {
-        setRfqPricingData(data)
-        setShowRfqOutright(true)
+        // Create new RFQ modal with unique ID
+        const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        const newModal = {
+          id: rfqId,
+          bond: selectedBond,
+          pricingData: data
+        }
+
+        // If popup mode, create window first
+        if (preferences?.rfqOpenInPopup) {
+          const windowInfo = createRfqWindow(rfqId)
+          if (!windowInfo) {
+            setErrorMessage(t('rfq.loadingError'))
+            setTimeout(() => setErrorMessage(null), 5000)
+            return
+          }
+          newModal.window = windowInfo.window
+          newModal.container = windowInfo.container
+        }
+
+        // Add to modals array
+        setRfqModals(prev => [...prev, newModal])
       } else {
         console.error('Invalid pricing data:', data)
+        setErrorMessage(t('rfq.loadingError'))
+        setTimeout(() => setErrorMessage(null), 5000)
       }
     } catch (error) {
       console.error('Error fetching RFQ data:', error)
-    } finally {
-      setRfqLoading(false)
+      setErrorMessage(t('rfq.loadingError'))
+      setTimeout(() => setErrorMessage(null), 5000)
     }
-  }, [selectedBond])
+  }, [selectedBond, preferences?.rfqOpenInPopup, rfqModals.length, createRfqWindow, t])
+
+  // Handle double-click on bond row to open RFQ OUTRIGHT (new window each time)
+  const handleBondDoubleClick = useCallback((bond) => {
+    // Check max 5 windows limit
+    if (rfqModals.length >= 5) {
+      setErrorMessage(t('rfq.maxWindowsError'))
+      setTimeout(() => setErrorMessage(null), 5000)
+      return
+    }
+
+    setSelectedBond(bond)
+    
+    const url = `/api/bonds/${bond.isin}/rfq-data`
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        return response.json()
+      })
+      .then(data => {
+        if (data && data.dealers && data.quotes) {
+          // Create new RFQ modal with unique ID for EACH double-click
+          const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          const newModal = {
+            id: rfqId,
+            bond: bond,
+            pricingData: data
+          }
+
+          // If popup mode, create window first
+          if (preferences?.rfqOpenInPopup) {
+            const windowInfo = createRfqWindow(rfqId)
+            if (!windowInfo) {
+              setErrorMessage(t('rfq.loadingError'))
+              setTimeout(() => setErrorMessage(null), 5000)
+              return
+            }
+            newModal.window = windowInfo.window
+            newModal.container = windowInfo.container
+          }
+
+          // Add to modals array (don't replace, just add)
+          setRfqModals(prev => [...prev, newModal])
+        } else {
+          console.error('Invalid pricing data structure:', data)
+          setErrorMessage(t('rfq.loadingError'))
+          setTimeout(() => setErrorMessage(null), 5000)
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching RFQ data:', error)
+        setErrorMessage(t('rfq.loadingError'))
+        setTimeout(() => setErrorMessage(null), 5000)
+      })
+  }, [rfqModals.length, preferences?.rfqOpenInPopup, createRfqWindow, t])
 
   // Handle RFQ submission
   const handleRfqSubmit = useCallback((rfqData) => {
-    console.log('RFQ Data submitted:', rfqData)
-    
     // Send to backend
     fetch('/api/rfq/submit', {
       method: 'POST',
@@ -385,7 +547,21 @@ const MainContent = () => {
     })
       .then(response => response.json())
       .then(data => {
-        console.log('RFQ submission response:', data)
+        // Could add success notification here
+      })
+      .catch(error => console.error('Error submitting RFQ:', error))
+  }, [])
+
+  // Handle RFQ submission
+  const handleRfqSubmit = useCallback((rfqData) => {
+    // Send to backend
+    fetch('/api/rfq/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rfqData)
+    })
+      .then(response => response.json())
+      .then(data => {
         // Could add success notification here
       })
       .catch(error => console.error('Error submitting RFQ:', error))
@@ -398,16 +574,9 @@ const MainContent = () => {
           <div className="rfq-dropdown">
             <button 
               className={`rfq-button ${expandedRFQ ? 'expanded' : ''}`} 
-              onClick={() => {
-                if (selectedRFQ === 'RFQ OUTRIGHT') {
-                  handleOpenRfqOutright()
-                  setExpandedRFQ(false)
-                } else {
-                  setExpandedRFQ(!expandedRFQ)
-                }
-              }}
+              onClick={() => setExpandedRFQ(!expandedRFQ)}
             >
-              {expandedRFQ ? selectedRFQ : 'OPEN RFQ'} {!expandedRFQ && '▼'}
+              OPEN RFQ ▼
             </button>
             {expandedRFQ && (
               <div className="rfq-menu">
@@ -494,13 +663,12 @@ const MainContent = () => {
 
       <div className="content-body" ref={contentBodyRef} style={{ cursor: isDraggingVertical ? 'col-resize' : 'default' }}>
         <div className="trading-area-container" style={{ flex: `0 0 ${tradingWidth}%` }}>
-          {selectedBond && (
-            <div className="selected-bond-info">
-              <span className="info-label">{selectedBond.description} - {selectedBond.isin}</span>
-            </div>
-          )}
-
-          <BondTable onSelectBond={setSelectedBond} countryBonds={dataTableRows} searchTerm={searchTerm} />
+          <BondTable 
+            onSelectBond={setSelectedBond} 
+            onDoubleClickBond={handleBondDoubleClick}
+            countryBonds={dataTableRows} 
+            searchTerm={searchTerm} 
+          />
 
           <div className="resize-handle-horizontal" onMouseDown={handleMouseDownHorizontal} />
 
@@ -527,20 +695,46 @@ const MainContent = () => {
         </div>
       </div>
 
-      {showRfqOutright && selectedBond && rfqPricingData && (
-        <RfqOutright
-          bond={{
-            isin: selectedBond.isin,
-            description: selectedBond.description,
-          }}
-          pricingData={rfqPricingData}
-          onClose={() => {
-            setShowRfqOutright(false)
-            setRfqPricingData(null)
-          }}
-          onSubmit={handleRfqSubmit}
-        />
+      {/* Error notification */}
+      {errorMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#CF1D43',
+          color: '#FFF',
+          padding: '12px 20px',
+          borderRadius: '4px',
+          zIndex: 9999,
+          fontWeight: 'bold',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+        }}>
+          {errorMessage}
+        </div>
       )}
+
+      {/* Render multiple RFQ modals */}
+      {rfqModals.map((modal) => {
+        const rfqNode = (
+          <RfqOutright
+            key={modal.id}
+            bond={modal.bond}
+            pricingData={modal.pricingData}
+            hostWindow={modal.window || window}
+            onClose={() => closeRfqWindow(modal.id)}
+            onSubmit={handleRfqSubmit}
+          />
+        )
+
+        // If popup, render in popup container
+        if (modal.container) {
+          return createPortal(rfqNode, modal.container)
+        }
+
+        // Otherwise render inline
+        return rfqNode
+      })}
     </div>
   )
 }

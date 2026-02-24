@@ -38,6 +38,12 @@ export const translations = {
       unpin: 'Unpin',
       resetColumn: 'Reset Column',
       resetAll: 'Reset All Columns'
+    },
+    // RFQ Modals
+    rfq: {
+      maxWindowsError: 'Maximum of 5 RFQ windows allowed. Close one before opening a new one.',
+      loadingError: 'Error loading pricing data. Please try again.',
+      fetchError: 'Failed to fetch RFQ data'
     }
   },
   it: {
@@ -67,6 +73,12 @@ export const translations = {
       unpin: 'Sblocca',
       resetColumn: 'Reset Colonna',
       resetAll: 'Reset Tutte'
+    },
+    // RFQ Modals
+    rfq: {
+      maxWindowsError: 'Massimo 5 finestre RFQ consentite. Chiuderne una prima di aprirne una nuova.',
+      loadingError: 'Errore nel caricamento dei dati dei prezzi. Riprovare.',
+      fetchError: 'Impossibile caricare i dati RFQ'
     }
   }
 }
