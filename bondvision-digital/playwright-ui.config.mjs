@@ -8,7 +8,10 @@ export default defineConfig({
     reporter: [['list'], ['html', { open: 'never' }]],
     use: {
         headless: false,
-        viewport: { width: 1600, height: 900 },
+        viewport: null,
+        launchOptions: {
+            args: ['--start-maximized']
+        },
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
         trace: 'retain-on-failure'

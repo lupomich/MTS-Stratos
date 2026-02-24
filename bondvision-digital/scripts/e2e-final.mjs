@@ -56,6 +56,15 @@ function getRuntimeConfig(overrides = {}) {
 
 let runtimeConfig = getRuntimeConfig();
 
+function getContextOptions() {
+    if (runtimeConfig.HEADLESS) {
+        return {};
+    }
+    return {
+        viewport: null
+    };
+}
+
 // Test results storage
 const testResults = [];
 let startTime = new Date();
@@ -460,7 +469,7 @@ async function runSection1(browser) {
     console.log('SECTION 1: USER MANAGEMENT - ADMIN PANEL');
     console.log('========================================\n');
     
-    const context = await browser.newContext();
+    const context = await browser.newContext(getContextOptions());
     const page = await context.newPage();
 
     await cleanupResidualTestUsersAPI();
@@ -837,7 +846,7 @@ async function runSection2(browser) {
     console.log('SECTION 2: SETTINGS PERSISTENCE - GUI');
     console.log('========================================\n');
     
-    const context = await browser.newContext();
+    const context = await browser.newContext(getContextOptions());
     const page = await context.newPage();
 
     await ensureUserExistsAPI({
@@ -1092,7 +1101,7 @@ async function runSection3(browser) {
     console.log('SECTION 3: FULL PERSISTENCE & CLEANUP');
     console.log('========================================\n');
     
-    const context = await browser.newContext();
+    const context = await browser.newContext(getContextOptions());
     const page = await context.newPage();
 
     const ensureTraderLoggedIn = async () => {
@@ -1495,6 +1504,9 @@ export async function runE2ESuite(overrides = {}) {
     const launchArgs = [];
     if (IN_DOCKER) {
         launchArgs.push('--no-sandbox', '--disable-dev-shm-usage');
+    }
+    if (!runtimeConfig.HEADLESS) {
+        launchArgs.push('--start-maximized');
     }
 
     const browser = await chromium.launch({
