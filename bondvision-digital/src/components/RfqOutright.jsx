@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RFQ OUTRIGHT Floating Window Component
  * 
  * Implements a professional floating window for Request for Quote (RFQ) Outright trading.
@@ -44,7 +44,6 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [position, setPosition] = useState(initialPosition || { x: 140, y: 90 });
-  const [debugMetrics, setDebugMetrics] = useState(null);
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const windowRef = useRef(null);
   const activeWindow = hostWindow || window;
@@ -257,58 +256,6 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     };
   }, [activeWindow, handleDragEnd, handleDragMove]);
 
-  const updateDebugMetrics = useCallback(() => {
-    const appElement = isPopup
-      ? activeWindow.document.body
-      : (
-        activeWindow.document.querySelector('.main-content')
-        || activeWindow.document.querySelector('.content-body')
-        || activeWindow.document.querySelector('#root')
-      );
-    const rfqElement = windowRef.current;
-
-    if (!appElement || !rfqElement) {
-      setDebugMetrics(null);
-      return;
-    }
-
-    const appRect = appElement.getBoundingClientRect();
-    const rfqRect = rfqElement.getBoundingClientRect();
-    const appCenterX = appRect.left + (appRect.width / 2);
-    const appCenterY = appRect.top + (appRect.height / 2);
-    const rfqCenterX = rfqRect.left + (rfqRect.width / 2);
-    const rfqCenterY = rfqRect.top + (rfqRect.height / 2);
-
-    setDebugMetrics({
-      mode: isPopup ? 'POPUP' : 'INLINE',
-      appWidth: Math.round(appRect.width),
-      appHeight: Math.round(appRect.height),
-      rfqWidth: Math.round(rfqRect.width),
-      rfqHeight: Math.round(rfqRect.height),
-      rfqLeft: Math.round(rfqRect.left),
-      rfqTop: Math.round(rfqRect.top),
-      innerWidth: Math.round(activeWindow.innerWidth || 0),
-      innerHeight: Math.round(activeWindow.innerHeight || 0),
-      outerWidth: Math.round(activeWindow.outerWidth || 0),
-      outerHeight: Math.round(activeWindow.outerHeight || 0),
-      dx: Math.round(rfqCenterX - appCenterX),
-      dy: Math.round(rfqCenterY - appCenterY)
-    });
-  }, [activeWindow.document, isPopup]);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const runUpdate = () => updateDebugMetrics();
-    const rafId = activeWindow.requestAnimationFrame(runUpdate);
-    activeWindow.addEventListener('resize', runUpdate);
-
-    return () => {
-      activeWindow.cancelAnimationFrame(rafId);
-      activeWindow.removeEventListener('resize', runUpdate);
-    };
-  }, [activeWindow, isLoading, position, updateDebugMetrics]);
-
   const toggleSide = () => {
     setSide((prevSide) => (prevSide === 'BUY' ? 'SELL' : 'BUY'));
   };
@@ -387,29 +334,6 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
         className="rfq-modal rfq-floating-window"
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       >
-        {debugMetrics && (
-          <div style={{
-            position: 'absolute',
-            right: '8px',
-            top: '34px',
-            zIndex: 30,
-            fontSize: '11px',
-            lineHeight: 1.3,
-            padding: '6px 8px',
-            background: 'rgba(10,31,31,0.98)',
-            border: '1px solid var(--color-primary)',
-            color: 'var(--color-bg-white)'
-          }}>
-            <div>MODE: {debugMetrics.mode}</div>
-            <div>APP: {debugMetrics.appWidth}×{debugMetrics.appHeight}</div>
-            <div>WIN: {debugMetrics.innerWidth}×{debugMetrics.innerHeight} (inner)</div>
-            <div>WIN: {debugMetrics.outerWidth}×{debugMetrics.outerHeight} (outer)</div>
-            <div>RFQ: {debugMetrics.rfqWidth}×{debugMetrics.rfqHeight}</div>
-            <div>POS: x={debugMetrics.rfqLeft}, y={debugMetrics.rfqTop}</div>
-            <div>ΔCENTER: dx={debugMetrics.dx}, dy={debugMetrics.dy}</div>
-          </div>
-        )}
-
         <div className="rfq-titlebar rfq-drag-handle" onMouseDown={handleDragStart}>
           <div className="rfq-title-left">
             <span className="rfq-title-badge">MTS</span>
