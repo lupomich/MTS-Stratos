@@ -52,6 +52,11 @@ const rfqTypes = [
   'RFQ PORTFOLIO'
 ]
 
+const RFQ_POPUP_WIDTH = 1250
+const RFQ_POPUP_HEIGHT = 800
+const RFQ_CASCADE_X = 30
+const RFQ_CASCADE_Y = 10
+
 const dataTableRows = [
   {
     isin: 'IT0005415416',
@@ -272,23 +277,58 @@ const MainContent = () => {
   }, [handleMouseMoveHorizontal, handleMouseUpHorizontal])
 
   // New RFQ modal management (multiple windows support)
-  const createRfqWindow = useCallback((rfqId) => {
+  const getInlineRfqPosition = useCallback((windowIndex) => {
+    const existingInlineModal = document.querySelector('.rfq-modal.rfq-floating-window')
+    const measuredWidth = existingInlineModal?.offsetWidth
+    const measuredHeight = existingInlineModal?.offsetHeight
+    const appElement = document.querySelector('.main-content')
+
+    const modalWidth = measuredWidth || Math.min(RFQ_POPUP_WIDTH, Math.max(320, window.innerWidth - 20))
+    const modalHeight = measuredHeight || Math.max(220, window.innerHeight - 20)
+    const appRect = appElement?.getBoundingClientRect()
+
+    const centeredX = appRect
+      ? Math.max(8, Math.round(appRect.left + ((appRect.width - modalWidth) / 2)))
+      : Math.max(8, Math.round((window.innerWidth - modalWidth) / 2))
+    const centeredY = appRect
+      ? Math.max(8, Math.round(appRect.top + ((appRect.height - modalHeight) / 2)))
+      : Math.max(8, Math.round((window.innerHeight - modalHeight) / 2))
+
+    return {
+      x: centeredX + (windowIndex * RFQ_CASCADE_X),
+      y: centeredY + (windowIndex * RFQ_CASCADE_Y)
+    }
+  }, [])
+
+  const getPopupRfqPosition = useCallback((windowIndex) => {
+    const hostLeft = Number.isFinite(window.screenX) ? window.screenX : window.screenLeft || 0
+    const hostTop = Number.isFinite(window.screenY) ? window.screenY : window.screenTop || 0
+    const hostWidth = window.outerWidth || window.innerWidth || RFQ_POPUP_WIDTH
+    const hostHeight = window.outerHeight || window.innerHeight || RFQ_POPUP_HEIGHT
+
+    const centeredLeft = Math.round(hostLeft + ((hostWidth - RFQ_POPUP_WIDTH) / 2))
+    const centeredTop = Math.round(hostTop + ((hostHeight - RFQ_POPUP_HEIGHT) / 2))
+
+    return {
+      left: centeredLeft + (windowIndex * RFQ_CASCADE_X),
+      top: centeredTop + (windowIndex * RFQ_CASCADE_Y)
+    }
+  }, [])
+
+  const createRfqWindow = useCallback((rfqId, windowIndex) => {
     const windowInfo = rfqWindowsRef.current.get(rfqId)
     if (windowInfo && !windowInfo.window.closed) {
       return windowInfo
     }
 
-    // Calculate offset based on number of existing windows to avoid overlapping
-    // Count existing open windows from the ref map
-    const existingWindowCount = rfqWindowsRef.current.size
-    const offsetLeft = 350 + (existingWindowCount * 30)  // Move 30px to the right, starting at 350
-    const offsetTop = 300 + (existingWindowCount * 10)  // Move 10px down, starting at 300
+    const safeIndex = Number.isFinite(windowIndex) ? windowIndex : rfqWindowsRef.current.size
+    const popupPosition = getPopupRfqPosition(safeIndex)
 
     // Dimensioni ottimizzate per mostrare il modal senza scrollbar indesiderate
     const popup = window.open(
       '', 
       `rfq-outright-window-${rfqId}`, 
-      `width=1250,height=800,left=${offsetLeft},top=${offsetTop},resizable=yes,scrollbars=no`
+      `width=${RFQ_POPUP_WIDTH},height=${RFQ_POPUP_HEIGHT},left=${popupPosition.left},top=${popupPosition.top},resizable=yes,scrollbars=no`
     )
     if (!popup) {
       console.error('Failed to open RFQ window')
@@ -326,7 +366,7 @@ const MainContent = () => {
     const newWindowInfo = { window: popup, container: root }
     rfqWindowsRef.current.set(rfqId, newWindowInfo)
     return newWindowInfo
-  }, [])
+  }, [getPopupRfqPosition])
 
   const closeRfqWindow = useCallback((rfqId) => {
     const windowInfo = rfqWindowsRef.current.get(rfqId)
@@ -456,24 +496,21 @@ const MainContent = () => {
         // Create new RFQ modal with unique ID
         const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         
-        // Calculate cascading position for both popup and inline modals
-        // Use total modal count (popup + inline) for consistent cascading
         const totalModalCount = rfqModals.length
-        const initialPosition = {
-          x: 140 + (totalModalCount * 30),
-          y: 150 + (totalModalCount * 10)  // Start at 150px (below top bar) + minimal offset
-        }
+        const initialPosition = getInlineRfqPosition(totalModalCount)
+        const centerOnMount = totalModalCount === 0
         
         const newModal = {
           id: rfqId,
           bond: selectedBond,
           pricingData: data,
-          initialPosition
+          initialPosition,
+          centerOnMount
         }
 
         // If popup mode, create window first
         if (preferences?.rfqOpenInPopup) {
-          const windowInfo = createRfqWindow(rfqId)
+          const windowInfo = createRfqWindow(rfqId, totalModalCount)
           if (!windowInfo) {
             setErrorMessage(t('rfq.loadingError'))
             setTimeout(() => setErrorMessage(null), 5000)
@@ -495,7 +532,7 @@ const MainContent = () => {
       setErrorMessage(t('rfq.loadingError'))
       setTimeout(() => setErrorMessage(null), 5000)
     }
-  }, [selectedBond, preferences?.rfqOpenInPopup, rfqModals.length, createRfqWindow, t])
+  }, [selectedBond, preferences?.rfqOpenInPopup, rfqModals.length, createRfqWindow, getInlineRfqPosition, t])
 
   // Handle double-click on bond row to open RFQ OUTRIGHT (new window each time)
   const handleBondDoubleClick = useCallback((bond) => {
@@ -521,23 +558,21 @@ const MainContent = () => {
           // Create new RFQ modal with unique ID for EACH double-click
           const rfqId = `rfq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
           
-          // Calculate cascading position
           const totalModalCount = rfqModals.length
-          const initialPosition = {
-            x: 300 + (totalModalCount * 30),
-            y: 200 + (totalModalCount * 10)
-          }
+          const initialPosition = getInlineRfqPosition(totalModalCount)
+          const centerOnMount = totalModalCount === 0
           
           const newModal = {
             id: rfqId,
             bond: bond,
             pricingData: data,
-            initialPosition
+            initialPosition,
+            centerOnMount
           }
 
           // If popup mode, create window first
           if (preferences?.rfqOpenInPopup) {
-            const windowInfo = createRfqWindow(rfqId)
+            const windowInfo = createRfqWindow(rfqId, totalModalCount)
             if (!windowInfo) {
               setErrorMessage(t('rfq.loadingError'))
               setTimeout(() => setErrorMessage(null), 5000)
@@ -560,7 +595,7 @@ const MainContent = () => {
         setErrorMessage(t('rfq.loadingError'))
         setTimeout(() => setErrorMessage(null), 5000)
       })
-  }, [rfqModals.length, preferences?.rfqOpenInPopup, createRfqWindow, t])
+  }, [rfqModals.length, preferences?.rfqOpenInPopup, createRfqWindow, getInlineRfqPosition, t])
 
   // Handle RFQ submission
   const handleRfqSubmit = useCallback((rfqData) => {
@@ -734,6 +769,7 @@ const MainContent = () => {
             pricingData={modal.pricingData}
             hostWindow={modal.window || window}
             initialPosition={modal.initialPosition}
+            centerOnMount={!!modal.centerOnMount}
             isPopup={isPopup}
             onClose={() => closeRfqWindow(modal.id)}
             onSubmit={handleRfqSubmit}

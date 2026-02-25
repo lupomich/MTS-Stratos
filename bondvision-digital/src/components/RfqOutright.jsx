@@ -26,7 +26,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './RfqOutright.css';
 
-const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup }) => {
+const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false }) => {
   const [side, setSide] = useState('BUY');
   const [size, setSize] = useState('');
   const [minSize, setMinSize] = useState('');
@@ -44,6 +44,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [position, setPosition] = useState(initialPosition || { x: 140, y: 90 });
+  const [debugMetrics, setDebugMetrics] = useState(null);
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const windowRef = useRef(null);
   const activeWindow = hostWindow || window;
@@ -161,22 +162,50 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   }, [pricingData, bestDealerIds]);
 
   useEffect(() => {
-    // Only center position for popup windows, not for inline modals
-    // Inline modals should use initialPosition passed from MainContent
-    if (isPopup) {
-      const updatePosition = () => {
-        const modalWidth = windowRef.current?.offsetWidth || 900;
-        const modalHeight = windowRef.current?.offsetHeight || 760;
-        const centeredX = Math.max(16, Math.floor((activeWindow.innerWidth - modalWidth) / 2));
-        const centeredY = Math.max(16, Math.floor((activeWindow.innerHeight - modalHeight) / 2));
-        setPosition(clampPosition(centeredX, centeredY));
-      };
-
-      updatePosition();
-      activeWindow.addEventListener('resize', updatePosition);
-      return () => activeWindow.removeEventListener('resize', updatePosition);
+    const shouldCenter = isPopup || centerOnMount;
+    if (!shouldCenter) {
+      return;
     }
-  }, [activeWindow, clampPosition, isPopup]);
+
+    let rafId1 = null;
+    let rafId2 = null;
+
+    const updatePosition = () => {
+      const modalRect = windowRef.current?.getBoundingClientRect();
+      const modalWidth = modalRect?.width || windowRef.current?.offsetWidth || 900;
+      const modalHeight = modalRect?.height || windowRef.current?.offsetHeight || 760;
+      const appElement = !isPopup
+        ? activeWindow.document.querySelector('.main-content')
+        : null;
+      const appRect = appElement?.getBoundingClientRect();
+
+      const centeredX = appRect
+        ? Math.max(16, Math.floor(appRect.left + ((appRect.width - modalWidth) / 2)))
+        : Math.max(16, Math.floor((activeWindow.innerWidth - modalWidth) / 2));
+      const centeredY = appRect
+        ? Math.max(16, Math.floor(appRect.top + ((appRect.height - modalHeight) / 2)))
+        : Math.max(16, Math.floor((activeWindow.innerHeight - modalHeight) / 2));
+      setPosition(clampPosition(centeredX, centeredY));
+    };
+
+    rafId1 = activeWindow.requestAnimationFrame(() => {
+      rafId2 = activeWindow.requestAnimationFrame(updatePosition);
+    });
+
+    if (isPopup) {
+      activeWindow.addEventListener('resize', updatePosition);
+      return () => {
+        if (rafId1) activeWindow.cancelAnimationFrame(rafId1);
+        if (rafId2) activeWindow.cancelAnimationFrame(rafId2);
+        activeWindow.removeEventListener('resize', updatePosition);
+      };
+    }
+
+    return () => {
+      if (rafId1) activeWindow.cancelAnimationFrame(rafId1);
+      if (rafId2) activeWindow.cancelAnimationFrame(rafId2);
+    };
+  }, [activeWindow, centerOnMount, clampPosition, isPopup, isLoading]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -227,6 +256,58 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
       activeWindow.removeEventListener('mouseup', handleDragEnd);
     };
   }, [activeWindow, handleDragEnd, handleDragMove]);
+
+  const updateDebugMetrics = useCallback(() => {
+    const appElement = isPopup
+      ? activeWindow.document.body
+      : (
+        activeWindow.document.querySelector('.main-content')
+        || activeWindow.document.querySelector('.content-body')
+        || activeWindow.document.querySelector('#root')
+      );
+    const rfqElement = windowRef.current;
+
+    if (!appElement || !rfqElement) {
+      setDebugMetrics(null);
+      return;
+    }
+
+    const appRect = appElement.getBoundingClientRect();
+    const rfqRect = rfqElement.getBoundingClientRect();
+    const appCenterX = appRect.left + (appRect.width / 2);
+    const appCenterY = appRect.top + (appRect.height / 2);
+    const rfqCenterX = rfqRect.left + (rfqRect.width / 2);
+    const rfqCenterY = rfqRect.top + (rfqRect.height / 2);
+
+    setDebugMetrics({
+      mode: isPopup ? 'POPUP' : 'INLINE',
+      appWidth: Math.round(appRect.width),
+      appHeight: Math.round(appRect.height),
+      rfqWidth: Math.round(rfqRect.width),
+      rfqHeight: Math.round(rfqRect.height),
+      rfqLeft: Math.round(rfqRect.left),
+      rfqTop: Math.round(rfqRect.top),
+      innerWidth: Math.round(activeWindow.innerWidth || 0),
+      innerHeight: Math.round(activeWindow.innerHeight || 0),
+      outerWidth: Math.round(activeWindow.outerWidth || 0),
+      outerHeight: Math.round(activeWindow.outerHeight || 0),
+      dx: Math.round(rfqCenterX - appCenterX),
+      dy: Math.round(rfqCenterY - appCenterY)
+    });
+  }, [activeWindow.document, isPopup]);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const runUpdate = () => updateDebugMetrics();
+    const rafId = activeWindow.requestAnimationFrame(runUpdate);
+    activeWindow.addEventListener('resize', runUpdate);
+
+    return () => {
+      activeWindow.cancelAnimationFrame(rafId);
+      activeWindow.removeEventListener('resize', runUpdate);
+    };
+  }, [activeWindow, isLoading, position, updateDebugMetrics]);
 
   const toggleSide = () => {
     setSide((prevSide) => (prevSide === 'BUY' ? 'SELL' : 'BUY'));
@@ -291,10 +372,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
 
   if (isLoading) {
     return (
-      <div 
-        className="rfq-window-layer" 
-        style={!isPopup ? { position: 'absolute', inset: 'auto' } : undefined}
-      >
+      <div className="rfq-window-layer">
         <div ref={windowRef} className="rfq-modal rfq-floating-window" style={{ left: `${position.x}px`, top: `${position.y}px` }}>
           <div className="rfq-loading">Loading...</div>
         </div>
@@ -303,15 +381,35 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   }
 
   return (
-    <div 
-      className="rfq-window-layer"
-      style={!isPopup ? { position: 'absolute', inset: 'auto' } : undefined}
-    >
+    <div className="rfq-window-layer">
       <div
         ref={windowRef}
         className="rfq-modal rfq-floating-window"
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       >
+        {debugMetrics && (
+          <div style={{
+            position: 'absolute',
+            right: '8px',
+            top: '34px',
+            zIndex: 30,
+            fontSize: '11px',
+            lineHeight: 1.3,
+            padding: '6px 8px',
+            background: 'rgba(10,31,31,0.98)',
+            border: '1px solid var(--color-primary)',
+            color: 'var(--color-bg-white)'
+          }}>
+            <div>MODE: {debugMetrics.mode}</div>
+            <div>APP: {debugMetrics.appWidth}×{debugMetrics.appHeight}</div>
+            <div>WIN: {debugMetrics.innerWidth}×{debugMetrics.innerHeight} (inner)</div>
+            <div>WIN: {debugMetrics.outerWidth}×{debugMetrics.outerHeight} (outer)</div>
+            <div>RFQ: {debugMetrics.rfqWidth}×{debugMetrics.rfqHeight}</div>
+            <div>POS: x={debugMetrics.rfqLeft}, y={debugMetrics.rfqTop}</div>
+            <div>ΔCENTER: dx={debugMetrics.dx}, dy={debugMetrics.dy}</div>
+          </div>
+        )}
+
         <div className="rfq-titlebar rfq-drag-handle" onMouseDown={handleDragStart}>
           <div className="rfq-title-left">
             <span className="rfq-title-badge">MTS</span>
