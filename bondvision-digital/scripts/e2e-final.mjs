@@ -16,6 +16,7 @@ import { pathToFileURL } from 'url';
 // Configuration
 const ADMIN_USER = { username: 'admin', password: 'admin123' };
 const IN_DOCKER = fs.existsSync('/.dockerenv');
+const HAS_DISPLAY = Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
 
 function getRuntimeConfig(overrides = {}) {
     const liveView = Object.prototype.hasOwnProperty.call(overrides, 'liveView')
@@ -63,6 +64,24 @@ function getContextOptions() {
     return {
         viewport: null
     };
+}
+
+async function maximizePageWindow(page) {
+    if (runtimeConfig.HEADLESS) {
+        return;
+    }
+
+    try {
+        const context = page.context();
+        const cdpSession = await context.newCDPSession(page);
+        const { windowId } = await cdpSession.send('Browser.getWindowForTarget');
+        await cdpSession.send('Browser.setWindowBounds', {
+            windowId,
+            bounds: { windowState: 'maximized' }
+        });
+    } catch (error) {
+        console.log(`  [WINDOW] maximize skipped: ${error.message}`);
+    }
 }
 
 // Test results storage
@@ -384,6 +403,26 @@ async function getGridState(page) {
     });
 }
 
+async function waitForGridStateWithRows(page, timeoutMs = 12000) {
+    const startedAt = Date.now();
+    let lastState = null;
+
+    while ((Date.now() - startedAt) < timeoutMs) {
+        try {
+            const state = await getGridState(page);
+            lastState = state;
+            if (state && Number(state.totalRowCount) > 0) {
+                return state;
+            }
+        } catch {
+        }
+
+        await page.waitForTimeout(400);
+    }
+
+    return lastState;
+}
+
 async function moveColumn(page, colId, toIndex) {
     await page.evaluate(({ id, index }) => {
         const gridRoot = document.querySelector('.bond-grid .ag-root-wrapper');
@@ -471,6 +510,7 @@ async function runSection1(browser) {
     
     const context = await browser.newContext(getContextOptions());
     const page = await context.newPage();
+    await maximizePageWindow(page);
 
     await cleanupResidualTestUsersAPI();
     
@@ -848,6 +888,7 @@ async function runSection2(browser) {
     
     const context = await browser.newContext(getContextOptions());
     const page = await context.newPage();
+    await maximizePageWindow(page);
 
     await ensureUserExistsAPI({
         username: 'trader-final',
@@ -1103,6 +1144,7 @@ async function runSection3(browser) {
     
     const context = await browser.newContext(getContextOptions());
     const page = await context.newPage();
+    await maximizePageWindow(page);
 
     const ensureTraderLoggedIn = async () => {
         for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -1167,7 +1209,7 @@ async function runSection3(browser) {
         await loginGUI(page, 'admin', 'admin123');
         await waitForBondGrid(page);
 
-        const state = await getGridState(page);
+        const state = await waitForGridStateWithRows(page, 12000);
         if (!state || state.totalRowCount <= 0) {
             throw new Error('Persist: grid state unavailable after relogin');
         }
@@ -1484,6 +1526,7 @@ async function main() {
 
 export async function runE2ESuite(overrides = {}) {
     runtimeConfig = getRuntimeConfig(overrides);
+    const effectiveHeadless = runtimeConfig.HEADLESS || (IN_DOCKER && !HAS_DISPLAY);
     testResults.length = 0;
     startTime = new Date();
 
@@ -1494,7 +1537,10 @@ export async function runE2ESuite(overrides = {}) {
     console.log(`Base URL: ${runtimeConfig.BASE_URL}`);
     console.log(`API URL: ${runtimeConfig.API_BASE}`);
     console.log(`Timeout per test: ${runtimeConfig.TEST_TIMEOUT}ms`);
-    console.log(`Headless: ${runtimeConfig.HEADLESS}`);
+    if (!runtimeConfig.HEADLESS && IN_DOCKER && !HAS_DISPLAY) {
+        console.log('⚠️  Headed richiesto ma DISPLAY non disponibile in Docker: fallback automatico a headless=true');
+    }
+    console.log(`Headless: ${effectiveHeadless}`);
     console.log(`SlowMo: ${runtimeConfig.SLOW_MO}ms`);
     if (process.env.PWDEBUG) {
         console.log(`PWDEBUG: ${process.env.PWDEBUG}`);
@@ -1505,12 +1551,12 @@ export async function runE2ESuite(overrides = {}) {
     if (IN_DOCKER) {
         launchArgs.push('--no-sandbox', '--disable-dev-shm-usage');
     }
-    if (!runtimeConfig.HEADLESS) {
+    if (!effectiveHeadless) {
         launchArgs.push('--start-maximized');
     }
 
     const browser = await chromium.launch({
-        headless: runtimeConfig.HEADLESS,
+        headless: effectiveHeadless,
         slowMo: Number.isNaN(runtimeConfig.SLOW_MO) ? 0 : runtimeConfig.SLOW_MO,
         args: launchArgs
     });

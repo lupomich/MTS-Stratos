@@ -4,4 +4,4 @@ COPY . .
 RUN npm install
 ENV API_BASE=http://host.docker.internal:3000/api
 ENV UI_BASE=http://host.docker.internal:3002
-CMD ["node", "scripts/e2e-preferences.mjs"]
+CMD ["node", "scripts/e2e-final.mjs"]

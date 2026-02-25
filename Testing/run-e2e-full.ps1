@@ -27,6 +27,7 @@ $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
 $preBackupPath = Join-Path $snapshotDir "pre-e2e-$runId.dump"
 $postBackupPath = Join-Path $snapshotDir "post-e2e-$runId.dump"
 $dbContainerName = 'mts-stratos-postgres'
+$e2eContainerName = 'mts-stratos-e2e'
 $dbName = 'stratos_db'
 $dbUser = 'stratos'
 $dbPassword = 'stratos2026'
@@ -673,41 +674,62 @@ try {
         Write-Host 'Preserving postgres/redis volumes (default behavior)' -ForegroundColor Green
     }
 
-    Write-Host 'Step 2/9 - Ensure core services are running (start missing only) + prepare e2e image' -ForegroundColor Yellow
-    Ensure-ComposeServicesRunning -Services @('postgres', 'redis', 'bondvision-backend', 'bondvision-digital') -EnsureE2EImage
+    Write-Host 'Step 2/9 - Ensure core services + e2e hot container are running (start missing only)' -ForegroundColor Yellow
+    Ensure-ComposeServicesRunning -Services @('postgres', 'redis', 'bondvision-backend', 'bondvision-digital', 'e2e') -EnsureE2EImage
 
     Write-Host 'Step 3/9 - Wait services warm-up' -ForegroundColor Yellow
     Start-Sleep -Seconds 12
 
-    Write-Host "Step 4/9 - Run E2E suite from TC$startFrom (stop on first fail)" -ForegroundColor Yellow
-    Remove-ContainerIfExists -Name 'mts-e2e-full-run'
-    Invoke-Compose -Args "run --build --name mts-e2e-full-run -e START_FROM=$startFrom -e STOP_ON_FIRST_FAIL=true e2e node scripts/e2e-final.mjs"
+    Write-Host "Step 4/9 - Run E2E suite from TC$startFrom on hot e2e container (stop on first fail)" -ForegroundColor Yellow
+    docker exec `
+        -e "START_FROM=$startFrom" `
+        -e 'STOP_ON_FIRST_FAIL=true' `
+        -e 'API_BASE=http://bondvision-backend:3000/api' `
+        -e 'BASE_URL=http://bondvision-digital:3002' `
+        $e2eContainerName `
+        node scripts/e2e-final.mjs
+    $runExitCode = $LASTEXITCODE
 
     Write-Host 'Step 5/9 - Export reports to Testing/' -ForegroundColor Yellow
-    docker cp mts-e2e-full-run:/app/test-results.csv Testing/test-results.csv
-    docker cp mts-e2e-full-run:/app/test-report.html Testing/test-report.html
-    docker cp mts-e2e-full-run:/app/test-results.json Testing/test-results.json
+    try { docker cp "$e2eContainerName`:/app/test-results.csv" Testing/test-results.csv } catch {}
+    try { docker cp "$e2eContainerName`:/app/test-report.html" Testing/test-report.html } catch {}
+    try { docker cp "$e2eContainerName`:/app/test-results.json" Testing/test-results.json } catch {}
 
     $resultsJsonPath = Join-Path $root 'Testing/test-results.json'
-    $failedTests = Get-FailedTestsFromReport -ReportPath $resultsJsonPath
-    if ($failedTests -gt 0) {
-        $firstFailedTest = Get-FirstFailedTestId -ReportPath $resultsJsonPath
-        if ($null -ne $firstFailedTest) {
-            Set-Content -Path $checkpointPath -Value $firstFailedTest
-            Write-Host "Checkpoint set: next run starts from T$firstFailedTest" -ForegroundColor Yellow
+    $failedTests = 0
+
+    if (Test-Path $resultsJsonPath) {
+        $failedTests = Get-FailedTestsFromReport -ReportPath $resultsJsonPath
+        if ($failedTests -gt 0) {
+            $firstFailedTest = Get-FirstFailedTestId -ReportPath $resultsJsonPath
+            if ($null -ne $firstFailedTest) {
+                Set-Content -Path $checkpointPath -Value $firstFailedTest
+                Write-Host "Checkpoint set: next run starts from T$firstFailedTest" -ForegroundColor Yellow
+            }
         }
-        throw "La suite E2E ha riportato $failedTests test falliti (vedi Testing/test-results.json)."
     }
 
-    if (Test-Path $checkpointPath) {
+    if ($failedTests -eq 0 -and (Test-Path $checkpointPath)) {
         Remove-Item $checkpointPath -Force
     }
 
-    Write-Host 'Step 6/10 - Update test markdown files from latest run' -ForegroundColor Yellow
-    Update-TestMarkdownFiles -JsonPath $resultsJsonPath -OutputDir (Join-Path $root 'Testing')
+    Write-Host 'Step 6/10 - Update TEST_* reports from latest run' -ForegroundColor Yellow
+    if (Test-Path $resultsJsonPath) {
+        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'update-test-reports.ps1') -JsonPath 'Testing/test-results.json' -OutputDir 'Testing'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Aggiornamento report TEST_* fallito.'
+        }
+    }
 
-    Write-Host 'Step 7/10 - Cleanup transient run container' -ForegroundColor Yellow
-    Remove-ContainerIfExists -Name 'mts-e2e-full-run'
+    if ($runExitCode -ne 0) {
+        throw "E2E execution failed in hot container '$e2eContainerName'."
+    }
+
+    if ($failedTests -gt 0) {
+        throw "La suite E2E ha riportato $failedTests test falliti (vedi Testing/test-results.json)."
+    }
+
+    Write-Host 'Step 7/10 - Keep e2e hot container active for next runs' -ForegroundColor Yellow
 
     if ($dbBackupTaken -and $KeepDbSnapshots) {
         Write-Host 'Step 8/10 - Save post-test snapshot (forced by --KeepDbSnapshots)' -ForegroundColor Yellow
@@ -735,12 +757,6 @@ catch {
 
     Write-Host '=== FAILED ===' -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
-
-    try {
-        Remove-ContainerIfExists -Name 'mts-e2e-full-run'
-    }
-    catch {
-    }
 
     if ($dbBackupTaken -and ($KeepDbSnapshots -or $KeepPostTestDbOnFailure)) {
         try {
