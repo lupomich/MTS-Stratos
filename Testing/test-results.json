@@ -1,39 +1,210 @@
 {
   "summary": {
-    "startTime": "2026-02-25T14:32:45.020Z",
-    "endTime": "2026-02-25T14:34:25.779Z",
+    "startTime": "2026-02-25T15:08:09.920Z",
+    "endTime": "2026-02-25T15:10:13.500Z",
     "testTimeoutMs": 30000,
-    "durationMs": 100759,
-    "totalTests": 27,
-    "passed": 24,
-    "failed": 3,
-    "passRate": "88.9%"
+    "durationMs": 123580,
+    "totalTests": 46,
+    "passed": 46,
+    "failed": 0,
+    "passRate": "100.0%"
   },
   "tests": [
+    {
+      "id": "T01",
+      "description": "Login Admin (GUI)",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:14.136Z",
+      "duration": 3748,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T02",
+      "description": "Open Admin Panel",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:17.884Z",
+      "duration": 1014,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T03",
+      "description": "Create Admin user",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:18.898Z",
+      "duration": 1833,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T04",
+      "description": "Login nuovo Admin",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:20.732Z",
+      "duration": 3024,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T05",
+      "description": "Logout Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:23.756Z",
+      "duration": 354,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T06",
+      "description": "Disable Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:24.110Z",
+      "duration": 2923,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T07",
+      "description": "Login utente disabilitato",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:27.033Z",
+      "duration": 2949,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T08",
+      "description": "Riattivazione Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:29.983Z",
+      "duration": 3055,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T09",
+      "description": "Login post-riattivazione",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:33.041Z",
+      "duration": 2978,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T10",
+      "description": "Delete Admin-test",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:36.022Z",
+      "duration": 4703,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T11",
+      "description": "Verify DB clean (API)",
+      "type": "API",
+      "startTime": "2026-02-25T15:08:40.726Z",
+      "duration": 323,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T12",
+      "description": "Create Trader user",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:41.050Z",
+      "duration": 2373,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T13",
+      "description": "Login Trader",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:43.423Z",
+      "duration": 3931,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T14",
+      "description": "Logout Trader",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:47.354Z",
+      "duration": 395,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T15",
+      "description": "Disable/Enable Trader cycle",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:47.750Z",
+      "duration": 12084,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T16",
+      "description": "Delete Trader",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:08:59.835Z",
+      "duration": 3746,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T17",
+      "description": "Create Viewer user",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:09:03.581Z",
+      "duration": 1728,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T18",
+      "description": "Login Viewer",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:09:05.309Z",
+      "duration": 2565,
+      "status": "PASS",
+      "failReason": null
+    },
+    {
+      "id": "T19",
+      "description": "Logout Viewer",
+      "type": "GUI",
+      "startTime": "2026-02-25T15:09:07.874Z",
+      "duration": 353,
+      "status": "PASS",
+      "failReason": null
+    },
     {
       "id": "T20",
       "description": "Disable/Enable Viewer cycle",
       "type": "GUI",
-      "startTime": "2026-02-25T14:32:47.530Z",
-      "duration": 10348,
-      "status": "FAIL",
-      "failReason": "User viewer-test not found in table"
+      "startTime": "2026-02-25T15:09:08.228Z",
+      "duration": 10936,
+      "status": "PASS",
+      "failReason": null
     },
     {
       "id": "T21",
       "description": "Delete Viewer",
       "type": "GUI",
-      "startTime": "2026-02-25T14:32:57.878Z",
-      "duration": 30013,
-      "status": "FAIL",
-      "failReason": "Timeout 30s"
+      "startTime": "2026-02-25T15:09:19.164Z",
+      "duration": 3733,
+      "status": "PASS",
+      "failReason": null
     },
     {
       "id": "T22",
       "description": "Verify DB clean (API)",
       "type": "API",
-      "startTime": "2026-02-25T14:33:27.892Z",
-      "duration": 102,
+      "startTime": "2026-02-25T15:09:22.898Z",
+      "duration": 128,
       "status": "PASS",
       "failReason": null
     },
@@ -41,8 +212,8 @@
       "id": "T23",
       "description": "Verify GUI clean",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:27.995Z",
-      "duration": 12,
+      "startTime": "2026-02-25T15:09:23.027Z",
+      "duration": 19,
       "status": "PASS",
       "failReason": null
     },
@@ -50,8 +221,8 @@
       "id": "T24",
       "description": "Create users for Section 2",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:28.008Z",
-      "duration": 3451,
+      "startTime": "2026-02-25T15:09:23.047Z",
+      "duration": 3548,
       "status": "PASS",
       "failReason": null
     },
@@ -59,8 +230,8 @@
       "id": "T25",
       "description": "Drag & Drop column",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:34.561Z",
-      "duration": 564,
+      "startTime": "2026-02-25T15:09:31.550Z",
+      "duration": 587,
       "status": "PASS",
       "failReason": null
     },
@@ -68,8 +239,8 @@
       "id": "T26",
       "description": "Hide column",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:35.125Z",
-      "duration": 537,
+      "startTime": "2026-02-25T15:09:32.137Z",
+      "duration": 541,
       "status": "PASS",
       "failReason": null
     },
@@ -77,8 +248,8 @@
       "id": "T27",
       "description": "Show column",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:35.662Z",
-      "duration": 539,
+      "startTime": "2026-02-25T15:09:32.678Z",
+      "duration": 543,
       "status": "PASS",
       "failReason": null
     },
@@ -86,8 +257,8 @@
       "id": "T28",
       "description": "Reset All Columns",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:36.201Z",
-      "duration": 1685,
+      "startTime": "2026-02-25T15:09:33.222Z",
+      "duration": 1737,
       "status": "PASS",
       "failReason": null
     },
@@ -95,8 +266,8 @@
       "id": "T29",
       "description": "Sort ascending",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:37.886Z",
-      "duration": 810,
+      "startTime": "2026-02-25T15:09:34.959Z",
+      "duration": 888,
       "status": "PASS",
       "failReason": null
     },
@@ -104,8 +275,8 @@
       "id": "T30",
       "description": "Sort descending",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:38.696Z",
-      "duration": 831,
+      "startTime": "2026-02-25T15:09:35.847Z",
+      "duration": 877,
       "status": "PASS",
       "failReason": null
     },
@@ -113,8 +284,8 @@
       "id": "T31",
       "description": "Sort different column",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:39.527Z",
-      "duration": 843,
+      "startTime": "2026-02-25T15:09:36.725Z",
+      "duration": 780,
       "status": "PASS",
       "failReason": null
     },
@@ -122,8 +293,8 @@
       "id": "T32",
       "description": "Persist country tab after logout",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:40.371Z",
-      "duration": 2866,
+      "startTime": "2026-02-25T15:09:37.505Z",
+      "duration": 3127,
       "status": "PASS",
       "failReason": null
     },
@@ -131,8 +302,8 @@
       "id": "T33",
       "description": "Persist sort after logout",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:43.238Z",
-      "duration": 3436,
+      "startTime": "2026-02-25T15:09:40.632Z",
+      "duration": 3896,
       "status": "PASS",
       "failReason": null
     },
@@ -140,8 +311,8 @@
       "id": "T34",
       "description": "Single filter",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:46.674Z",
-      "duration": 450,
+      "startTime": "2026-02-25T15:09:44.529Z",
+      "duration": 468,
       "status": "PASS",
       "failReason": null
     },
@@ -149,8 +320,8 @@
       "id": "T35",
       "description": "Multiple filters",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:47.124Z",
-      "duration": 448,
+      "startTime": "2026-02-25T15:09:44.997Z",
+      "duration": 454,
       "status": "PASS",
       "failReason": null
     },
@@ -158,8 +329,8 @@
       "id": "T36",
       "description": "Remove one filter",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:47.572Z",
-      "duration": 445,
+      "startTime": "2026-02-25T15:09:45.451Z",
+      "duration": 461,
       "status": "PASS",
       "failReason": null
     },
@@ -167,8 +338,8 @@
       "id": "T37",
       "description": "Clear all filters",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:48.017Z",
-      "duration": 826,
+      "startTime": "2026-02-25T15:09:45.912Z",
+      "duration": 939,
       "status": "PASS",
       "failReason": null
     },
@@ -176,8 +347,8 @@
       "id": "T38",
       "description": "Mixed modifications",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:49.191Z",
-      "duration": 5476,
+      "startTime": "2026-02-25T15:09:47.593Z",
+      "duration": 5438,
       "status": "PASS",
       "failReason": null
     },
@@ -185,17 +356,17 @@
       "id": "T39",
       "description": "Persist all after reload",
       "type": "GUI",
-      "startTime": "2026-02-25T14:33:54.667Z",
-      "duration": 17776,
-      "status": "FAIL",
-      "failReason": "Persist: grid state unavailable after relogin"
+      "startTime": "2026-02-25T15:09:53.032Z",
+      "duration": 5971,
+      "status": "PASS",
+      "failReason": null
     },
     {
       "id": "T40",
       "description": "Complete reset",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:12.443Z",
-      "duration": 1973,
+      "startTime": "2026-02-25T15:09:59.004Z",
+      "duration": 2192,
       "status": "PASS",
       "failReason": null
     },
@@ -203,8 +374,8 @@
       "id": "T42",
       "description": "Login admin for RFQ tests",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:14.417Z",
-      "duration": 333,
+      "startTime": "2026-02-25T15:10:01.197Z",
+      "duration": 337,
       "status": "PASS",
       "failReason": null
     },
@@ -212,8 +383,8 @@
       "id": "T43",
       "description": "Double-click bond row opens RFQ window",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:14.750Z",
-      "duration": 2370,
+      "startTime": "2026-02-25T15:10:01.534Z",
+      "duration": 2390,
       "status": "PASS",
       "failReason": null
     },
@@ -221,8 +392,8 @@
       "id": "T44",
       "description": "RFQ window displays pricing data",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:17.120Z",
-      "duration": 1364,
+      "startTime": "2026-02-25T15:10:03.925Z",
+      "duration": 1393,
       "status": "PASS",
       "failReason": null
     },
@@ -230,8 +401,8 @@
       "id": "T45",
       "description": "RFQ window draggable and closable",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:18.484Z",
-      "duration": 4576,
+      "startTime": "2026-02-25T15:10:05.318Z",
+      "duration": 4617,
       "status": "PASS",
       "failReason": null
     },
@@ -239,8 +410,8 @@
       "id": "T46",
       "description": "Open RFQ from OPEN RFQ button",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:23.060Z",
-      "duration": 1718,
+      "startTime": "2026-02-25T15:10:09.935Z",
+      "duration": 1764,
       "status": "PASS",
       "failReason": null
     },
@@ -248,8 +419,8 @@
       "id": "T47",
       "description": "Final cleanup",
       "type": "GUI",
-      "startTime": "2026-02-25T14:34:24.779Z",
-      "duration": 328,
+      "startTime": "2026-02-25T15:10:11.699Z",
+      "duration": 497,
       "status": "PASS",
       "failReason": null
     }

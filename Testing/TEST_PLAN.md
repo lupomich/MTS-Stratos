@@ -9,12 +9,12 @@
 <!-- RUN_SUMMARY_START -->
 - **Data esecuzione**: 2026-02-25
 - **Timeout per test**: 30 secondi (30000 ms)
-- **Start Time**: 2026-02-25 15:32:45 CET (UTC: 2026-02-25T14:32:45.020Z)
-- **End Time**: 2026-02-25 15:34:25 CET (UTC: 2026-02-25T14:34:25.779Z)
-- **Suite eseguita**: T01-T27
-- **Risultato**: 24 PASS, 3 FAIL
-- **Pass rate**: 88.9%
-- **Durata totale**: 100.76s
+- **Start Time**: 2026-02-25 16:08:09 CET (UTC: 2026-02-25T15:08:09.920Z)
+- **End Time**: 2026-02-25 16:10:13 CET (UTC: 2026-02-25T15:10:13.500Z)
+- **Suite eseguita**: T01-T46
+- **Risultato**: 46 PASS, 0 FAIL
+- **Pass rate**: 100.0%
+- **Durata totale**: 123.58s
 - **Report generati**:
    - Testing/test-report.html
    - Testing/test-results.csv
@@ -28,10 +28,10 @@
 | Campo | Valore |
 |-------|--------|
 | Status | RUN |
-| Pass/Fail | FAIL |
-| Test eseguiti | 27/47 |
-| Test PASS | 24 |
-| Test FAIL | 3 |
+| Pass/Fail | PASS |
+| Test eseguiti | 46/47 |
+| Test PASS | 46 |
+| Test FAIL | 0 |
 <!-- RUN_SUMMARY_END -->
 
 ---
