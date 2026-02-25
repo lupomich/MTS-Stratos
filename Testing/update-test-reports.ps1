@@ -17,6 +17,21 @@ function Get-TestNumber {
     return 9999
 }
 
+function ConvertTo-CET {
+    param([string]$IsoString)
+    if (-not $IsoString) { return '' }
+    try {
+        $utc = [datetime]::Parse($IsoString, $null, [System.Globalization.DateTimeStyles]::RoundtripKind)
+        $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById('Central European Standard Time')
+        $cet = [System.TimeZoneInfo]::ConvertTimeFromUtc($utc, $tz)
+        $abbr = if ($tz.IsDaylightSavingTime($cet)) { 'CEST' } else { 'CET' }
+        return $cet.ToString('yyyy-MM-dd HH:mm:ss') + ' ' + $abbr
+    }
+    catch {
+        return $IsoString
+    }
+}
+
 function Format-IsoDate {
     param([string]$IsoString)
     if (-not $IsoString) { return (Get-Date -Format 'yyyy-MM-dd') }
@@ -47,7 +62,6 @@ function Update-TestMarkdownFiles {
     $total = [int]$summary.totalTests
     $passed = [int]$summary.passed
     $failed = [int]$summary.failed
-    $notRun = [Math]::Max(0, 47 - $total)
     $avgDuration = if ($total -gt 0) { [Math]::Round(([double]$summary.durationMs / $total), 0) } else { 0 }
     $slowest = $tests | Sort-Object duration -Descending | Select-Object -First 1
     $fastest = $tests | Sort-Object duration | Select-Object -First 1
@@ -73,9 +87,10 @@ function Update-TestMarkdownFiles {
         $checklist += "| $($t.id) | $($t.description) | $($t.type) | $status | $($t.status) | $duration | $notes |"
     }
 
-    if ($notRun -gt 0) {
-        for ($i = $total + 1; $i -le 47; $i++) {
-            $id = ('T{0:D2}' -f $i)
+    $runIds = @($tests | ForEach-Object { $_.id })
+    for ($i = 1; $i -le 47; $i++) {
+        $id = ('T{0:D2}' -f $i)
+        if ($runIds -notcontains $id) {
             $checklist += "| $id | - | GUI | NOT RUN | - | - | - |"
         }
     }
@@ -83,8 +98,10 @@ function Update-TestMarkdownFiles {
     $checklist += ''
     $checklist += '## SUMMARY'
     $checklist += ''
-    $checklist += "- **Start Time**: $($summary.startTime)"
-    $checklist += "- **End Time**: $($summary.endTime)"
+    $cetStart = ConvertTo-CET -IsoString $summary.startTime
+    $cetEnd = ConvertTo-CET -IsoString $summary.endTime
+    $checklist += "- **Start Time**: $cetStart (UTC: $($summary.startTime))"
+    $checklist += "- **End Time**: $cetEnd (UTC: $($summary.endTime))"
     $checklist += "- **Total Duration**: $([Math]::Round(([double]$summary.durationMs/1000),2))s"
     $checklist += "- **Total Tests**: $total"
     $checklist += "- **Passed**: $passed"
@@ -94,42 +111,57 @@ function Update-TestMarkdownFiles {
     if ($slowest) { $checklist += "- **Slowest Test**: $($slowest.id) ($($slowest.duration) ms)" }
     if ($fastest) { $checklist += "- **Fastest Test**: $($fastest.id) ($($fastest.duration) ms)" }
 
-    $checklist | Out-File -Encoding UTF8 -FilePath (Join-Path $ResolvedOutputDir 'TEST_CHECKLIST.md')
+    $checklistPath = Join-Path $ResolvedOutputDir 'TEST_CHECKLIST.md'
+    [System.IO.File]::WriteAllText($checklistPath, ($checklist -join "`n"), (New-Object System.Text.UTF8Encoding $false))
 
-    $plan = @()
-    $plan += '# MTS-Stratos Test Plan FINALE - GUI Focused'
-    $plan += ''
-    $plan += "**Data**: $(Format-IsoDate -IsoString $summary.startTime)  "
-    $plan += '**Versione**: FINAL  '
-    $plan += '**Timeout**: 10 secondi per test  '
-    $plan += '**Focus**: GUI (con API secondarie)  '
-    $plan += '**Totale Test**: 47'
-    $plan += ''
-    $plan += "## Ultimo Esito Esecuzione ($(Format-IsoDate -IsoString $summary.startTime))"
-    $plan += ''
-    $plan += "- **Suite eseguita**: T01-T$('{0:D2}' -f $total)"
-    $plan += "- **Risultato**: $passed PASS, $failed FAIL"
-    $plan += "- **Pass rate**: $($summary.passRate)"
-    $plan += "- **Durata totale**: $([Math]::Round(([double]$summary.durationMs/1000),2))s"
-    $plan += '- **Report generati**:'
-    $plan += '   - Testing/test-report.html'
-    $plan += '   - Testing/test-results.csv'
-    $plan += '   - Testing/test-results.json'
-    $plan += '   - Testing/TEST_CHECKLIST.md'
-    $plan += '   - Testing/TEST_PLAN.md'
-    $plan += '   - Testing/TEST_RESULTS.xlsx'
-    $plan += ''
-    $plan += '### Stato Run / Pass-Fail'
-    $plan += ''
-    $plan += '| Campo | Valore |'
-    $plan += '|-------|--------|'
-    $plan += '| Status | RUN |'
-    $plan += "| Pass/Fail | $(if ($failed -eq 0) { 'PASS' } else { 'FAIL' }) |"
-    $plan += "| Test eseguiti | $total/47 |"
-    $plan += "| Test PASS | $passed |"
-    $plan += "| Test FAIL | $failed |"
+    # Update only the RUN_SUMMARY section inside the existing TEST_PLAN.md
+    $planPath = Join-Path $ResolvedOutputDir 'TEST_PLAN.md'
+    $cetStart = ConvertTo-CET -IsoString $summary.startTime
+    $cetEnd = ConvertTo-CET -IsoString $summary.endTime
+    $summaryLines = @()
+    $summaryLines += "- **Data esecuzione**: $(Format-IsoDate -IsoString $summary.startTime)"
+    $summaryLines += "- **Start Time**: $cetStart (UTC: $($summary.startTime))"
+    $summaryLines += "- **End Time**: $cetEnd (UTC: $($summary.endTime))"
+    $summaryLines += "- **Suite eseguita**: T01-T$(('{0:D2}' -f $total))"
+    $summaryLines += "- **Risultato**: $passed PASS, $failed FAIL"
+    $summaryLines += "- **Pass rate**: $($summary.passRate)"
+    $summaryLines += "- **Durata totale**: $([Math]::Round(([double]$summary.durationMs/1000),2))s"
+    $summaryLines += '- **Report generati**:'
+    $summaryLines += '   - Testing/test-report.html'
+    $summaryLines += '   - Testing/test-results.csv'
+    $summaryLines += '   - Testing/test-results.json'
+    $summaryLines += '   - Testing/TEST_CHECKLIST.md'
+    $summaryLines += '   - Testing/TEST_PLAN.md'
+    $summaryLines += '   - Testing/TEST_RESULTS.xlsx'
+    $summaryLines += ''
+    $summaryLines += '### Stato Run / Pass-Fail'
+    $summaryLines += ''
+    $summaryLines += '| Campo | Valore |'
+    $summaryLines += '|-------|--------|'
+    $summaryLines += '| Status | RUN |'
+    $summaryLines += "| Pass/Fail | $(if ($failed -eq 0) { 'PASS' } else { 'FAIL' }) |"
+    $summaryLines += "| Test eseguiti | $total/47 |"
+    $summaryLines += "| Test PASS | $passed |"
+    $summaryLines += "| Test FAIL | $failed |"
 
-    $plan | Out-File -Encoding UTF8 -FilePath (Join-Path $ResolvedOutputDir 'TEST_PLAN.md')
+    if (Test-Path $planPath) {
+        $planContent = [System.IO.File]::ReadAllText($planPath)
+        $startMarker = '<!-- RUN_SUMMARY_START -->'
+        $endMarker = '<!-- RUN_SUMMARY_END -->'
+        $startIdx = $planContent.IndexOf($startMarker)
+        $endIdx = $planContent.IndexOf($endMarker)
+        if ($startIdx -ge 0 -and $endIdx -gt $startIdx) {
+            $before = $planContent.Substring(0, $startIdx + $startMarker.Length)
+            $after = $planContent.Substring($endIdx)
+            $newSummary = "`n" + ($summaryLines -join "`n") + "`n"
+            $planContent = $before + $newSummary + $after
+            [System.IO.File]::WriteAllText($planPath, $planContent, (New-Object System.Text.UTF8Encoding $false))
+        } else {
+            Write-Warning 'TEST_PLAN.md: RUN_SUMMARY markers not found -- file not updated.'
+        }
+    } else {
+        Write-Warning "TEST_PLAN.md not found at $planPath -- skipping plan update."
+    }
 }
 
 function Update-TestExcelFile {
