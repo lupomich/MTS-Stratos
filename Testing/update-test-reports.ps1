@@ -62,6 +62,9 @@ function Update-TestMarkdownFiles {
     $total = [int]$summary.totalTests
     $passed = [int]$summary.passed
     $failed = [int]$summary.failed
+    $testTimeoutProp = $summary.PSObject.Properties['testTimeoutMs']
+    $testTimeoutMs = if ($null -ne $testTimeoutProp -and [int]$testTimeoutProp.Value -gt 0) { [int]$testTimeoutProp.Value } else { 30000 }
+    $testTimeoutSec = [Math]::Round(($testTimeoutMs / 1000), 2)
     $avgDuration = if ($total -gt 0) { [Math]::Round(([double]$summary.durationMs / $total), 0) } else { 0 }
     $slowest = $tests | Sort-Object duration -Descending | Select-Object -First 1
     $fastest = $tests | Sort-Object duration | Select-Object -First 1
@@ -71,7 +74,7 @@ function Update-TestMarkdownFiles {
     $checklist += ''
     $checklist += "**Data creazione**: 2026-02-20  "
     $checklist += "**Ultima esecuzione**: $(Format-IsoDate -IsoString $summary.startTime)  "
-    $checklist += '**Timeout per test**: 10 secondi  '
+    $checklist += "**Timeout per test**: ${testTimeoutSec} secondi (${testTimeoutMs} ms)  "
     $checklist += "**Totale test**: $total  "
     $checklist += '**Focus**: GUI con API secondarie'
     $checklist += ''
@@ -120,6 +123,7 @@ function Update-TestMarkdownFiles {
     $cetEnd = ConvertTo-CET -IsoString $summary.endTime
     $summaryLines = @()
     $summaryLines += "- **Data esecuzione**: $(Format-IsoDate -IsoString $summary.startTime)"
+    $summaryLines += "- **Timeout per test**: ${testTimeoutSec} secondi (${testTimeoutMs} ms)"
     $summaryLines += "- **Start Time**: $cetStart (UTC: $($summary.startTime))"
     $summaryLines += "- **End Time**: $cetEnd (UTC: $($summary.endTime))"
     $summaryLines += "- **Suite eseguita**: T01-T$(('{0:D2}' -f $total))"

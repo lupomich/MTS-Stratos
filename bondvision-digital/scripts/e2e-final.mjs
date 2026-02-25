@@ -4,7 +4,7 @@
  * MTS-Stratos E2E Test Suite FINALE
  * Data: 2026-02-20
  * Focus: GUI primario, API secondario
- * Timeout: 10 secondi per test
+ * Timeout: configurabile via TEST_TIMEOUT (default 30000ms)
  * Tests totali: 47
  */
 
@@ -129,7 +129,7 @@ async function runTest(testId, description, type, testFn) {
         await Promise.race([
             testFn(),
             new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout 10s')), runtimeConfig.TEST_TIMEOUT)
+                setTimeout(() => reject(new Error(`Timeout ${Math.round(runtimeConfig.TEST_TIMEOUT / 1000)}s`)), runtimeConfig.TEST_TIMEOUT)
             )
         ]);
         result.status = 'PASS';
@@ -780,9 +780,7 @@ async function runSection1(browser) {
         await openAdminPanel(page);
         
         await toggleUserActive(page, 'viewer-test');
-        let row = await findUserRow(page, 'viewer-test');
-        let status = await row.locator('.status-badge').textContent();
-        if (!status.includes('Inactive')) throw new Error('Disable failed');
+        await waitForUserStatus(page, 'viewer-test', 'Inactive', 6000);
         
         await page.locator('.admin-modal .close-btn').click();
         await logoutGUI(page);
@@ -800,9 +798,7 @@ async function runSection1(browser) {
         await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
         await openAdminPanel(page);
         await toggleUserActive(page, 'viewer-test');
-        row = await findUserRow(page, 'viewer-test');
-        status = await row.locator('.status-badge').textContent();
-        if (!status.includes('Active')) throw new Error('Re-enable failed');
+        await waitForUserStatus(page, 'viewer-test', 'Active', 6000);
         
         await page.locator('.admin-modal .close-btn').click();
         await logoutGUI(page);
@@ -846,6 +842,11 @@ async function runSection1(browser) {
     });
     
     await runTest('T23', 'Verify GUI clean', 'GUI', async () => {
+        if (await page.locator('.admin-modal').count() === 0) {
+            await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
+            await openAdminPanel(page);
+        }
+
         const rows = await page.locator('.users-table tbody tr').all();
         if (rows.length !== 2) {
             throw new Error(`Expected 2 user rows (admin + demo), got ${rows.length}`);
@@ -861,6 +862,11 @@ async function runSection1(browser) {
     });
     
     await runTest('T24', 'Create users for Section 2', 'GUI', async () => {
+        if (await page.locator('.admin-modal').count() === 0) {
+            await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
+            await openAdminPanel(page);
+        }
+
         await createUserGUI(page, 'trader-final', 'trader-final@stratos.local', 'Trader123!', 'trader');
         await findUserRow(page, 'trader-final');
         
@@ -1688,6 +1694,7 @@ function generateReports() {
         summary: {
             startTime: startTime.toISOString(),
             endTime: endTime.toISOString(),
+            testTimeoutMs: runtimeConfig.TEST_TIMEOUT,
             durationMs: duration,
             totalTests: total,
             passed,

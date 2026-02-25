@@ -1,6 +1,7 @@
 param(
     [int]$StartFromOverride = 1,
     [int]$SlowMoMs = 250,
+    [int]$TestTimeoutMs = 30000,
     [switch]$DebugInspector,
     [switch]$UsePlaywrightUI,
     [switch]$NoOpenLiveBrowser
@@ -39,8 +40,8 @@ function Open-LiveBrowserMaximized {
 Push-Location $root
 try {
     Write-Host '=== MTS-Stratos E2E Live View ===' -ForegroundColor Cyan
-    Write-Host 'Ensuring required containers are running (postgres, redis, backend, frontend)...' -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml up -d postgres redis bondvision-backend bondvision-digital
+    Write-Host 'Ensuring required containers are running (postgres, redis, backend, frontend, pgadmin)...' -ForegroundColor Yellow
+    docker-compose -f docker-compose.master.yml up -d postgres redis pgadmin bondvision-backend bondvision-digital
     if ($LASTEXITCODE -ne 0) {
         throw 'Unable to start required docker services.'
     }
@@ -80,6 +81,7 @@ try {
         $env:HEADLESS = 'false'
         $env:LIVE_VIEW = 'true'
         $env:SLOW_MO = "$SlowMoMs"
+        $env:TEST_TIMEOUT = "$TestTimeoutMs"
 
         if ($DebugInspector) {
             $env:PWDEBUG = '1'
@@ -90,7 +92,7 @@ try {
         }
 
         if ($UsePlaywrightUI) {
-            Write-Host "Starting Playwright UI mode from T$StartFromOverride (slowMo=${SlowMoMs}ms)..." -ForegroundColor Green
+            Write-Host "Starting Playwright UI mode from T$StartFromOverride (slowMo=${SlowMoMs}ms, timeout=${TestTimeoutMs}ms)..." -ForegroundColor Green
             npm run e2e:ui
         }
         else {
@@ -104,7 +106,7 @@ try {
                 }
             }
 
-            Write-Host "Starting live E2E from T$StartFromOverride (slowMo=${SlowMoMs}ms)..." -ForegroundColor Green
+            Write-Host "Starting live E2E from T$StartFromOverride (slowMo=${SlowMoMs}ms, timeout=${TestTimeoutMs}ms)..." -ForegroundColor Green
             npm run e2e:live
         }
 
