@@ -1,5 +1,7 @@
 # E2E DB Snapshot Runbook
 
+Per la panoramica completa degli script E2E e dei relativi parametri, vedi `Testing/E2E_SCRIPTS_USER_MANUAL.md`.
+
 ## Obiettivo
 Preservare i dati reali del DB e, quando serve, mantenere una copia dello stato post-test per troubleshooting.
 
