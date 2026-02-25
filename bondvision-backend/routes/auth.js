@@ -31,7 +31,7 @@ router.post('/login',
 );
 
 // Get current authenticated user
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
@@ -40,7 +40,18 @@ router.get('/me', (req, res) => {
   const token = authHeader.slice(7);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ user: { id: decoded.id, username: decoded.username, role: decoded.role } });
+    const pool = req.app.get('pool');
+    const result = await pool.query(
+      'SELECT id, username, role FROM users WHERE id = $1 AND is_active = true LIMIT 1',
+      [decoded.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid token user' });
+    }
+
+    const user = result.rows[0];
+    res.json({ user: { id: user.id, username: user.username, role: user.role } });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }

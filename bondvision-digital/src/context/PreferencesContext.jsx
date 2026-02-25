@@ -13,6 +13,7 @@ const defaultPreferences = {
     selectedCountryTab: 'IT',
     gridLayout: 'comfortable',
     rfqOpenInPopup: false,
+    rfqAlwaysOnTop: false,
     columnWidths: {},
     filters: {},
     sorts: []
@@ -159,6 +160,7 @@ export const PreferencesProvider = ({ children }) => {
         setSelectedCountryTab: (countryCode) => updatePreference('selectedCountryTab', countryCode, { immediate: true }),
         setGridLayout: (layout) => updatePreference('gridLayout', layout),
         setRfqOpenInPopup: (enabled) => updatePreference('rfqOpenInPopup', enabled, { immediate: true }),
+        setRfqAlwaysOnTop: (enabled) => updatePreference('rfqAlwaysOnTop', enabled, { immediate: true }),
         setColumnOrder: (order) => updatePreference('columnOrder', order),
         setColumnWidths: (widths) => updatePreference('columnWidths', widths),
         setFilters: (filters) => updatePreference('filters', filters),

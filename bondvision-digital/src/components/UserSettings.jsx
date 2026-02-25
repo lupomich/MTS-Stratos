@@ -3,10 +3,17 @@ import { usePreferences } from '../context/PreferencesContext';
 import './UserSettings.css';
 
 const UserSettings = ({ onClose }) => {
-    const { preferences, setRfqOpenInPopup } = usePreferences();
+    const { preferences, setRfqOpenInPopup, setRfqAlwaysOnTop } = usePreferences();
 
     const handleRfqWindowChange = (enabled) => {
         setRfqOpenInPopup(enabled);
+        if (!enabled && preferences.rfqAlwaysOnTop) {
+            setRfqAlwaysOnTop(false);
+        }
+    };
+
+    const handleRfqAlwaysOnTopChange = (enabled) => {
+        setRfqAlwaysOnTop(enabled);
     };
 
     return (
@@ -30,6 +37,18 @@ const UserSettings = ({ onClose }) => {
                                         onChange={(e) => handleRfqWindowChange(e.target.checked)}
                                     />
                                     <span>Open RFQ in separate window</span>
+                                </label>
+                            </div>
+
+                            <div className="setting-group" style={{ marginTop: '12px' }}>
+                                <label className={`checkbox-label ${!preferences.rfqOpenInPopup ? 'disabled' : ''}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(preferences.rfqAlwaysOnTop)}
+                                        onChange={(e) => handleRfqAlwaysOnTopChange(e.target.checked)}
+                                        disabled={!preferences.rfqOpenInPopup}
+                                    />
+                                    <span>RFQ Always On Top (best effort)</span>
                                 </label>
                             </div>
                         </div>

@@ -11,10 +11,11 @@ const defaultPreferences = {
   lastTab: 'government-bonds',
   selectedCountryTab: 'IT',
   gridLayout: 'comfortable',
-  rfqOpenInPopup: false
+  rfqOpenInPopup: false,
+  rfqAlwaysOnTop: false
 };
 
-function getUserFromRequest(req) {
+function decodeUserFromRequest(req) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
@@ -35,6 +36,25 @@ function getUserFromRequest(req) {
   } catch {
     return null;
   }
+}
+
+async function resolveAuthenticatedUser(req) {
+  const decodedUser = decodeUserFromRequest(req);
+  if (!decodedUser) {
+    return { user: null, hasAuthHeader: Boolean(req.headers.authorization) };
+  }
+
+  const pool = req.app.get('pool');
+  const result = await pool.query(
+    'SELECT id, username, role FROM users WHERE id = $1 AND is_active = true LIMIT 1',
+    [decodedUser.id]
+  );
+
+  if (result.rows.length === 0) {
+    return { user: null, hasAuthHeader: true, invalidTokenUser: true };
+  }
+
+  return { user: result.rows[0], hasAuthHeader: true };
 }
 
 async function getUiSettingsFromDb(pool, userId) {
@@ -62,7 +82,11 @@ async function getUiSettingsFromDb(pool, userId) {
 
 // Get user preferences
 router.get('/', async (req, res) => {
-  const user = getUserFromRequest(req);
+  const { user, invalidTokenUser } = await resolveAuthenticatedUser(req);
+
+  if (invalidTokenUser) {
+    return res.status(401).json({ error: 'Invalid token user' });
+  }
 
   if (!user) {
     return res.json({
@@ -89,7 +113,11 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/ui_settings', async (req, res) => {
-  const user = getUserFromRequest(req);
+  const { user, invalidTokenUser } = await resolveAuthenticatedUser(req);
+
+  if (invalidTokenUser) {
+    return res.status(401).json({ error: 'Invalid token user' });
+  }
 
   if (!user) {
     return res.json({
@@ -117,7 +145,11 @@ router.get('/ui_settings', async (req, res) => {
 
 // Update user preference
 router.put('/ui_settings', async (req, res) => {
-  const user = getUserFromRequest(req);
+  const { user, invalidTokenUser } = await resolveAuthenticatedUser(req);
+
+  if (invalidTokenUser) {
+    return res.status(401).json({ error: 'Invalid token user' });
+  }
 
   if (!user) {
     return res.status(401).json({ error: 'Authentication required' });

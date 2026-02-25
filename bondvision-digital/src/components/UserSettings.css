@@ -108,6 +108,20 @@
     accent-color: var(--color-primary);
 }
 
+.checkbox-label.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.checkbox-label.disabled:hover {
+    border-color: var(--dark-border);
+    background: var(--dark-bg);
+}
+
+.checkbox-label.disabled input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
 .checkbox-label span {
     font-size: 16px;
     color: var(--text-light);

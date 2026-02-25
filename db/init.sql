@@ -104,7 +104,7 @@ INSERT INTO user_preferences (user_id, preference_key, preference_value)
 SELECT 
     id,
     'ui_settings',
-    '{"theme": "dark", "language": "en", "defaultColumns": ["isin", "description", "price", "yield", "maturity"], "lastTab": "government-bonds", "gridLayout": "comfortable", "rfqOpenInPopup": false}'::jsonb
+    '{"theme": "dark", "language": "en", "defaultColumns": ["isin", "description", "price", "yield", "maturity"], "lastTab": "government-bonds", "gridLayout": "comfortable", "rfqOpenInPopup": false, "rfqAlwaysOnTop": false}'::jsonb
 FROM users WHERE username = 'admin'
 ON CONFLICT (user_id, preference_key) DO NOTHING;
 
@@ -113,7 +113,7 @@ INSERT INTO user_preferences (user_id, preference_key, preference_value)
 SELECT 
     id,
     'ui_settings',
-    '{"theme": "light", "language": "it", "defaultColumns": ["isin", "description", "price"], "lastTab": "corporate-bonds", "gridLayout": "compact", "rfqOpenInPopup": false}'::jsonb
+    '{"theme": "light", "language": "it", "defaultColumns": ["isin", "description", "price"], "lastTab": "corporate-bonds", "gridLayout": "compact", "rfqOpenInPopup": false, "rfqAlwaysOnTop": false}'::jsonb
 FROM users WHERE username = 'demo'
 ON CONFLICT (user_id, preference_key) DO NOTHING;
 
@@ -122,6 +122,12 @@ UPDATE user_preferences
 SET preference_value = jsonb_set(preference_value, '{rfqOpenInPopup}', 'false'::jsonb, true)
 WHERE preference_key = 'ui_settings'
   AND NOT (preference_value ? 'rfqOpenInPopup');
+
+-- Backfill rfqAlwaysOnTop default for existing ui_settings rows that miss the key
+UPDATE user_preferences
+SET preference_value = jsonb_set(preference_value, '{rfqAlwaysOnTop}', 'false'::jsonb, true)
+WHERE preference_key = 'ui_settings'
+    AND NOT (preference_value ? 'rfqAlwaysOnTop');
 
 -- Grant permissions
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO stratos;

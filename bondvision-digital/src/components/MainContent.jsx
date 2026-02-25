@@ -167,6 +167,8 @@ const MainContent = () => {
   // Multiple RFQ modals support
   const [rfqModals, setRfqModals] = useState([]) // Array of {id, bond, pricingData, window, container}
   const rfqWindowsRef = useRef(new Map()) // Map id -> {window, container}
+  const popupActivationOrderRef = useRef([])
+  const lastBringToFrontRef = useRef({ id: null, at: 0 })
   const [errorMessage, setErrorMessage] = useState(null)
   
   const priceUpdateIntervalRef = useRef(null)
@@ -315,6 +317,117 @@ const MainContent = () => {
     }
   }, [])
 
+  const rfqAlwaysOnTopEnabled = Boolean(preferences?.rfqOpenInPopup && preferences?.rfqAlwaysOnTop)
+
+  const markPopupAsActive = useCallback((rfqId) => {
+    const nextOrder = popupActivationOrderRef.current.filter((id) => id !== rfqId)
+    nextOrder.push(rfqId)
+    popupActivationOrderRef.current = nextOrder
+  }, [])
+
+  const getTopPopupId = useCallback(() => {
+    const orderedIds = popupActivationOrderRef.current
+    for (let i = orderedIds.length - 1; i >= 0; i -= 1) {
+      const id = orderedIds[i]
+      const windowInfo = rfqWindowsRef.current.get(id)
+      if (windowInfo?.window && !windowInfo.window.closed) {
+        return id
+      }
+    }
+
+    const modalWithPopup = [...rfqModals].reverse().find((modal) => {
+      const windowInfo = rfqWindowsRef.current.get(modal.id)
+      return Boolean(windowInfo?.window && !windowInfo.window.closed)
+    })
+
+    return modalWithPopup?.id || null
+  }, [rfqModals])
+
+  const bringPopupToFront = useCallback((forcedId = null, options = {}) => {
+    const { bypassThrottle = false } = options
+    if (!rfqAlwaysOnTopEnabled) return
+
+    const targetId = forcedId || getTopPopupId()
+    if (!targetId) return
+
+    const windowInfo = rfqWindowsRef.current.get(targetId)
+    if (!windowInfo?.window || windowInfo.window.closed) return
+
+    const now = Date.now()
+    if (!bypassThrottle && lastBringToFrontRef.current.id === targetId && (now - lastBringToFrontRef.current.at) < 180) {
+      return
+    }
+
+    try {
+      windowInfo.window.focus()
+      markPopupAsActive(targetId)
+      lastBringToFrontRef.current = { id: targetId, at: Date.now() }
+    } catch (error) {
+      console.debug('Unable to focus RFQ popup window:', error)
+    }
+  }, [getTopPopupId, markPopupAsActive, rfqAlwaysOnTopEnabled])
+
+  const restackAllPopups = useCallback(() => {
+    if (!rfqAlwaysOnTopEnabled) {
+      return
+    }
+
+    const openPopupIds = popupActivationOrderRef.current.filter((id) => {
+      const info = rfqWindowsRef.current.get(id)
+      return Boolean(info?.window && !info.window.closed)
+    })
+
+    if (openPopupIds.length === 0) {
+      return
+    }
+
+    if (openPopupIds.length === 1) {
+      bringPopupToFront(openPopupIds[0], { bypassThrottle: true })
+      return
+    }
+
+    openPopupIds.forEach((id, index) => {
+      window.setTimeout(() => {
+        bringPopupToFront(id, { bypassThrottle: true })
+      }, index * 24)
+    })
+
+    const topId = openPopupIds[openPopupIds.length - 1]
+    window.setTimeout(() => {
+      bringPopupToFront(topId, { bypassThrottle: true })
+    }, openPopupIds.length * 24 + 36)
+  }, [bringPopupToFront, rfqAlwaysOnTopEnabled])
+
+  const requestBringPopupToFront = useCallback((forcedId = null) => {
+    if (!rfqAlwaysOnTopEnabled) {
+      return
+    }
+
+    bringPopupToFront(forcedId)
+
+    const retryDelays = [70, 170]
+    retryDelays.forEach((delayMs) => {
+      window.setTimeout(() => {
+        bringPopupToFront(forcedId, { bypassThrottle: true })
+      }, delayMs)
+    })
+  }, [bringPopupToFront, rfqAlwaysOnTopEnabled])
+
+  const requestRestackAllPopups = useCallback(() => {
+    if (!rfqAlwaysOnTopEnabled) {
+      return
+    }
+
+    restackAllPopups()
+
+    const retryDelays = [90, 210]
+    retryDelays.forEach((delayMs) => {
+      window.setTimeout(() => {
+        restackAllPopups()
+      }, delayMs)
+    })
+  }, [restackAllPopups, rfqAlwaysOnTopEnabled])
+
   const createRfqWindow = useCallback((rfqId, windowIndex) => {
     const windowInfo = rfqWindowsRef.current.get(rfqId)
     if (windowInfo && !windowInfo.window.closed) {
@@ -356,17 +469,32 @@ const MainContent = () => {
     popup.document.body.appendChild(root)
 
     popup.focus()
+    markPopupAsActive(rfqId)
+
+    popup.addEventListener('focus', () => {
+      markPopupAsActive(rfqId)
+    })
+
+    popup.addEventListener('mousedown', () => {
+      markPopupAsActive(rfqId)
+    })
 
     popup.onbeforeunload = () => {
       // Clean up when window is closed
       rfqWindowsRef.current.delete(rfqId)
+      popupActivationOrderRef.current = popupActivationOrderRef.current.filter((id) => id !== rfqId)
       setRfqModals(prev => prev.filter(m => m.id !== rfqId))
     }
 
     const newWindowInfo = { window: popup, container: root }
     rfqWindowsRef.current.set(rfqId, newWindowInfo)
+
+    if (rfqAlwaysOnTopEnabled) {
+      requestAnimationFrame(() => requestBringPopupToFront(rfqId))
+    }
+
     return newWindowInfo
-  }, [getPopupRfqPosition])
+  }, [getPopupRfqPosition, markPopupAsActive, requestBringPopupToFront, rfqAlwaysOnTopEnabled])
 
   const closeRfqWindow = useCallback((rfqId) => {
     const windowInfo = rfqWindowsRef.current.get(rfqId)
@@ -374,8 +502,51 @@ const MainContent = () => {
       windowInfo.window.close()
     }
     rfqWindowsRef.current.delete(rfqId)
+    popupActivationOrderRef.current = popupActivationOrderRef.current.filter((id) => id !== rfqId)
     setRfqModals(prev => prev.filter(m => m.id !== rfqId))
   }, [])
+
+  useEffect(() => {
+    if (!rfqAlwaysOnTopEnabled) {
+      return
+    }
+
+    const scheduleBringToFront = () => {
+      requestAnimationFrame(() => requestBringPopupToFront())
+    }
+
+    const handleHostFocus = () => {
+      scheduleBringToFront()
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        scheduleBringToFront()
+      }
+    }
+
+    const handleHostPointerInteraction = () => {
+      requestAnimationFrame(() => requestRestackAllPopups())
+    }
+
+    window.addEventListener('focus', handleHostFocus)
+    window.addEventListener('pointerdown', handleHostPointerInteraction, true)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', handleHostFocus)
+      window.removeEventListener('pointerdown', handleHostPointerInteraction, true)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [requestBringPopupToFront, requestRestackAllPopups, rfqAlwaysOnTopEnabled])
+
+  useEffect(() => {
+    if (!rfqAlwaysOnTopEnabled || rfqModals.length === 0) {
+      return
+    }
+
+    requestAnimationFrame(() => requestBringPopupToFront())
+  }, [requestBringPopupToFront, rfqAlwaysOnTopEnabled, rfqModals])
 
   // Cleanup all windows on unmount
   useEffect(() => {
