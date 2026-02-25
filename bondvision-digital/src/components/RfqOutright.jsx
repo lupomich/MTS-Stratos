@@ -1,4 +1,4 @@
-﻿/**
+/**
  * RFQ OUTRIGHT Floating Window Component
  * 
  * Implements a professional floating window for Request for Quote (RFQ) Outright trading.
