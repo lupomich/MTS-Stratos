@@ -98,6 +98,14 @@ class SkipTest extends Error {
 // Utility: Sleep
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+const safeAcceptDialog = async (dialog) => {
+    try {
+        await dialog.accept();
+    } catch {
+        // Dialog may already be handled by another listener in race scenarios.
+    }
+};
+
 // Utility: Test wrapper
 async function runTest(testId, description, type, testFn) {
     const testNumber = Number.parseInt(String(testId).replace(/^T/i, ''), 10);
@@ -166,7 +174,7 @@ async function loginGUI(page, username, password) {
 
 // Utility: Logout GUI
 async function logoutGUI(page) {
-    page.once('dialog', dialog => dialog.accept());
+    page.once('dialog', safeAcceptDialog);
     await page.locator('.sidebar-item.sidebar-logout').click();
     await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
 }
@@ -247,7 +255,7 @@ async function deleteUserGUI(page, username) {
     const row = await findUserRow(page, username);
 
     // Accept confirm dialog
-    page.once('dialog', dialog => dialog.accept());
+    page.once('dialog', safeAcceptDialog);
 
     // Click delete button
     await row.locator('.btn-delete').click();
@@ -403,7 +411,7 @@ async function getGridState(page) {
     });
 }
 
-async function waitForGridStateWithRows(page, timeoutMs = 12000) {
+async function waitForGridStateWithRows(page, timeoutMs = 12000, minTotalRows = 0) {
     const startedAt = Date.now();
     let lastState = null;
 
@@ -411,7 +419,8 @@ async function waitForGridStateWithRows(page, timeoutMs = 12000) {
         try {
             const state = await getGridState(page);
             lastState = state;
-            if (state && Number(state.totalRowCount) > 0) {
+            const hasColumnState = Array.isArray(state?.columnState) && state.columnState.length > 0;
+            if (state && hasColumnState && Number(state.totalRowCount) >= minTotalRows) {
                 return state;
             }
         } catch {
@@ -1215,9 +1224,17 @@ async function runSection3(browser) {
         await loginGUI(page, 'admin', 'admin123');
         await waitForBondGrid(page);
 
-        const state = await waitForGridStateWithRows(page, 12000);
-        if (!state || state.totalRowCount <= 0) {
+        const state = await waitForGridStateWithRows(page, 12000, 0);
+        if (!state || !Array.isArray(state.columnState) || state.columnState.length === 0) {
             throw new Error('Persist: grid state unavailable after relogin');
+        }
+
+        const isin = state.columnState.find(c => c.colId === 'isin');
+        if (isin?.sort !== 'desc') {
+            throw new Error(`Persist: expected ISIN desc sort, got ${isin?.sort || 'none'}`);
+        }
+        if (!state.filterModel?.description) {
+            throw new Error('Persist: description filter not restored');
         }
     });
     
