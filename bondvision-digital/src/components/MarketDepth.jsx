@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
+import { useLanguage } from '../context/LanguageContext'
 import './MarketDepth.css'
 
 const mockDealerPricing = [
@@ -40,6 +41,7 @@ const getRandomTime = () => {
 }
 
 const MarketDepth = ({ selectedBond }) => {
+  const { t } = useLanguage()
   const gridRef = useRef()
   const [rowData, setRowData] = useState(mockDealerPricing)
   const [orderBookData, setOrderBookData] = useState([
@@ -246,7 +248,7 @@ const MarketDepth = ({ selectedBond }) => {
                 </svg>
               )}
             </span>
-            <div className="order-book-title">MTS Cash Order Book</div>
+            <div className="order-book-title">{t('marketDepth.mtsCashOrderBook')}</div>
           </div>
           {!collapsedSections.mtsOrderBook && (
             <div className="ag-theme-alpine-dark order-book-grid">
@@ -274,7 +276,7 @@ const MarketDepth = ({ selectedBond }) => {
                 </svg>
               )}
             </span>
-            <div className="order-book-title">EBM Order Book</div>
+            <div className="order-book-title">{t('marketDepth.ebmOrderBook')}</div>
           </div>
           {!collapsedSections.ebmOrderBook && (
             <div className="ag-theme-alpine-dark order-book-grid">
@@ -302,7 +304,7 @@ const MarketDepth = ({ selectedBond }) => {
                 </svg>
               )}
             </span>
-            <span className="composite-title">BondVision Composite</span>
+            <span className="composite-title">{t('marketDepth.bondvisionComposite')}</span>
           </div>
           {!collapsedSections.composite && (
             <div className="ag-theme-alpine-dark dealer-grid">
@@ -339,7 +341,7 @@ const MarketDepth = ({ selectedBond }) => {
                 </svg>
               )}
             </span>
-            <span className="dealer-title">BondVision Dealer Pricing</span>
+            <span className="dealer-title">{t('marketDepth.bondvisionDealerPricing')}</span>
           </div>
           {!collapsedSections.dealerPricing && (
             <div className="ag-theme-alpine-dark dealer-pricing-grid">

@@ -121,6 +121,36 @@
   font-size: 12px;
 }
 
+.rfq-error-bubble {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  max-width: 320px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-error);
+  border-radius: 4px;
+  background: var(--color-error);
+  color: var(--color-bg-white);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.rfq-error-bubble::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  width: 10px;
+  height: 10px;
+  background: var(--color-error);
+  border-left: 1px solid var(--color-error);
+  border-top: 1px solid var(--color-error);
+  transform: rotate(45deg);
+}
+
 .rfq-form-grid {
   display: grid;
   gap: 6px;
@@ -138,6 +168,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  position: relative;
 }
 
 .rfq-label {
@@ -374,9 +405,12 @@
   color: var(--color-bg-white);
 }
 
-.rfq-pricing-panel.sell .rfq-table-header.rfq-sprd-header,
-.rfq-pricing-panel.sell .rfq-table-header.rfq-anti-header {
+.rfq-pricing-panel.sell .rfq-table-header.rfq-sprd-header {
   background: rgba(0, 141, 127, 0.28);
+}
+
+.rfq-pricing-panel.sell .rfq-table-header.rfq-anti-header {
+  background: var(--color-primary);
 }
 
 .rfq-table-row {
@@ -442,12 +476,30 @@
   gap: 6px;
   padding: 6px;
   overflow-x: hidden;
+  position: relative;
+}
+
+.rfq-error-bubble-dealers {
+  top: calc(100% + 6px);
+  left: 0;
+  white-space: nowrap;
+  max-width: none;
+}
+
+.rfq-error-bubble-dealers::before {
+  display: block;
 }
 
 .rfq-dealer-section-head {
   display: grid;
   grid-template-columns: 180px 1fr 210px;
   gap: 6px;
+  align-items: center;
+}
+
+.rfq-section-title-wrap {
+  position: relative;
+  display: inline-flex;
   align-items: center;
 }
 

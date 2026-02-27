@@ -183,6 +183,29 @@ const MainContent = () => {
   const contentBodyRef = useRef(null)
   const mainContentRef = useRef(null)
 
+  const getRfqTypeLabel = useCallback((type) => {
+    switch (type) {
+      case 'RFQ OUTRIGHT':
+        return t('mainContent.rfqTypes.outright')
+      case 'RFQ SWITCH':
+        return t('mainContent.rfqTypes.switch')
+      case 'RFQ BUTTERFLY':
+        return t('mainContent.rfqTypes.butterfly')
+      case 'RFQ LIST':
+        return t('mainContent.rfqTypes.list')
+      case 'RFQ PORTFOLIO':
+        return t('mainContent.rfqTypes.portfolio')
+      default:
+        return type
+    }
+  }, [t])
+
+  const getTopTabLabel = useCallback((code, fallbackName) => {
+    if (code === 'ALL') return t('mainContent.topTabs.all')
+    if (code === 'AXED') return t('mainContent.topTabs.axed')
+    return fallbackName
+  }, [t])
+
   // Load persisted country tab preference when available
   useEffect(() => {
     if (preferencesLoading || countryTabHydrationDoneRef.current) return
@@ -794,7 +817,7 @@ const MainContent = () => {
               className={`rfq-button ${expandedRFQ ? 'expanded' : ''}`} 
               onClick={() => setExpandedRFQ(!expandedRFQ)}
             >
-              OPEN RFQ ▼
+              {t('mainContent.openRfq')} ▼
             </button>
             {expandedRFQ && (
               <div className="rfq-menu">
@@ -810,7 +833,7 @@ const MainContent = () => {
                       setExpandedRFQ(false)
                     }}
                   >
-                    {type}
+                    {getRfqTypeLabel(type)}
                   </div>
                 ))}
               </div>
@@ -818,14 +841,14 @@ const MainContent = () => {
           </div>
           <input 
             type="text" 
-            placeholder="Search Bonds..." 
+            placeholder={t('mainContent.searchBondsPlaceholder')} 
             className="search-input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)} 
           />
         </div>
         <div className="toolbar-right">
-          <button className="rfq-toolbar-button">RFQ TOOLBAR</button>
+          <button className="rfq-toolbar-button">{t('mainContent.rfqToolbar')}</button>
         </div>
       </div>
 
@@ -838,7 +861,7 @@ const MainContent = () => {
             title={t.name}
           >
             <span className="flag">{t.flag}</span>
-            <span className="code">{t.code}</span>
+            <span className="code">{getTopTabLabel(t.code, t.name)}</span>
           </button>
         ))}
       </div>
@@ -846,14 +869,14 @@ const MainContent = () => {
       <div className="country-tabs">
         <div className="gov-selector-container">
           <select id="gov-selector" className="gov-selector">
-            <option>Gov / Country</option>
-            <option>Gov / Maturity</option>
-            <option>Gov / Switches</option>
-            <option>Govt gtd / SSA</option>
-            <option>Covered / Maturity</option>
-            <option>SSAs / Maturity</option>
-            <option>Corporate / Industry</option>
-            <option>Banks-Financials</option>
+            <option>{t('mainContent.govOptions.govCountry')}</option>
+            <option>{t('mainContent.govOptions.govMaturity')}</option>
+            <option>{t('mainContent.govOptions.govSwitches')}</option>
+            <option>{t('mainContent.govOptions.govGtdSsa')}</option>
+            <option>{t('mainContent.govOptions.coveredMaturity')}</option>
+            <option>{t('mainContent.govOptions.ssasMaturity')}</option>
+            <option>{t('mainContent.govOptions.corporateIndustry')}</option>
+            <option>{t('mainContent.govOptions.banksFinancials')}</option>
           </select>
         </div>
         {countries.map((country, idx) => (
@@ -892,7 +915,7 @@ const MainContent = () => {
 
           <div className="data-section" style={{ flex: `0 0 ${dataHeight}%` }}>
             <div className="data-header">
-              <span className="data-title">DATA</span>
+              <span className="data-title">{t('mainContent.dataTitle')}</span>
             </div>
             <div className="ag-theme-alpine-dark data-grid">
               <AgGridReact

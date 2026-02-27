@@ -21,7 +21,7 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
   
   const handleLogout = async () => {
     setShowOverlayMenu(false)
-    if (window.confirm('Are you sure you want to logout?')) {
+    if (window.confirm(t('sidebar.logoutConfirm'))) {
       await logout()
     }
   }
@@ -89,11 +89,11 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
       {showOverlayMenu && (
         <>
           <div className="sidebar-overlay-backdrop" onClick={() => setShowOverlayMenu(false)} />
-          <aside className="sidebar-overlay-panel" role="menu" aria-label="Main menu">
-            <button className="sidebar-overlay-close" onClick={() => setShowOverlayMenu(false)} aria-label="Close menu">×</button>
+          <aside className="sidebar-overlay-panel" role="menu" aria-label={t('sidebar.overlayAriaLabel')}>
+            <button className="sidebar-overlay-close" onClick={() => setShowOverlayMenu(false)} aria-label={t('sidebar.closeMenuAriaLabel')}>×</button>
 
             <button className="sidebar-overlay-item" onClick={handleOpenSettings} role="menuitem">
-              SETTINGS
+              {t('sidebar.settings')}
             </button>
 
             <button
@@ -102,11 +102,11 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
               role="menuitem"
               disabled={user?.role !== 'admin'}
             >
-              ADMIN
+              {t('sidebar.admin')}
             </button>
 
             <button className="sidebar-overlay-item sidebar-overlay-item-logout" onClick={handleLogout} role="menuitem">
-              LOG OUT
+              {t('sidebar.logout')}
             </button>
           </aside>
         </>
@@ -135,7 +135,7 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
             </div>
-            <div className="sidebar-label">Logout</div>
+            <div className="sidebar-label">{t('sidebar.logout')}</div>
           </div>
         </div>
       )}

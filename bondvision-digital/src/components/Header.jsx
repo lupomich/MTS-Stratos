@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import './Header.css'
 
 const Header = ({ activeMarket, setActiveMarket }) => {
-  const { language, toggleLanguage } = useLanguage()
+  const { language, toggleLanguage, t } = useLanguage()
   const { user } = useAuth()
   const [currentTime, setCurrentTime] = useState('')
   const [memberStatus, setMemberStatus] = useState('OFF')
@@ -98,18 +98,18 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           CASH
         </button>
         <div className="header-info">
-          <span className="transaction-label">{user?.username || 'Guest'}</span>
+          <span className="transaction-label">{user?.username || t('header.guest')}</span>
           <span className="user-id">{currentTime}</span>
           <div className="status-row">
             <div className="status-item">
-              <span className="status-label">Market</span>
+              <span className="status-label">{t('header.market')}</span>
               <button type="button" className="status-pill pill-test" tabIndex={-1}>
                 TEST
               </button>
             </div>
 
             <div className="status-item">
-              <span className="status-label">Member</span>
+              <span className="status-label">{t('header.member')}</span>
               <button
                 type="button"
                 className={`status-pill ${memberStatus === 'ON' ? 'pill-on' : 'pill-off'}`}
@@ -120,7 +120,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
             </div>
 
             <div className="status-item">
-              <span className="status-label">Trader</span>
+              <span className="status-label">{t('header.trader')}</span>
               <button
                 type="button"
                 className={`status-pill ${traderStatus === 'ON' ? 'pill-on' : 'pill-off'} ${memberStatus === 'OFF' ? 'pill-locked' : ''}`}
@@ -132,7 +132,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
             </div>
 
             <div className="status-item">
-              <span className="status-label">AutoEx</span>
+              <span className="status-label">{t('header.autoEx')}</span>
               <button
                 type="button"
                 className={`status-pill ${autoexStatus === 'ON' ? 'pill-on' : 'pill-off'}`}
@@ -144,7 +144,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           </div>
         </div>
         <div className="header-icons">
-          <button className="icon-btn language-btn" title="Language" onClick={toggleLanguage}>
+          <button className="icon-btn language-btn" title={t('header.language')} onClick={toggleLanguage}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <circle cx="12" cy="12" r="10"/>
               <line x1="2" y1="12" x2="22" y2="12"/>

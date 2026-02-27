@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './AdminPanel.css';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const AdminPanel = ({ onClose }) => {
     const [users, setUsers] = useState([]);
@@ -12,6 +13,7 @@ const AdminPanel = ({ onClose }) => {
     const [createError, setCreateError] = useState('');
     const [createLoading, setCreateLoading] = useState(false);
     const { isAdmin } = useAuth();
+    const { t } = useLanguage();
     // Create user handler
     const handleOpenCreate = () => {
         setCreateForm({ username: '', email: '', password: '', role: 'viewer' });
@@ -39,11 +41,11 @@ const AdminPanel = ({ onClose }) => {
         e.preventDefault();
         setCreateError('');
         if (!createForm.username || !createForm.email || !createForm.password) {
-            setCreateError('All fields are required.');
+            setCreateError(t('admin.allFieldsRequired'));
             return;
         }
         if (!validatePassword(createForm.password)) {
-            setCreateError('Password must be at least 8 characters and include a letter, number, and symbol.');
+            setCreateError(t('admin.passwordValidation'));
             return;
         }
         setCreateLoading(true);
@@ -57,7 +59,7 @@ const AdminPanel = ({ onClose }) => {
             handleCloseCreate();
             loadUsers();
         } catch (err) {
-            setCreateError(err.response?.data?.error || 'Failed to create user');
+            setCreateError(err.response?.data?.error || t('admin.failedCreateUser'));
         } finally {
             setCreateLoading(false);
         }
@@ -75,7 +77,7 @@ const AdminPanel = ({ onClose }) => {
             const response = await axios.get('/users');
             setUsers(response.data.users);
         } catch (error) {
-            setError('Failed to load users');
+            setError(t('admin.failedLoadUsers'));
             console.error(error);
         } finally {
             setLoading(false);
@@ -89,12 +91,13 @@ const AdminPanel = ({ onClose }) => {
             });
             loadUsers();
         } catch (error) {
-            alert('Failed to update user status');
+            alert(t('admin.failedUpdateUserStatus'));
         }
     };
 
     const handleDeleteUser = async (userId, username) => {
-        if (!confirm(`Are you sure you want to delete user "${username}"?`)) {
+        const deleteMessage = t('admin.deleteUserConfirm').replace('{username}', username);
+        if (!confirm(deleteMessage)) {
             return;
         }
 
@@ -102,7 +105,7 @@ const AdminPanel = ({ onClose }) => {
             await axios.delete(`/users/${userId}`);
             loadUsers();
         } catch (error) {
-            alert('Failed to delete user');
+            alert(t('admin.failedDeleteUser'));
         }
     };
 
@@ -111,7 +114,7 @@ const AdminPanel = ({ onClose }) => {
             await axios.put(`/users/${userId}`, { role: newRole });
             loadUsers();
         } catch (error) {
-            alert('Failed to update user role');
+            alert(t('admin.failedUpdateUserRole'));
         }
     };
 
@@ -120,11 +123,11 @@ const AdminPanel = ({ onClose }) => {
             <div className="admin-overlay" onClick={onClose}>
                 <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
                     <div className="admin-header">
-                        <h2>Access Denied</h2>
+                        <h2>{t('admin.accessDenied')}</h2>
                         <button className="close-btn" onClick={onClose}>×</button>
                     </div>
                     <div className="admin-body">
-                        <p>You need admin privileges to access this panel.</p>
+                        <p>{t('admin.accessDeniedMessage')}</p>
                     </div>
                 </div>
             </div>
@@ -135,17 +138,17 @@ const AdminPanel = ({ onClose }) => {
         <div className="admin-overlay" onClick={onClose}>
             <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="admin-header">
-                    <h2>Admin Panel - User Management</h2>
+                    <h2>{t('admin.panelTitle')}</h2>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <button className="btn-create-user" onClick={handleOpenCreate} title="Create User">
-                            <span className="btn-create-icon">+</span> Create User
+                        <button className="btn-create-user" onClick={handleOpenCreate} title={t('admin.createUser')}>
+                            <span className="btn-create-icon">+</span> {t('admin.createUser')}
                         </button>
                         <button className="close-btn" onClick={onClose}>×</button>
                     </div>
                 </div>
 
                 <div className="admin-body">
-                    {loading && <div className="loading">Loading users...</div>}
+                    {loading && <div className="loading">{t('admin.loadingUsers')}</div>}
                     {error && <div className="error-message">{error}</div>}
 
                     {!loading && !error && (
@@ -180,17 +183,17 @@ const AdminPanel = ({ onClose }) => {
                                             </td>
                                             <td>
                                                 <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
-                                                    {user.is_active ? 'Active' : 'Inactive'}
+                                                    {user.is_active ? t('admin.active') : t('admin.inactive')}
                                                 </span>
                                             </td>
                                             <td>
                                                 {user.last_login 
                                                     ? new Date(user.last_login).toLocaleString()
-                                                    : 'Never'}
+                                                    : t('admin.never')}
                                             </td>
-                                            <td>{user.created_by_username || 'System'}</td>
+                                            <td>{user.created_by_username || t('admin.system')}</td>
                                             <td className="actions">
-                                                <label className="toggle-switch" title={user.is_active ? 'Deactivate user' : 'Activate user'}>
+                                                <label className="toggle-switch" title={user.is_active ? t('admin.deactivateUser') : t('admin.activateUser')}>
                                                     <input
                                                         type="checkbox"
                                                         checked={user.is_active}
@@ -201,7 +204,7 @@ const AdminPanel = ({ onClose }) => {
                                                 <button
                                                     className="btn-delete"
                                                     onClick={() => handleDeleteUser(user.id, user.username)}
-                                                    title="Delete user"
+                                                    title={t('admin.deleteUser')}
                                                 >
                                                     🗑️
                                                 </button>
@@ -217,48 +220,48 @@ const AdminPanel = ({ onClose }) => {
                     <div className="modal-overlay" onClick={handleCloseCreate}>
                         <div className="modal" onClick={e => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Create New User</h3>
+                                <h3>{t('admin.createNewUser')}</h3>
                                 <button className="close-btn" onClick={handleCloseCreate}>×</button>
                             </div>
                             <form className="modal-form" onSubmit={handleCreateUser} autoComplete="off">
                                 <label>
-                                    Username
+                                    {t('admin.username')}
                                     <input
                                         name="username"
                                         type="text"
                                         value={createForm.username}
                                         onChange={handleCreateInput}
-                                        placeholder="Enter username"
+                                        placeholder={t('admin.usernamePlaceholder')}
                                         autoComplete="off"
                                         required
                                     />
                                 </label>
                                 <label>
-                                    Email
+                                    {t('admin.email')}
                                     <input
                                         name="email"
                                         type="email"
                                         value={createForm.email}
                                         onChange={handleCreateInput}
-                                        placeholder="Enter email"
+                                        placeholder={t('admin.emailPlaceholder')}
                                         autoComplete="off"
                                         required
                                     />
                                 </label>
                                 <label>
-                                    Password
+                                    {t('admin.password')}
                                     <input
                                         name="password"
                                         type="password"
                                         value={createForm.password}
                                         onChange={handleCreateInput}
-                                        placeholder="At least 8 chars, 1 letter, 1 number, 1 symbol"
+                                        placeholder={t('admin.passwordPlaceholder')}
                                         autoComplete="new-password"
                                         required
                                     />
                                 </label>
                                 <label>
-                                    Role
+                                    {t('admin.role')}
                                     <select
                                         name="role"
                                         value={createForm.role}
@@ -271,7 +274,7 @@ const AdminPanel = ({ onClose }) => {
                                 </label>
                                 {createError && <div className="error-message" style={{ marginTop: 8 }}>{createError}</div>}
                                 <button className="btn-submit" type="submit" disabled={createLoading}>
-                                    {createLoading ? 'Creating...' : 'Create User'}
+                                    {createLoading ? t('admin.creating') : t('admin.createUser')}
                                 </button>
                             </form>
                         </div>

@@ -24,9 +24,11 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import './RfqOutright.css';
 
 const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false }) => {
+  const { t } = useLanguage();
   const [side, setSide] = useState('BUY');
   const [size, setSize] = useState('');
   const [minSize, setMinSize] = useState('');
@@ -42,7 +44,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const [infoValue, setInfoValue] = useState('');
   const [selectedDealers, setSelectedDealers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [validationError, setValidationError] = useState(null);
   const [position, setPosition] = useState(initialPosition || { x: 140, y: 90 });
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const windowRef = useRef(null);
@@ -283,6 +285,9 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     const value = e.target.value;
     if (value === '' || /^\d+(\.\d*)?$/.test(value)) {
       setSize(value);
+      if (validationError?.field === 'size') {
+        setValidationError(null);
+      }
     }
   };
 
@@ -304,6 +309,10 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
         return [...prev, normalizedDealerId];
       }
     });
+
+    if (validationError?.field === 'dealers') {
+      setValidationError(null);
+    }
   };
 
   const handlePricingRowClick = (dealerId) => {
@@ -312,14 +321,22 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
 
   const handleSubmit = () => {
     if (!size || size === '' || parseFloat(size) <= 0) {
-      setError('Please enter a valid size');
+      setValidationError({
+        field: 'size',
+        message: t('rfq.sizeValidation')
+      });
       return;
     }
 
     if (selectedDealers.length === 0) {
-      setError('Please select at least one dealer');
+      setValidationError({
+        field: 'dealers',
+        message: t('rfq.dealerSelectionValidation')
+      });
       return;
     }
+
+    setValidationError(null);
 
     const rfqData = {
       isin: bond.isin,
@@ -340,7 +357,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     return (
       <div className="rfq-window-layer">
         <div ref={windowRef} className="rfq-modal rfq-floating-window" style={{ left: `${position.x}px`, top: `${position.y}px` }}>
-          <div className="rfq-loading">Loading...</div>
+          <div className="rfq-loading">{t('common.loading')}</div>
         </div>
       </div>
     );
@@ -356,53 +373,54 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
         <div className="rfq-titlebar rfq-drag-handle" onMouseDown={handleDragStart}>
           <div className="rfq-title-left">
             <span className="rfq-title-badge">MTS</span>
-            <span className="rfq-title-text">8.RFQ OUTRIGHT</span>
+            <span className="rfq-title-text">{t('rfq.title')}</span>
           </div>
           <div className="rfq-window-controls">
-            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label="Minimize">−</button>
-            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label="Maximize">□</button>
-            <button className="rfq-window-btn rfq-window-btn-close" onMouseDown={(e) => e.stopPropagation()} onClick={onClose} aria-label="Close">✕</button>
+            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label={t('rfq.minimizeAria')}>−</button>
+            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label={t('rfq.maximizeAria')}>□</button>
+            <button className="rfq-window-btn rfq-window-btn-close" onMouseDown={(e) => e.stopPropagation()} onClick={onClose} aria-label={t('rfq.closeAria')}>✕</button>
           </div>
         </div>
 
         <div className="rfq-strip-row">
-          <div className="rfq-strip-tab rfq-strip-tab-transparency">TRANSPARENCY</div>
-          <div className="rfq-strip-tab">POST-TRADE PUBLISH</div>
-          <div className="rfq-strip-center">Real-Time</div>
+          <div className="rfq-strip-tab rfq-strip-tab-transparency">{t('rfq.stripTransparency')}</div>
+          <div className="rfq-strip-tab">{t('rfq.stripPostTradePublish')}</div>
+          <div className="rfq-strip-center">{t('rfq.stripRealtime')}</div>
           <div className="rfq-strip-right">Swiss / A Bockbe... / Client ID</div>
         </div>
 
         <div className="rfq-modal-body">
-          {error && <div className="rfq-error-message">{error}</div>}
-
           <div className="rfq-form-grid rfq-form-grid-main">
             <div className="rfq-field rfq-field-side">
-              <label className="rfq-label">SIDE</label>
+              <label className="rfq-label">{t('rfq.side')}</label>
               <button className={`rfq-side-toggle ${side === 'BUY' ? 'buy' : 'sell'}`} onClick={toggleSide}>{side}</button>
             </div>
 
             <div className="rfq-field rfq-field-description">
-              <label className="rfq-label">DESCRIPTION</label>
+              <label className="rfq-label">{t('rfq.description')}</label>
               <div className="rfq-input with-icon">{bond.description}</div>
             </div>
 
             <div className="rfq-field">
-              <label className="rfq-label">ISIN</label>
+              <label className="rfq-label">{t('rfq.isin')}</label>
               <div className="rfq-input">{bond.isin}</div>
             </div>
 
-            <div className="rfq-field">
-              <label className="rfq-label">SIZE (MM)</label>
+            <div className="rfq-field rfq-field-size">
+              <label className="rfq-label">{t('rfq.sizeMm')}</label>
               <input className="rfq-size-input" value={size} onChange={handleSizeChange} placeholder="2" />
+              {validationError?.field === 'size' && (
+                <div className="rfq-error-bubble" role="alert">{validationError.message}</div>
+              )}
             </div>
 
             <div className="rfq-field">
-              <label className="rfq-label">MIN. SIZE (MM)</label>
+              <label className="rfq-label">{t('rfq.minSizeMm')}</label>
               <input className="rfq-size-input" value={minSize} onChange={handleNumericChange(setMinSize)} />
             </div>
 
             <div className="rfq-field">
-              <label className="rfq-label">SETTL.</label>
+              <label className="rfq-label">{t('rfq.settlement')}</label>
               <select className="rfq-size-input" value={settlement} onChange={(e) => setSettlement(e.target.value)}>
                 <option>T + 2</option>
                 <option>T + 1</option>
@@ -411,47 +429,47 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
             </div>
 
             <div className="rfq-field">
-              <label className="rfq-label">DATE</label>
+              <label className="rfq-label">{t('rfq.date')}</label>
               <input className="rfq-size-input" value={tradeDate} onChange={(e) => setTradeDate(e.target.value)} />
             </div>
 
             <div className="rfq-field">
-              <label className="rfq-label">BV BID/ASK</label>
+              <label className="rfq-label">{t('rfq.bvBidAsk')}</label>
               <input className="rfq-size-input" value={bvBidAsk} onChange={(e) => setBvBidAsk(e.target.value)} />
             </div>
 
             <div className="rfq-field">
-              <label className="rfq-label">YTM</label>
+              <label className="rfq-label">{t('rfq.ytm')}</label>
               <input className="rfq-size-input" value={ytm} onChange={(e) => setYtm(e.target.value)} />
             </div>
           </div>
 
           <div className="rfq-form-grid rfq-form-grid-secondary">
             <div className="rfq-field">
-              <label className="rfq-label">ACCRUED / DAYS</label>
+              <label className="rfq-label">{t('rfq.accruedDays')}</label>
               <input className="rfq-size-input" value={accruedDays} onChange={(e) => setAccruedDays(e.target.value)} />
             </div>
             <div className="rfq-field">
-              <label className="rfq-label">PRINCIPAL</label>
+              <label className="rfq-label">{t('rfq.principal')}</label>
               <input className="rfq-size-input" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
             </div>
             <div className="rfq-field">
-              <label className="rfq-label">PROCEEDS</label>
+              <label className="rfq-label">{t('rfq.proceeds')}</label>
               <input className="rfq-size-input" value={proceeds} onChange={(e) => setProceeds(e.target.value)} />
             </div>
             <div className="rfq-field">
-              <label className="rfq-label">DV01 (U)</label>
+              <label className="rfq-label">{t('rfq.dv01')}</label>
               <input className="rfq-size-input" value={dv01} onChange={handleNumericChange(setDv01)} />
             </div>
             <div className="rfq-field">
-              <label className="rfq-label">ALLOCATION</label>
+              <label className="rfq-label">{t('rfq.allocation')}</label>
               <div className="rfq-input action-input">
                 <input className="rfq-inline-input" value={allocation} onChange={(e) => setAllocation(e.target.value)} />
                 <span className="rfq-inline-actions">＋ ▼</span>
               </div>
             </div>
             <div className="rfq-field">
-              <label className="rfq-label">INFO</label>
+              <label className="rfq-label">{t('rfq.info')}</label>
               <div className="rfq-input action-input">
                 <input className="rfq-inline-input" value={infoValue} onChange={(e) => setInfoValue(e.target.value)} />
                 <span className="rfq-inline-actions">＋ ✎ ✓</span>
@@ -460,20 +478,20 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
           </div>
 
           <div className="rfq-subtabs">
-            <button className="rfq-subtab active">ANALYTICS</button>
-            <button className="rfq-subtab">REF. PRICES</button>
+            <button className="rfq-subtab active">{t('rfq.analytics')}</button>
+            <button className="rfq-subtab">{t('rfq.refPrices')}</button>
             <div className="rfq-subtabs-right">ⓘ</div>
           </div>
 
           <div className={`rfq-pricing-panel ${side === 'BUY' ? 'buy' : 'sell'}`}>
             <div className="rfq-pricing-header-row">
-              <h3 className="rfq-pricing-title">PRICING</h3>
+              <h3 className="rfq-pricing-title">{t('rfq.pricing')}</h3>
               <div className="rfq-limit-controls">
-                <button className="rfq-limit-btn">Limit Price</button>
-                <button className="rfq-limit-btn">Limit Yield</button>
+                <button className="rfq-limit-btn">{t('rfq.limitPrice')}</button>
+                <button className="rfq-limit-btn">{t('rfq.limitYield')}</button>
                 <label className="rfq-switch-wrap">
                   <span className="rfq-switch" />
-                  <span>Auto Match</span>
+                  <span>{t('rfq.autoMatch')}</span>
                 </label>
               </div>
             </div>
@@ -516,17 +534,22 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
 
           <div className="rfq-dealer-section">
             <div className="rfq-dealer-section-head">
-              <span className="rfq-section-title">DEALER SELECTION</span>
+              <div className="rfq-section-title-wrap">
+                <span className="rfq-section-title">{t('rfq.dealerSelection')}</span>
+                {validationError?.field === 'dealers' && (
+                  <div className="rfq-error-bubble rfq-error-bubble-dealers" role="alert">{validationError.message}</div>
+                )}
+              </div>
               <div className="rfq-dealer-head-controls">
-                <button className="rfq-bestquotes-btn">BEST QUOTES</button>
+                <button className="rfq-bestquotes-btn">{t('rfq.bestQuotes')}</button>
                 <button className="rfq-small-btn">▼</button>
                 <label className="rfq-switch-wrap compact">
                   <span className="rfq-switch" />
-                  <span>Processed Trade</span>
+                  <span>{t('rfq.processedTrade')}</span>
                 </label>
               </div>
               <div className="rfq-dealer-group-box">
-                <span>Dealer Groups</span>
+                <span>{t('rfq.dealerGroups')}</span>
                 <span>＋ ▼</span>
               </div>
             </div>
@@ -547,9 +570,9 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
         </div>
 
         <div className="rfq-modal-footer">
-          <button className="rfq-btn rfq-btn-save">SAVE</button>
-          <button className="rfq-btn rfq-btn-primary" onClick={handleSubmit}>SEND RFQ</button>
-          <button className="rfq-btn rfq-btn-close" onClick={onClose}>CLOSE</button>
+          <button className="rfq-btn rfq-btn-save">{t('rfq.save')}</button>
+          <button className="rfq-btn rfq-btn-primary" onClick={handleSubmit}>{t('rfq.sendRfq')}</button>
+          <button className="rfq-btn rfq-btn-close" onClick={onClose}>{t('rfq.close')}</button>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import './Login.css';
 
 const Login = () => {
@@ -10,6 +11,7 @@ const Login = () => {
     const [message, setMessage] = useState(null);
 
     const { login, error } = useAuth();
+    const { t } = useLanguage();
 
     const handleChange = (e) => {
         setFormData({
@@ -33,7 +35,7 @@ const Login = () => {
             <div className="login-box">
                 <div className="login-header">
                     <img src="/mts-bondvision-logo.svg" alt="MTS BondVision" className="login-logo" />
-                    <h1>MTS Stratos</h1>
+                    <h1>{t('login.title')}</h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="login-form">
@@ -50,7 +52,7 @@ const Login = () => {
                     )}
 
                     <div className="form-group">
-                        <label htmlFor="username">Username</label>
+                        <label htmlFor="username">{t('login.username')}</label>
                         <input
                             type="text"
                             id="username"
@@ -59,12 +61,12 @@ const Login = () => {
                             onChange={handleChange}
                             required
                             autoComplete="username"
-                            placeholder="Enter your username"
+                            placeholder={t('login.usernamePlaceholder')}
                         />
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="password">Password</label>
+                        <label htmlFor="password">{t('login.password')}</label>
                         <input
                             type="password"
                             id="password"
@@ -73,16 +75,16 @@ const Login = () => {
                             onChange={handleChange}
                             required
                             autoComplete="current-password"
-                            placeholder="Enter your password"
+                            placeholder={t('login.passwordPlaceholder')}
                         />
                     </div>
 
                     <button type="submit" className="submit-btn">
-                        Login
+                        {t('login.submit')}
                     </button>
 
                     <div className="demo-credentials">
-                        <p><strong>Demo Accounts:</strong></p>
+                        <p><strong>{t('login.demoAccounts')}</strong></p>
                         <p>Admin: <code>admin</code> / <code>admin123</code></p>
                         <p>Trader: <code>demo</code> / <code>user123</code></p>
                     </div>
