@@ -40,7 +40,7 @@ const getRandomTime = () => {
   return `${h}:${m}:${s}`
 }
 
-const MarketDepth = ({ selectedBond }) => {
+const MarketDepth = ({ selectedBond, collapsed = false, onToggleCollapse }) => {
   const { t } = useLanguage()
   const gridRef = useRef()
   const [rowData, setRowData] = useState(mockDealerPricing)
@@ -224,6 +224,12 @@ const MarketDepth = ({ selectedBond }) => {
     resizable: true,
     filter: false
   }), [])
+
+  if (collapsed) {
+    return (
+      <div className="market-depth market-depth-collapsed" />
+    )
+  }
 
   return (
     <div className="market-depth">

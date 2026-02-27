@@ -178,6 +178,10 @@ const MainContent = () => {
   const [tradingWidth, setTradingWidth] = useState(60) // percentage
   const [marketWidth, setMarketWidth] = useState(40) // percentage
   const [dataHeight, setDataHeight] = useState(35) // percentage
+  const [isMarketDepthCollapsed, setIsMarketDepthCollapsed] = useState(false)
+  const [isDataPanelCollapsed, setIsDataPanelCollapsed] = useState(false)
+  const previousMarketWidthRef = useRef(40)
+  const previousDataHeightRef = useRef(35)
   const [isDraggingVertical, setIsDraggingVertical] = useState(false)
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const contentBodyRef = useRef(null)
@@ -242,15 +246,17 @@ const MainContent = () => {
 
   // Handle resize verticale (trading area vs market depth)
   const handleMouseDownVertical = useCallback((e) => {
+    if (isMarketDepthCollapsed) return
     e.preventDefault()
     setIsDraggingVertical(true)
-  }, [])
+  }, [isMarketDepthCollapsed])
 
   const handleMouseUpVertical = useCallback(() => {
     setIsDraggingVertical(false)
   }, [])
 
   const handleMouseMoveVertical = useCallback((e) => {
+    if (isMarketDepthCollapsed) return
     if (!isDraggingVertical || !contentBodyRef.current) return
     e.preventDefault()
 
@@ -261,19 +267,37 @@ const MainContent = () => {
       setTradingWidth(newWidth)
       setMarketWidth(100 - newWidth)
     }
-  }, [isDraggingVertical])
+  }, [isDraggingVertical, isMarketDepthCollapsed])
+
+  const toggleMarketDepthCollapse = useCallback(() => {
+    setIsMarketDepthCollapsed((prev) => {
+      if (!prev) {
+        previousMarketWidthRef.current = marketWidth
+        setMarketWidth(0)
+        setTradingWidth(100)
+        return true
+      }
+
+      const restoredMarketWidth = Math.min(80, Math.max(20, previousMarketWidthRef.current || 40))
+      setMarketWidth(restoredMarketWidth)
+      setTradingWidth(100 - restoredMarketWidth)
+      return false
+    })
+  }, [marketWidth])
 
   // Handle resize orizzontale (content vs data)
   const handleMouseDownHorizontal = useCallback((e) => {
+    if (isDataPanelCollapsed) return
     e.preventDefault()
     setIsDraggingHorizontal(true)
-  }, [])
+  }, [isDataPanelCollapsed])
 
   const handleMouseUpHorizontal = useCallback(() => {
     setIsDraggingHorizontal(false)
   }, [])
 
   const handleMouseMoveHorizontal = useCallback((e) => {
+    if (isDataPanelCollapsed) return
     if (!isDraggingHorizontal || !mainContentRef.current) return
     e.preventDefault()
 
@@ -283,7 +307,21 @@ const MainContent = () => {
     if (newHeight > 15 && newHeight < 60) {
       setDataHeight(newHeight)
     }
-  }, [isDraggingHorizontal])
+  }, [isDraggingHorizontal, isDataPanelCollapsed])
+
+  const toggleDataPanelCollapse = useCallback(() => {
+    setIsDataPanelCollapsed((prev) => {
+      if (!prev) {
+        previousDataHeightRef.current = dataHeight
+        setDataHeight(0)
+        return true
+      }
+
+      const restoredHeight = Math.min(60, Math.max(15, previousDataHeightRef.current || 35))
+      setDataHeight(restoredHeight)
+      return false
+    })
+  }, [dataHeight])
 
   React.useEffect(() => {
     document.addEventListener('mousemove', handleMouseMoveVertical)
@@ -912,7 +950,7 @@ const MainContent = () => {
       </div>
 
       <div className="content-body" ref={contentBodyRef} style={{ cursor: isDraggingVertical ? 'col-resize' : 'default' }}>
-        <div className="trading-area-container" style={{ flex: `0 0 ${tradingWidth}%` }}>
+        <div className="trading-area-container" style={{ flex: isMarketDepthCollapsed ? '0 0 100%' : `0 0 ${tradingWidth}%` }}>
           <BondTable 
             onSelectBond={setSelectedBond} 
             onDoubleClickBond={handleBondDoubleClick}
@@ -920,29 +958,81 @@ const MainContent = () => {
             searchTerm={searchTerm} 
           />
 
-          <div className="resize-handle-horizontal" onMouseDown={handleMouseDownHorizontal} />
-
-          <div className="data-section" style={{ flex: `0 0 ${dataHeight}%` }}>
-            <div className="data-header">
-              <span className="data-title">{t('mainContent.dataTitle')}</span>
-            </div>
-            <div className="ag-theme-alpine-dark data-grid">
-              <AgGridReact
-                rowData={dataTableRows}
-                columnDefs={dataColumnDefs}
-                defaultColDef={dataDefaultColDef}
-                domLayout='normal'
-                suppressCellFocus={true}
-              />
-            </div>
+          <div
+            className={`resize-handle-horizontal ${isDataPanelCollapsed ? 'collapsed' : ''}`}
+            onMouseDown={handleMouseDownHorizontal}
+          >
+            <button
+              className="panel-split-toggle panel-split-toggle-horizontal"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+              onClick={toggleDataPanelCollapse}
+              aria-label={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+              title={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {isDataPanelCollapsed ? (
+                  <polyline points="18 15 12 9 6 15"/>
+                ) : (
+                  <polyline points="6 9 12 15 18 9"/>
+                )}
+              </svg>
+            </button>
           </div>
+
+          {!isDataPanelCollapsed && (
+            <div className="data-section" style={{ flex: `0 0 ${dataHeight}%` }}>
+              <div className="data-header">
+                <span className="data-title">{t('mainContent.dataTitle')}</span>
+              </div>
+              <div className="ag-theme-alpine-dark data-grid">
+                <AgGridReact
+                  rowData={dataTableRows}
+                  columnDefs={dataColumnDefs}
+                  defaultColDef={dataDefaultColDef}
+                  domLayout='normal'
+                  suppressCellFocus={true}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="resize-handle-vertical" onMouseDown={handleMouseDownVertical} />
-
-        <div className="market-info" style={{ flex: `0 0 ${marketWidth}%` }}>
-          <MarketDepth selectedBond={selectedBond} />
+        <div
+          className={`resize-handle-vertical ${isMarketDepthCollapsed ? 'collapsed' : ''}`}
+          onMouseDown={handleMouseDownVertical}
+        >
+          <button
+            className="panel-split-toggle"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            onClick={toggleMarketDepthCollapse}
+            aria-label={isMarketDepthCollapsed ? t('marketDepth.expandPanel') : t('marketDepth.collapsePanel')}
+            title={isMarketDepthCollapsed ? t('marketDepth.expandPanel') : t('marketDepth.collapsePanel')}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {isMarketDepthCollapsed ? (
+                <polyline points="15 18 9 12 15 6"/>
+              ) : (
+                <polyline points="9 18 15 12 9 6"/>
+              )}
+            </svg>
+          </button>
         </div>
+
+        {!isMarketDepthCollapsed && (
+          <div className="market-info" style={{ flex: `0 0 ${marketWidth}%` }}>
+            <MarketDepth
+              selectedBond={selectedBond}
+              collapsed={isMarketDepthCollapsed}
+              onToggleCollapse={toggleMarketDepthCollapse}
+            />
+          </div>
+        )}
       </div>
 
       {/* Error notification */}

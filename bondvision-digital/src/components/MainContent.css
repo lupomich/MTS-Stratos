@@ -17,11 +17,54 @@
   transition: background-color 0.2s;
   border-left: 1px solid var(--dark-border);
   border-right: 1px solid var(--dark-border);
+  z-index: 20;
+}
+
+.resize-handle-vertical.collapsed {
+  width: 0;
+  border-left: none;
+  border-right: none;
+  overflow: visible;
+}
+
+.resize-handle-vertical.collapsed .panel-split-toggle {
+  left: auto;
+  right: 2px;
+  transform: translateY(-50%);
 }
 
 .resize-handle-vertical:hover {
-  background-color: var(--color-primary);
-  opacity: 0.5;
+  background-color: rgba(0, 141, 127, 0.2);
+}
+
+.panel-split-toggle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 34px;
+  border: 1px solid var(--dark-border);
+  border-radius: 999px;
+  background: var(--dark-hover);
+  color: var(--color-bg-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 1;
+  z-index: 30;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.panel-split-toggle:hover {
+  background: rgba(0, 141, 127, 0.35);
+  border-color: var(--color-primary);
+}
+
+.panel-split-toggle-horizontal {
+  width: 34px;
+  height: 14px;
 }
 
 .resize-handle-horizontal {
@@ -34,11 +77,28 @@
   transition: background-color 0.2s;
   border-top: 1px solid var(--dark-border);
   border-bottom: 1px solid var(--dark-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
 }
 
 .resize-handle-horizontal:hover {
-  background-color: var(--color-primary);
-  opacity: 0.5;
+  background-color: rgba(0, 141, 127, 0.2);
+}
+
+.resize-handle-horizontal.collapsed {
+  height: 0;
+  border-top: none;
+  border-bottom: none;
+  cursor: default;
+  overflow: visible;
+}
+
+.resize-handle-horizontal.collapsed .panel-split-toggle-horizontal {
+  top: auto;
+  bottom: 2px;
+  transform: translateX(-50%);
 }
 
 /* RFQ TOOLBAR */

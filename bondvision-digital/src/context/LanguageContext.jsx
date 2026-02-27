@@ -60,6 +60,8 @@ export const translations = {
       searchBondsPlaceholder: 'Search bonds...',
       rfqToolbar: 'RFQ TOOLBAR',
       dataTitle: 'DATA',
+      collapseDataPanel: 'Collapse DATA panel',
+      expandDataPanel: 'Expand DATA panel',
       topTabs: {
         all: 'All',
         axed: 'Axed'
@@ -181,7 +183,9 @@ export const translations = {
       mtsCashOrderBook: 'MTS Cash Order Book',
       ebmOrderBook: 'EBM Order Book',
       bondvisionComposite: 'BondVision Composite',
-      bondvisionDealerPricing: 'BondVision Dealer Pricing'
+      bondvisionDealerPricing: 'BondVision Dealer Pricing',
+      collapsePanel: 'Collapse panel',
+      expandPanel: 'Expand panel'
     }
   },
   it: {
@@ -233,6 +237,8 @@ export const translations = {
       searchBondsPlaceholder: 'Cerca bond...',
       rfqToolbar: 'BARRA RFQ',
       dataTitle: 'DATI',
+      collapseDataPanel: 'Comprimi pannello DATI',
+      expandDataPanel: 'Espandi pannello DATI',
       topTabs: {
         all: 'Tutti',
         axed: 'Axed'
@@ -354,7 +360,9 @@ export const translations = {
       mtsCashOrderBook: 'MTS Cash Order Book',
       ebmOrderBook: 'EBM Order Book',
       bondvisionComposite: 'BondVision Composite',
-      bondvisionDealerPricing: 'BondVision Dealer Pricing'
+      bondvisionDealerPricing: 'BondVision Dealer Pricing',
+      collapsePanel: 'Collassa pannello',
+      expandPanel: 'Espandi pannello'
     }
   }
 }

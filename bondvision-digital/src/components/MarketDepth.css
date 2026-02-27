@@ -5,6 +5,11 @@
   overflow-y: auto;
 }
 
+.market-depth.market-depth-collapsed {
+  padding: 4px;
+  overflow: hidden;
+}
+
 .depth-section {
   display: flex;
   flex-direction: column;
