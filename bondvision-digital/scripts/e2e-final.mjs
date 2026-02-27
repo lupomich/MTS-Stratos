@@ -165,6 +165,7 @@ async function runTest(testId, description, type, testFn) {
 
 // Utility: Login GUI
 async function loginGUI(page, username, password) {
+    await ensureLoggedOutBeforeLogin(page);
     await page.goto(runtimeConfig.BASE_URL);
 
     const loginVisible = await page.locator('#username').isVisible().catch(() => false);
@@ -180,14 +181,85 @@ async function loginGUI(page, username, password) {
     await page.locator('#username').fill(username);
     await page.locator('#password').fill(password);
     await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/dashboard|\//, { timeout: 5000 });
+
+    const loginErrorLocator = page.locator('.message.error').first();
+    const loginDeadline = Date.now() + 6000;
+
+    while (Date.now() < loginDeadline) {
+        const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
+        if (mainVisible) {
+            return;
+        }
+
+        const errorVisible = await loginErrorLocator.isVisible().catch(() => false);
+        if (errorVisible) {
+            const loginErrorText = ((await loginErrorLocator.textContent().catch(() => '')) || '').trim();
+            if (/already\s+logged|gi[aà]\s+collegat/i.test(loginErrorText)) {
+                throw new Error(`Login blocked immediately: ${loginErrorText}`);
+            }
+            throw new Error(`Login error: ${loginErrorText || 'Unknown login error'}`);
+        }
+
+        await page.waitForTimeout(100);
+    }
+
+    throw new Error('Login timeout: main content not visible and no explicit login error shown');
+}
+
+async function ensureLoggedOutBeforeLogin(page) {
+    await page.goto(runtimeConfig.BASE_URL);
+
+    const tokenFromStorage = await page.evaluate(() => {
+        try {
+            return localStorage.getItem('token');
+        } catch {
+            return null;
+        }
+    }).catch(() => null);
+
+    if (tokenFromStorage) {
+        await page.request.post(`${runtimeConfig.API_BASE}/auth/logout`, {
+            headers: { Authorization: `Bearer ${tokenFromStorage}` },
+            failOnStatusCode: false
+        }).catch(() => {});
+
+        await page.evaluate(() => {
+            try {
+                localStorage.removeItem('token');
+            } catch {
+                // no-op
+            }
+        }).catch(() => {});
+    }
+
+    const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
+    if (mainVisible) {
+        await logoutGUI(page);
+    }
+
+    await page.goto(runtimeConfig.BASE_URL);
+    await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
 }
 
 // Utility: Logout GUI
 async function logoutGUI(page) {
     page.once('dialog', safeAcceptDialog);
-    await page.locator('.sidebar-item.sidebar-logout').click();
+    const logoutButton = page.locator('.sidebar-item.sidebar-logout');
+    const logoutVisible = await logoutButton.isVisible().catch(() => false);
+    if (!logoutVisible) {
+        return;
+    }
+    await logoutButton.click();
     await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
+}
+
+async function closeAdminModalIfOpen(page) {
+    const closeButton = page.locator('.admin-modal .close-btn').first();
+    const closeVisible = await closeButton.isVisible().catch(() => false);
+    if (!closeVisible) {
+        return;
+    }
+    await closeButton.click({ timeout: 2000 }).catch(() => {});
 }
 
 async function openOverlayMenu(page) {
@@ -274,50 +346,68 @@ async function deleteUserGUI(page, username) {
     await sleep(500); // Wait for API call and table reload
 }
 
-// Utility: API call to get users
-async function getUsersAPI() {
+async function withAdminApiToken(action) {
     const response = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ADMIN_USER)
     });
+
+    if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const reason = payload?.error || payload?.message || `HTTP ${response.status}`;
+        throw new Error(`Admin API login failed: ${reason}`);
+    }
+
     const { token } = await response.json();
-    
-    const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+    if (!token) {
+        throw new Error('Admin API login failed: missing token');
+    }
+
+    try {
+        return await action(token);
+    } finally {
+        await fetch(`${runtimeConfig.API_BASE}/auth/logout`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => {});
+    }
+}
+
+// Utility: API call to get users
+async function getUsersAPI() {
+    return withAdminApiToken(async (token) => {
+        const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await usersResponse.json();
+        return data.users;
     });
-    const data = await usersResponse.json();
-    return data.users;
 }
 
 async function cleanupResidualTestUsersAPI() {
-    const response = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ADMIN_USER)
-    });
-    const { token } = await response.json();
+    await withAdminApiToken(async (token) => {
+        const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await usersResponse.json();
+        const testUsers = new Set([
+            'admin-test',
+            'trader-test',
+            'viewer-test',
+            'trader-final',
+            'viewer-final'
+        ]);
 
-    const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await usersResponse.json();
-    const testUsers = new Set([
-        'admin-test',
-        'trader-test',
-        'viewer-test',
-        'trader-final',
-        'viewer-final'
-    ]);
-
-    for (const user of data.users || []) {
-        if (testUsers.has(user.username)) {
-            await fetch(`${runtimeConfig.API_BASE}/users/${encodeURIComponent(user.id)}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+        for (const user of data.users || []) {
+            if (testUsers.has(user.username)) {
+                await fetch(`${runtimeConfig.API_BASE}/users/${encodeURIComponent(user.id)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
         }
-    }
+    });
 }
 
 async function waitForBondGrid(page) {
@@ -395,29 +485,24 @@ async function waitForUiSettingsSave(page, options = {}) {
 }
 
 async function ensureUserExistsAPI({ username, email, password, role }) {
-    const loginResponse = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ADMIN_USER)
-    });
-    const { token } = await loginResponse.json();
-
-    const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const usersData = await usersResponse.json();
-    const exists = (usersData.users || []).some(u => u.username === username);
-
-    if (!exists) {
-        await fetch(`${runtimeConfig.API_BASE}/users`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ username, email, password, role })
+    await withAdminApiToken(async (token) => {
+        const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-    }
+        const usersData = await usersResponse.json();
+        const exists = (usersData.users || []).some(u => u.username === username);
+
+        if (!exists) {
+            await fetch(`${runtimeConfig.API_BASE}/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ username, email, password, role })
+            });
+        }
+    });
 }
 
 async function waitForGridApi(page) {
@@ -732,6 +817,8 @@ async function runSection1(page) {
     });
     
     await runTest('T11', 'Verify DB clean (API)', 'API', async () => {
+        await closeAdminModalIfOpen(page);
+        await logoutGUI(page);
         const users = await getUsersAPI();
         const adminTestExists = users.some(u => u.username === 'admin-test');
         if (adminTestExists) {
@@ -743,6 +830,8 @@ async function runSection1(page) {
     console.log('\n--- Subsection B: Trader Profile ---');
     
     await runTest('T12', 'Create Trader user', 'GUI', async () => {
+        await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
+        await openAdminPanel(page);
         await createUserGUI(page, 'trader-test', 'trader-test@stratos.local', 'Trader123!', 'trader');
         await findUserRow(page, 'trader-test');
     });
@@ -916,6 +1005,8 @@ async function runSection1(page) {
     }
     
     await runTest('T22', 'Verify DB clean (API)', 'API', async () => {
+        await closeAdminModalIfOpen(page);
+        await logoutGUI(page);
         const users = await getUsersAPI();
         if (users.length !== 2) {
             throw new Error(`Expected 2 users (admin + demo), got ${users.length}`);
@@ -975,6 +1066,9 @@ async function runSection2(page) {
     console.log('\n\n========================================');
     console.log('SECTION 2: SETTINGS PERSISTENCE - GUI');
     console.log('========================================\n');
+
+    await closeAdminModalIfOpen(page);
+    await logoutGUI(page);
     
     await ensureUserExistsAPI({
         username: 'trader-final',
@@ -1652,6 +1746,8 @@ async function runSection3(page) {
     });;
     
     await runTest('T47', 'Final cleanup', 'GUI', async () => {
+        await closeAdminModalIfOpen(page);
+        await logoutGUI(page);
         await cleanupResidualTestUsersAPI();
 
         // Verify only admin + demo left

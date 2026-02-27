@@ -92,6 +92,39 @@ try {
         throw 'Unable to start required docker services.'
     }
 
+    Write-Host 'Resetting ALL auth session state for deterministic live run (DB + Redis cache)...' -ForegroundColor Yellow
+    docker exec mts-stratos-postgres psql -U stratos -d stratos_db -c "UPDATE users SET is_logged_in = false, active_session_id = NULL, active_session_at = NULL;"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to reset users session flags in PostgreSQL.'
+    }
+
+    docker exec mts-stratos-postgres psql -U stratos -d stratos_db -c "UPDATE user_sessions SET is_active = false WHERE is_active = true;"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to deactivate active rows in user_sessions.'
+    }
+
+    docker exec mts-stratos-redis sh -lc "redis-cli --scan --pattern 'auth:online:*' | xargs -r redis-cli del >/dev/null"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to clear auth online keys in Redis.'
+    }
+
+    $dbResidualRaw = docker exec mts-stratos-postgres psql -U stratos -d stratos_db -t -A -c "SELECT COUNT(*) FROM users WHERE is_logged_in = true OR active_session_id IS NOT NULL OR active_session_at IS NOT NULL;"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to verify users session flags in PostgreSQL.'
+    }
+    $dbResidual = [int](($dbResidualRaw | Out-String).Trim())
+
+    $redisResidualRaw = docker exec mts-stratos-redis sh -lc "redis-cli --scan --pattern 'auth:online:*' | wc -l"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to verify auth online keys in Redis.'
+    }
+    $redisResidual = [int](($redisResidualRaw | Out-String).Trim())
+
+    Write-Host "Auth cleanup verification -> DB residual sessions: $dbResidual, Redis residual keys: $redisResidual" -ForegroundColor Cyan
+    if ($dbResidual -ne 0 -or $redisResidual -ne 0) {
+        throw "Auth cleanup incomplete (DB=$dbResidual, Redis=$redisResidual). Aborting live run."
+    }
+
     Push-Location $frontendDir
     try {
         if (-not (Test-Path 'node_modules')) {

@@ -22,6 +22,13 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const clearLocalAuthState = () => {
+        localStorage.removeItem('token');
+        setToken(null);
+        delete axios.defaults.headers.common['Authorization'];
+        setUser(null);
+    };
+
     // Configure axios defaults
     axios.defaults.baseURL = API_URL;
     
@@ -44,8 +51,7 @@ export const AuthProvider = ({ children }) => {
                     setUser(response.data.user);
                 } catch (error) {
                     console.error('Auth check failed:', error);
-                    localStorage.removeItem('token');
-                    delete axios.defaults.headers.common['Authorization'];
+                    clearLocalAuthState();
                 }
             }
             setLoading(false);
@@ -53,6 +59,26 @@ export const AuthProvider = ({ children }) => {
 
         checkAuth();
     }, []);
+
+    useEffect(() => {
+        if (!token || !user) return;
+
+        const heartbeat = async () => {
+            try {
+                await axios.post('/auth/heartbeat');
+            } catch (heartbeatError) {
+                const status = heartbeatError.response?.status;
+                if (status === 401) {
+                    clearLocalAuthState();
+                    return;
+                }
+                console.error('Heartbeat error:', heartbeatError);
+            }
+        };
+
+        const intervalId = setInterval(heartbeat, 30000);
+        return () => clearInterval(intervalId);
+    }, [token, user]);
 
     const login = async (username, password) => {
         try {
@@ -93,10 +119,7 @@ export const AuthProvider = ({ children }) => {
             console.error('Logout error:', error);
         } finally {
             // Clear state regardless of API result
-            localStorage.removeItem('token');
-            setToken(null);
-            delete axios.defaults.headers.common['Authorization'];
-            setUser(null);
+            clearLocalAuthState();
         }
     };
 

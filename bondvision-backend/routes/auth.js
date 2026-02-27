@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
+const SESSION_IDLE_TIMEOUT_SECONDS = Number(process.env.SESSION_IDLE_TIMEOUT_SECONDS || 120);
 
 const getOnlineKey = (userId) => `auth:online:${userId}`;
 
@@ -40,6 +41,25 @@ const clearOnlineCache = async (redis, userId) => {
   await redis.del(getOnlineKey(userId));
 };
 
+const clearUserSessionState = async (pool, redis, userId) => {
+  await pool.query(
+    `UPDATE users
+     SET is_logged_in = false,
+         active_session_id = NULL,
+         active_session_at = NULL
+     WHERE id = $1`,
+    [userId]
+  );
+  await clearOnlineCache(redis, userId);
+};
+
+const isSessionStale = (activeSessionAt) => {
+  if (!activeSessionAt) return true;
+  const activeAtMs = new Date(activeSessionAt).getTime();
+  if (!Number.isFinite(activeAtMs)) return true;
+  return (Date.now() - activeAtMs) > (SESSION_IDLE_TIMEOUT_SECONDS * 1000);
+};
+
 router.post('/login',
   body('username').isString(),
   body('password').isString(),
@@ -56,6 +76,17 @@ router.post('/login',
       const match = await bcrypt.compare(password, user.password_hash);
       if (!match) return res.status(401).json({ error: 'Invalid credentials' });
 
+      if (user.is_logged_in && isSessionStale(user.active_session_at)) {
+        try {
+          await clearUserSessionState(pool, redis, user.id);
+          user.is_logged_in = false;
+          user.active_session_id = null;
+          user.active_session_at = null;
+        } catch (cleanupErr) {
+          console.error('Stale session cleanup error on login:', cleanupErr.message);
+        }
+      }
+
       let cachedSessionId = null;
       try {
         cachedSessionId = await redis?.get(getOnlineKey(user.id));
@@ -70,6 +101,15 @@ router.post('/login',
           code: 'ALREADY_LOGGED_IN',
           language
         });
+      }
+
+      if (!cachedSessionId && user.is_logged_in) {
+        if (isSessionStale(user.active_session_at)) {
+          await clearUserSessionState(pool, redis, user.id);
+          user.is_logged_in = false;
+          user.active_session_id = null;
+          user.active_session_at = null;
+        }
       }
 
       if (!cachedSessionId && user.is_logged_in) {
@@ -137,7 +177,7 @@ router.get('/me', async (req, res) => {
     const pool = req.app.get('pool');
     const redis = req.app.get('redis');
     const result = await pool.query(
-      'SELECT id, username, role, is_logged_in, active_session_id FROM users WHERE id = $1 AND is_active = true LIMIT 1',
+      'SELECT id, username, role, is_logged_in, active_session_id, active_session_at FROM users WHERE id = $1 AND is_active = true LIMIT 1',
       [decoded.id]
     );
 
@@ -146,6 +186,11 @@ router.get('/me', async (req, res) => {
     }
 
     const user = result.rows[0];
+    if (isSessionStale(user.active_session_at)) {
+      await clearUserSessionState(pool, redis, user.id);
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
     if (!user.is_logged_in || !user.active_session_id || user.active_session_id !== decoded.sessionId) {
       return res.status(401).json({ error: 'Session expired' });
     }
@@ -161,9 +206,56 @@ router.get('/me', async (req, res) => {
       console.error('Redis read error on /me:', cacheErr.message);
     }
 
+    await pool.query('UPDATE users SET active_session_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
     res.json({ user: { id: user.id, username: user.username, role: user.role } });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Heartbeat endpoint keeps active session alive and avoids false stale locks
+router.post('/heartbeat', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.slice(7);
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const pool = req.app.get('pool');
+    const redis = req.app.get('redis');
+
+    const result = await pool.query(
+      'SELECT id, is_logged_in, active_session_id, active_session_at FROM users WHERE id = $1 AND is_active = true LIMIT 1',
+      [decoded.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid token user' });
+    }
+
+    const user = result.rows[0];
+    if (isSessionStale(user.active_session_at)) {
+      await clearUserSessionState(pool, redis, user.id);
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
+    if (!user.is_logged_in || !user.active_session_id || user.active_session_id !== decoded.sessionId) {
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
+    await pool.query('UPDATE users SET active_session_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+    try {
+      await syncOnlineCache(redis, user.id, user.active_session_id);
+    } catch (cacheErr) {
+      console.error('Redis write error on heartbeat:', cacheErr.message);
+    }
+
+    return res.json({ ok: true });
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
   }
 });
 
@@ -179,21 +271,7 @@ router.post('/logout', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const pool = req.app.get('pool');
     const redis = req.app.get('redis');
-
-    await pool.query(
-      `UPDATE users
-       SET is_logged_in = false,
-           active_session_id = NULL,
-           active_session_at = NULL
-       WHERE id = $1`,
-      [decoded.id]
-    );
-
-    try {
-      await clearOnlineCache(redis, decoded.id);
-    } catch (cacheErr) {
-      console.error('Redis delete error on logout:', cacheErr.message);
-    }
+    await clearUserSessionState(pool, redis, decoded.id);
   } catch (err) {
     console.error('Logout token parse error:', err.message);
   }
