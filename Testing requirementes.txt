@@ -1,4 +1,4 @@
-vorrei che creassi una checklist di test dell'applicazione per testare tutte le funzionalità (checklist deve far parte del workspace, volgio anche un xlsx). In particolare:
+vorrei che creassi una checklist di test dell'applicazione per testare tutte le funzionalità (checklist deve far parte del workspace, voglio anche un xlsx). In particolare:
 - creazione nuovo utente (uno per ogni profilo) attraverso admin panel, con successivo login, verifica collegamento, logout, disattivazione utente, tentato login di utente disattivato, riattivazione utente, corretta login e successiva cancellazione degli utenti creati. Alla fine la situazione utenti deve essere uguale a quella antecedente l'inizio dei test.
 - collegamento utente e verifica delle funzionalità di memorizzazione dei setting: spostamento colonne, ordinamento, filtri singoli e multipli, cancellazione colonne. Verifica che al logout le impostazioni siano mantenute. Ripristino situazione iniziale (tramite reset all columns) e verifica del ripristino.
 - Ogni altra funzionalità implementata che possa essere verificata
