@@ -354,6 +354,23 @@
   top: 2px;
 }
 
+.rfq-switch.active {
+  background: rgba(0, 141, 127, 0.28);
+}
+
+.rfq-switch.active::after {
+  left: 20px;
+}
+
+.processed-trade-toggle {
+  cursor: pointer;
+}
+
+.processed-trade-toggle.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .rfq-pricing-table-wrapper {
   max-height: 252px;
   overflow-y: auto;

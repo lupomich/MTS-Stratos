@@ -473,7 +473,7 @@ const MainContent = () => {
       return null
     }
 
-    popup.document.title = 'RFQ OUTRIGHT'
+    popup.document.title = `${windowIndex + 1}. RFQ OUTRIGHT`
     popup.document.body.style.margin = '0'
     popup.document.body.style.padding = '0'
     popup.document.body.style.background = '#0a1f1f'
@@ -808,6 +808,15 @@ const MainContent = () => {
       .catch(error => console.error('Error submitting RFQ:', error))
   }, [])
 
+  useEffect(() => {
+    rfqModals.forEach((modal, index) => {
+      const popupWindow = rfqWindowsRef.current.get(modal.id)?.window || modal.window
+      if (popupWindow && !popupWindow.closed) {
+        popupWindow.document.title = `${index + 1}. ${t('rfq.title')}`
+      }
+    })
+  }, [rfqModals, t])
+
   return (
     <div className="main-content" ref={mainContentRef}>
       <div className="rfq-toolbar">
@@ -956,13 +965,14 @@ const MainContent = () => {
       )}
 
       {/* Render multiple RFQ modals */}
-      {rfqModals.map((modal) => {
+      {rfqModals.map((modal, index) => {
         const isPopup = !!modal.container
         const rfqNode = (
           <RfqOutright
             key={modal.id}
             bond={modal.bond}
             pricingData={modal.pricingData}
+            rfqSequence={index + 1}
             hostWindow={modal.window || window}
             initialPosition={modal.initialPosition}
             centerOnMount={!!modal.centerOnMount}

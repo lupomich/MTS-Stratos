@@ -28,7 +28,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import './RfqOutright.css';
 
-const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false }) => {
+const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false, rfqSequence = 1 }) => {
   const { t } = useLanguage();
   const { preferences } = usePreferences();
   const [side, setSide] = useState('BUY');
@@ -49,6 +49,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const [validationError, setValidationError] = useState(null);
   const [showDealerActions, setShowDealerActions] = useState(false);
   const [activeDealerMode, setActiveDealerMode] = useState('bestQuotes');
+  const [processedTradeEnabled, setProcessedTradeEnabled] = useState(false);
   const [position, setPosition] = useState(initialPosition || { x: 140, y: 90 });
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const windowRef = useRef(null);
@@ -173,6 +174,8 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
       .slice(0, maxDealersInRfq)
       .map((row) => row.dealer);
   }, [sortedPricingRows, maxDealersInRfq]);
+
+  const isProcessedTradeToggleDisabled = !processedTradeEnabled && selectedDealers.length > 1;
 
   useEffect(() => {
     if (pricingData && pricingData.dealers) {
@@ -338,6 +341,8 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     setSelectedDealers((prev) => {
       if (prev.includes(normalizedDealerId)) {
         return prev.filter((d) => d !== normalizedDealerId);
+      } else if (processedTradeEnabled) {
+        return [normalizedDealerId];
       } else if (prev.length >= 20) {
         return prev;
       } else {
@@ -355,7 +360,8 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   };
 
   const handleSelectBestQuotes = () => {
-    setSelectedDealers(bestDealerIds);
+    const nextDealers = processedTradeEnabled ? bestDealerIds.slice(0, 1) : bestDealerIds;
+    setSelectedDealers(nextDealers);
     setActiveDealerMode('bestQuotes');
     setValidationError(null);
     setShowDealerActions(false);
@@ -369,10 +375,25 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   };
 
   const handleSelectOneWayAxed = () => {
-    setSelectedDealers(oneWayAxedDealerIds);
+    const nextDealers = processedTradeEnabled ? oneWayAxedDealerIds.slice(0, 1) : oneWayAxedDealerIds;
+    setSelectedDealers(nextDealers);
     setActiveDealerMode('oneWayAxed');
     setValidationError(null);
     setShowDealerActions(false);
+  };
+
+  const toggleProcessedTrade = () => {
+    if (isProcessedTradeToggleDisabled) {
+      return;
+    }
+
+    setProcessedTradeEnabled((prev) => {
+      const nextValue = !prev;
+      if (nextValue) {
+        setSelectedDealers((current) => current.slice(0, 1));
+      }
+      return nextValue;
+    });
   };
 
   const getDealerModeLabel = useCallback((mode) => {
@@ -420,6 +441,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
       description: bond.description,
       side,
       size: parseFloat(size),
+      processedTrade: processedTradeEnabled,
       selectedDealers,
       timestamp: new Date().toISOString(),
     };
@@ -450,7 +472,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
         <div className="rfq-titlebar rfq-drag-handle" onMouseDown={handleDragStart}>
           <div className="rfq-title-left">
             <span className="rfq-title-badge">MTS</span>
-            <span className="rfq-title-text">{t('rfq.title')}</span>
+            <span className="rfq-title-text">{`${rfqSequence}.${t('rfq.title')}`}</span>
           </div>
           <div className="rfq-window-controls">
             <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label={t('rfq.minimizeAria')}>−</button>
@@ -629,8 +651,11 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
                     </div>
                   )}
                 </div>
-                <label className="rfq-switch-wrap compact">
-                  <span className="rfq-switch" />
+                <label
+                  className={`rfq-switch-wrap compact processed-trade-toggle ${isProcessedTradeToggleDisabled ? 'disabled' : ''}`}
+                  onClick={toggleProcessedTrade}
+                >
+                  <span className={`rfq-switch ${processedTradeEnabled ? 'active' : ''}`} />
                   <span>{t('rfq.processedTrade')}</span>
                 </label>
               </div>
