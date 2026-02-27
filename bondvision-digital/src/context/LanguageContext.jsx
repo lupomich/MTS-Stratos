@@ -52,7 +52,8 @@ export const translations = {
       title: 'User Settings',
       rfqSettings: 'RFQ Settings',
       openRfqInPopup: 'Open RFQ in separate window',
-      rfqAlwaysOnTop: 'RFQ Always On Top (best effort)'
+      rfqAlwaysOnTop: 'RFQ Always On Top (best effort)',
+      maxNoDealersRfq: 'Max No. of Dealers in the RFQ'
     },
     mainContent: {
       openRfq: 'OPEN RFQ',
@@ -131,6 +132,9 @@ export const translations = {
       autoMatch: 'Auto Match',
       dealerSelection: 'DEALER SELECTION',
       bestQuotes: 'BEST QUOTES',
+      manual: 'MANUAL',
+      oneWayAxed: '1-WAY AXED',
+      clearSelection: 'CLEAR SELECTION',
       processedTrade: 'Processed Trade',
       dealerGroups: 'Dealer Groups',
       save: 'SAVE',
@@ -221,7 +225,8 @@ export const translations = {
       title: 'Impostazioni utente',
       rfqSettings: 'Impostazioni RFQ',
       openRfqInPopup: 'Apri RFQ in finestra separata',
-      rfqAlwaysOnTop: 'RFQ Always On Top (best effort)'
+      rfqAlwaysOnTop: 'RFQ Always On Top (best effort)',
+      maxNoDealersRfq: 'N. max di dealer nella RFQ'
     },
     mainContent: {
       openRfq: 'APRI RFQ',
@@ -300,6 +305,9 @@ export const translations = {
       autoMatch: 'Auto Match',
       dealerSelection: 'DEALER SELECTION',
       bestQuotes: 'BEST QUOTES',
+      manual: 'MANUAL',
+      oneWayAxed: '1-WAY AXED',
+      clearSelection: 'AZZERA SELEZIONE',
       processedTrade: 'Processed Trade',
       dealerGroups: 'Dealer Groups',
       save: 'SAVE',

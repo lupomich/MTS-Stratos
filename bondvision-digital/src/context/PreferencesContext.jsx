@@ -14,6 +14,7 @@ const defaultPreferences = {
     gridLayout: 'comfortable',
     rfqOpenInPopup: false,
     rfqAlwaysOnTop: false,
+    rfqMaxDealers: 6,
     columnWidths: {},
     filters: {},
     sorts: []
@@ -161,6 +162,7 @@ export const PreferencesProvider = ({ children }) => {
         setGridLayout: (layout) => updatePreference('gridLayout', layout),
         setRfqOpenInPopup: (enabled) => updatePreference('rfqOpenInPopup', enabled, { immediate: true }),
         setRfqAlwaysOnTop: (enabled) => updatePreference('rfqAlwaysOnTop', enabled, { immediate: true }),
+        setRfqMaxDealers: (maxDealers) => updatePreference('rfqMaxDealers', maxDealers, { immediate: true }),
         setColumnOrder: (order) => updatePreference('columnOrder', order),
         setColumnWidths: (widths) => updatePreference('columnWidths', widths),
         setFilters: (filters) => updatePreference('filters', filters),

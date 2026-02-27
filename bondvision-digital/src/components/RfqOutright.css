@@ -519,6 +519,13 @@
   gap: 6px;
 }
 
+.rfq-dealer-actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .rfq-bestquotes-btn {
   height: 34px;
   min-width: 190px;
@@ -535,6 +542,38 @@
   border: 1px solid var(--color-primary);
   background: var(--color-bg-white);
   color: var(--dark-bg);
+}
+
+.rfq-dealer-actions-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 35;
+  min-width: 220px;
+  border: 1px solid var(--color-primary);
+  background: var(--dark-bg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.rfq-dealer-actions-item {
+  width: 100%;
+  height: 34px;
+  border: 0;
+  border-bottom: 1px solid rgba(0, 141, 127, 0.3);
+  background: transparent;
+  color: var(--color-bg-white);
+  font-size: 13px;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.rfq-dealer-actions-item:last-child {
+  border-bottom: 0;
+}
+
+.rfq-dealer-actions-item:hover {
+  background: rgba(0, 141, 127, 0.25);
 }
 
 .rfq-switch-wrap.compact {

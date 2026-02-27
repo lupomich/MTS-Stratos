@@ -25,10 +25,12 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { usePreferences } from '../context/PreferencesContext';
 import './RfqOutright.css';
 
 const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false }) => {
   const { t } = useLanguage();
+  const { preferences } = usePreferences();
   const [side, setSide] = useState('BUY');
   const [size, setSize] = useState('');
   const [minSize, setMinSize] = useState('');
@@ -45,10 +47,14 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const [selectedDealers, setSelectedDealers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [validationError, setValidationError] = useState(null);
+  const [showDealerActions, setShowDealerActions] = useState(false);
+  const [activeDealerMode, setActiveDealerMode] = useState('bestQuotes');
   const [position, setPosition] = useState(initialPosition || { x: 140, y: 90 });
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const windowRef = useRef(null);
+  const dealerActionsRef = useRef(null);
   const activeWindow = hostWindow || window;
+  const maxDealersInRfq = Math.min(20, Math.max(1, Number.parseInt(preferences?.rfqMaxDealers, 10) || 6));
 
   const clampPosition = useCallback((x, y) => {
     const fallbackWidth = Math.min(1070, Math.max(320, activeWindow.innerWidth - 20));
@@ -151,13 +157,27 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const bestDealerIds = useMemo(() => (
     sortedPricingRows
       .filter((row) => row.price !== '' && !Number.isNaN(Number.parseFloat(row.price)))
-      .slice(0, 6)
+      .slice(0, maxDealersInRfq)
       .map((row) => row.dealer)
-  ), [sortedPricingRows]);
+  ), [sortedPricingRows, maxDealersInRfq]);
+
+  const oneWayAxedDealerIds = useMemo(() => {
+    const parseSize = (sizeValue) => {
+      const parsed = Number.parseFloat(String(sizeValue ?? '').replace(',', '.'));
+      return Number.isNaN(parsed) ? -1 : parsed;
+    };
+
+    return sortedPricingRows
+      .filter((row) => String(row.axe ?? '').trim() !== '' && String(row.antiAxe ?? '').trim() === '')
+      .sort((a, b) => parseSize(b.size) - parseSize(a.size))
+      .slice(0, maxDealersInRfq)
+      .map((row) => row.dealer);
+  }, [sortedPricingRows, maxDealersInRfq]);
 
   useEffect(() => {
     if (pricingData && pricingData.dealers) {
       setSelectedDealers((prev) => (prev.length === 0 ? bestDealerIds : prev));
+      setActiveDealerMode('bestQuotes');
       setIsLoading(false);
     }
   }, [pricingData, bestDealerIds]);
@@ -277,6 +297,21 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     };
   }, [activeWindow, handleDragEnd, handleDragMove]);
 
+  useEffect(() => {
+    if (!showDealerActions) return;
+
+    const handleOutsideClick = (event) => {
+      if (!dealerActionsRef.current?.contains(event.target)) {
+        setShowDealerActions(false);
+      }
+    };
+
+    activeWindow.document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      activeWindow.document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [activeWindow, showDealerActions]);
+
   const toggleSide = () => {
     setSide((prevSide) => (prevSide === 'BUY' ? 'SELL' : 'BUY'));
   };
@@ -317,6 +352,48 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
 
   const handlePricingRowClick = (dealerId) => {
     handleDealerToggle(dealerId);
+  };
+
+  const handleSelectBestQuotes = () => {
+    setSelectedDealers(bestDealerIds);
+    setActiveDealerMode('bestQuotes');
+    setValidationError(null);
+    setShowDealerActions(false);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedDealers([]);
+    setActiveDealerMode('manual');
+    setValidationError(null);
+    setShowDealerActions(false);
+  };
+
+  const handleSelectOneWayAxed = () => {
+    setSelectedDealers(oneWayAxedDealerIds);
+    setActiveDealerMode('oneWayAxed');
+    setValidationError(null);
+    setShowDealerActions(false);
+  };
+
+  const getDealerModeLabel = useCallback((mode) => {
+    if (mode === 'oneWayAxed') return t('rfq.oneWayAxed');
+    if (mode === 'manual') return t('rfq.manual');
+    if (mode === 'clearSelection') return t('rfq.clearSelection');
+    return t('rfq.bestQuotes');
+  }, [t]);
+
+  const applyActiveDealerMode = () => {
+    if (activeDealerMode === 'oneWayAxed') {
+      handleSelectOneWayAxed();
+      return;
+    }
+
+    if (activeDealerMode === 'clearSelection') {
+      handleClearSelection();
+      return;
+    }
+
+    handleSelectBestQuotes();
   };
 
   const handleSubmit = () => {
@@ -541,8 +618,17 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
                 )}
               </div>
               <div className="rfq-dealer-head-controls">
-                <button className="rfq-bestquotes-btn">{t('rfq.bestQuotes')}</button>
-                <button className="rfq-small-btn">▼</button>
+                <div className="rfq-dealer-actions" ref={dealerActionsRef}>
+                  <button className="rfq-bestquotes-btn" onClick={applyActiveDealerMode}>{getDealerModeLabel(activeDealerMode)}</button>
+                  <button className="rfq-small-btn" onClick={() => setShowDealerActions((prev) => !prev)} aria-label={t('rfq.bestQuotes')}>▼</button>
+                  {showDealerActions && (
+                    <div className="rfq-dealer-actions-menu">
+                      <button className="rfq-dealer-actions-item" onClick={handleSelectBestQuotes}>{t('rfq.bestQuotes')}</button>
+                      <button className="rfq-dealer-actions-item" onClick={handleSelectOneWayAxed}>{t('rfq.oneWayAxed')}</button>
+                      <button className="rfq-dealer-actions-item" onClick={handleClearSelection}>{t('rfq.clearSelection')}</button>
+                    </div>
+                  )}
+                </div>
                 <label className="rfq-switch-wrap compact">
                   <span className="rfq-switch" />
                   <span>{t('rfq.processedTrade')}</span>
