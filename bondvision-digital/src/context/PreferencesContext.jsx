@@ -156,7 +156,7 @@ export const PreferencesProvider = ({ children }) => {
         resetPreferences,
         // Convenience methods
         setTheme: (theme) => updatePreference('theme', theme),
-        setLanguage: (language) => updatePreference('language', language),
+        setLanguage: (language) => updatePreference('language', language, { immediate: true }),
         setLastTab: (tab) => updatePreference('lastTab', tab),
         setSelectedCountryTab: (countryCode) => updatePreference('selectedCountryTab', countryCode, { immediate: true }),
         setGridLayout: (layout) => updatePreference('gridLayout', layout),

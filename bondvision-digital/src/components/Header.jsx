@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import { useLanguage } from '../context/LanguageContext'
+import { usePreferences } from '../context/PreferencesContext'
 import { useAuth } from '../context/AuthContext'
 import './Header.css'
 
 const Header = ({ activeMarket, setActiveMarket }) => {
-  const { language, toggleLanguage, t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
+  const { preferences, setLanguage: setPreferredLanguage } = usePreferences()
   const { user } = useAuth()
   const [currentTime, setCurrentTime] = useState('')
   const [memberStatus, setMemberStatus] = useState('OFF')
   const [traderStatus, setTraderStatus] = useState('OFF')
   const [autoexStatus, setAutoexStatus] = useState('OFF')
+
+  const handleLanguageToggle = () => {
+    const nextLanguage = language === 'en' ? 'it' : 'en'
+    setLanguage(nextLanguage)
+    setPreferredLanguage(nextLanguage)
+  }
 
   const handleMemberToggle = () => {
     const newMemberStatus = memberStatus === 'OFF' ? 'ON' : 'OFF'
@@ -49,6 +57,14 @@ const Header = ({ activeMarket, setActiveMarket }) => {
 
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    const persistedLanguage = preferences?.language
+    if (!persistedLanguage) return
+    if (persistedLanguage !== language) {
+      setLanguage(persistedLanguage)
+    }
+  }, [preferences?.language, language, setLanguage])
   
   return (
     <header className="header">
@@ -144,7 +160,7 @@ const Header = ({ activeMarket, setActiveMarket }) => {
           </div>
         </div>
         <div className="header-icons">
-          <button className="icon-btn language-btn" title={t('header.language')} onClick={toggleLanguage}>
+          <button className="icon-btn language-btn" title={t('header.language')} onClick={handleLanguageToggle}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <circle cx="12" cy="12" r="10"/>
               <line x1="2" y1="12" x2="22" y2="12"/>

@@ -46,7 +46,8 @@ export const translations = {
       usernamePlaceholder: 'Enter your username',
       passwordPlaceholder: 'Enter your password',
       submit: 'Login',
-      demoAccounts: 'Demo Accounts:'
+      demoAccounts: 'Demo Accounts:',
+      alreadyLoggedIn: 'User already logged in from another session'
     },
     userSettings: {
       title: 'User Settings',
@@ -225,13 +226,14 @@ export const translations = {
       usernamePlaceholder: 'Inserisci username',
       passwordPlaceholder: 'Inserisci password',
       submit: 'Login',
-      demoAccounts: 'Account demo:'
+      demoAccounts: 'Account demo:',
+      alreadyLoggedIn: 'Utente già collegato da un\'altra sessione'
     },
     userSettings: {
       title: 'Impostazioni utente',
       rfqSettings: 'Impostazioni RFQ',
       openRfqInPopup: 'Apri RFQ in finestra separata',
-      rfqAlwaysOnTop: 'RFQ Always On Top (best effort)',
+      rfqAlwaysOnTop: 'RFQ sempre in primo piano (best effort)',
       maxNoDealersRfq: 'N. max di dealer nella RFQ'
     },
     mainContent: {
@@ -374,6 +376,10 @@ export const translations = {
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState('en')
 
+  const applyLanguage = (nextLanguage) => {
+    setLanguage(nextLanguage === 'it' ? 'it' : 'en')
+  }
+
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'it' : 'en')
   }
@@ -390,7 +396,7 @@ export const LanguageProvider = ({ children }) => {
   }
 
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage: applyLanguage, toggleLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   )

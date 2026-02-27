@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS users (
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP WITH TIME ZONE
+    last_login TIMESTAMP WITH TIME ZONE,
+    is_logged_in BOOLEAN DEFAULT false,
+    active_session_id UUID,
+    active_session_at TIMESTAMP WITH TIME ZONE
 );
 
 -- User preferences table
