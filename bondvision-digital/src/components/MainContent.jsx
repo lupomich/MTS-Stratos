@@ -186,6 +186,7 @@ const MainContent = () => {
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const contentBodyRef = useRef(null)
   const mainContentRef = useRef(null)
+  const isBondTableFullScreen = isMarketDepthCollapsed && isDataPanelCollapsed
 
   const getRfqTypeLabel = useCallback((type) => {
     switch (type) {
@@ -268,21 +269,29 @@ const MainContent = () => {
     }
   }, [isDraggingVertical, isMarketDepthCollapsed])
 
-  const toggleMarketDepthCollapse = useCallback(() => {
-    setIsMarketDepthCollapsed((prev) => {
-      if (!prev) {
-        previousMarketWidthRef.current = marketWidth
-        setMarketWidth(0)
-        setTradingWidth(100)
-        return true
-      }
+  const collapseMarketDepthPanel = useCallback(() => {
+    if (isMarketDepthCollapsed) return
+    previousMarketWidthRef.current = marketWidth
+    setMarketWidth(0)
+    setTradingWidth(100)
+    setIsMarketDepthCollapsed(true)
+  }, [isMarketDepthCollapsed, marketWidth])
 
-      const restoredMarketWidth = Math.min(80, Math.max(20, previousMarketWidthRef.current || 40))
-      setMarketWidth(restoredMarketWidth)
-      setTradingWidth(100 - restoredMarketWidth)
-      return false
-    })
-  }, [marketWidth])
+  const expandMarketDepthPanel = useCallback(() => {
+    if (!isMarketDepthCollapsed) return
+    const restoredMarketWidth = Math.min(80, Math.max(20, previousMarketWidthRef.current || 40))
+    setMarketWidth(restoredMarketWidth)
+    setTradingWidth(100 - restoredMarketWidth)
+    setIsMarketDepthCollapsed(false)
+  }, [isMarketDepthCollapsed])
+
+  const toggleMarketDepthCollapse = useCallback(() => {
+    if (isMarketDepthCollapsed) {
+      expandMarketDepthPanel()
+      return
+    }
+    collapseMarketDepthPanel()
+  }, [isMarketDepthCollapsed, collapseMarketDepthPanel, expandMarketDepthPanel])
 
   // Handle resize orizzontale (content vs data)
   const handleMouseDownHorizontal = useCallback((e) => {
@@ -308,19 +317,44 @@ const MainContent = () => {
     }
   }, [isDraggingHorizontal, isDataPanelCollapsed])
 
-  const toggleDataPanelCollapse = useCallback(() => {
-    setIsDataPanelCollapsed((prev) => {
-      if (!prev) {
-        previousDataHeightRef.current = dataHeight
-        setDataHeight(0)
-        return true
-      }
+  const collapseDataPanel = useCallback(() => {
+    if (isDataPanelCollapsed) return
+    previousDataHeightRef.current = dataHeight
+    setDataHeight(0)
+    setIsDataPanelCollapsed(true)
+  }, [isDataPanelCollapsed, dataHeight])
 
-      const restoredHeight = Math.min(60, Math.max(15, previousDataHeightRef.current || 35))
-      setDataHeight(restoredHeight)
-      return false
-    })
-  }, [dataHeight])
+  const expandDataPanel = useCallback(() => {
+    if (!isDataPanelCollapsed) return
+    const restoredHeight = Math.min(60, Math.max(15, previousDataHeightRef.current || 35))
+    setDataHeight(restoredHeight)
+    setIsDataPanelCollapsed(false)
+  }, [isDataPanelCollapsed])
+
+  const toggleDataPanelCollapse = useCallback(() => {
+    if (isDataPanelCollapsed) {
+      expandDataPanel()
+      return
+    }
+    collapseDataPanel()
+  }, [isDataPanelCollapsed, collapseDataPanel, expandDataPanel])
+
+  const toggleBondTableFullScreen = useCallback(() => {
+    if (isBondTableFullScreen) {
+      expandMarketDepthPanel()
+      expandDataPanel()
+      return
+    }
+
+    collapseMarketDepthPanel()
+    collapseDataPanel()
+  }, [
+    isBondTableFullScreen,
+    collapseMarketDepthPanel,
+    collapseDataPanel,
+    expandMarketDepthPanel,
+    expandDataPanel
+  ])
 
   React.useEffect(() => {
     document.addEventListener('mousemove', handleMouseMoveVertical)
@@ -1007,6 +1041,41 @@ const MainContent = () => {
           className={`resize-handle-vertical ${isMarketDepthCollapsed ? 'collapsed' : ''}`}
           onMouseDown={handleMouseDownVertical}
         >
+          <button
+            className="fullscreen-toggle-button fullscreen-toggle-edge"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            onClick={toggleBondTableFullScreen}
+            aria-label={isBondTableFullScreen ? t('mainContent.closeFullScreen') : t('mainContent.fullScreen')}
+            title={isBondTableFullScreen ? t('mainContent.closeFullScreen') : t('mainContent.fullScreen')}
+          >
+            {isBondTableFullScreen ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 3 9 9 3 9" />
+                <line x1="9" y1="9" x2="3" y2="3" />
+                <polyline points="15 3 15 9 21 9" />
+                <line x1="15" y1="9" x2="21" y2="3" />
+                <polyline points="9 21 9 15 3 15" />
+                <line x1="9" y1="15" x2="3" y2="21" />
+                <polyline points="15 21 15 15 21 15" />
+                <line x1="15" y1="15" x2="21" y2="21" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="14" y1="10" x2="21" y2="3" />
+                <polyline points="9 21 3 21 3 15" />
+                <line x1="10" y1="14" x2="3" y2="21" />
+                <polyline points="3 9 3 3 9 3" />
+                <line x1="3" y1="3" x2="10" y2="10" />
+                <polyline points="21 15 21 21 15 21" />
+                <line x1="14" y1="14" x2="21" y2="21" />
+              </svg>
+            )}
+          </button>
+
           <button
             className="panel-split-toggle"
             onMouseDown={(e) => {
