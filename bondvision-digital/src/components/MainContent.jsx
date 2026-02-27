@@ -6,7 +6,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
 import RfqOutright from './RfqOutright'
-import { getRandomBonds, generatePriceData, getCountryName } from '../data/governmentBonds'
+import { getBondsByCountry, generatePriceData, getCountryName } from '../data/governmentBonds'
 import { usePreferences } from '../context/PreferencesContext'
 import { useLanguage } from '../context/LanguageContext'
 import './MainContent.css'
@@ -235,11 +235,10 @@ const MainContent = () => {
     }
   }, [selectedCountry, preferencesLoading, countryTabHydrated, preferences?.selectedCountryTab, setSelectedCountryTab])
 
-  // Carica bond casuali quando cambia il paese
+  // Carica tutti i bond disponibili quando cambia il paese
   useEffect(() => {
-    const randomCount = Math.floor(Math.random() * (30 - 10 + 1)) + 10
     const countryName = getCountryName(selectedCountry)
-    const bonds = getRandomBonds(countryName, randomCount)
+    const bonds = getBondsByCountry(countryName)
     const dataBonds = bonds.map(bond => generatePriceData(bond))
     setDataTableRows(dataBonds)
   }, [selectedCountry])

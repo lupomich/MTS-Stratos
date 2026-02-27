@@ -2370,6 +2370,10 @@ export function getCountryName(countryCode) {
   return countryCodeMap[countryCode] || countryCode
 }
 
+export function getBondsByCountry(countryCode) {
+  return [...(governmentBonds[countryCode] || [])]
+}
+
 export function getRandomBonds(countryCode, count = 15) {
   const bonds = governmentBonds[countryCode] || []
   const randomCount = Math.max(Math.min(count, 30), 10)
