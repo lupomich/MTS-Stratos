@@ -4,6 +4,7 @@ param(
     [int]$TestTimeoutMs = 30000,
     [switch]$DebugInspector,
     [switch]$UsePlaywrightUI,
+    [switch]$OpenLiveBrowser,
     [switch]$NoOpenLiveBrowser
 )
 
@@ -35,6 +36,51 @@ function Open-LiveBrowserMaximized {
     }
 
     Start-Process $Url | Out-Null
+}
+
+function Show-ReportRefreshSummary {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TestingDir
+    )
+
+    $jsonPath = Join-Path $TestingDir 'test-results.json'
+    $csvPath = Join-Path $TestingDir 'test-results.csv'
+    $htmlPath = Join-Path $TestingDir 'test-report.html'
+    $xlsxPath = Join-Path $TestingDir 'TEST_RESULTS.xlsx'
+
+    if (-not (Test-Path $jsonPath)) {
+        Write-Host 'Report summary unavailable: test-results.json not found.' -ForegroundColor Yellow
+        return
+    }
+
+    try {
+        $json = Get-Content -Raw -Path $jsonPath | ConvertFrom-Json
+        $startTime = $json.summary.startTime
+        $endTime = $json.summary.endTime
+        $totalTests = $json.summary.totalTests
+        $passed = $json.summary.passed
+        $failed = $json.summary.failed
+
+        Write-Host '--- Report refresh summary ---' -ForegroundColor Cyan
+        Write-Host "Execution Date (UTC): $startTime"
+        Write-Host "End Time (UTC): $endTime"
+        Write-Host "Result: $passed PASS / $failed FAIL ($totalTests tests)"
+
+        $artifacts = @($jsonPath, $csvPath, $htmlPath, $xlsxPath)
+        foreach ($artifact in $artifacts) {
+            if (Test-Path $artifact) {
+                $item = Get-Item $artifact
+                Write-Host ("Updated: {0} ({1})" -f $item.FullName, $item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+            }
+            else {
+                Write-Host ("Missing: {0}" -f $artifact) -ForegroundColor Yellow
+            }
+        }
+    }
+    catch {
+        Write-Host "Unable to print report refresh summary: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
 }
 
 Push-Location $root
@@ -96,7 +142,8 @@ try {
             npm run e2e:ui
         }
         else {
-            if (-not $NoOpenLiveBrowser) {
+            $shouldOpenLiveBrowser = $OpenLiveBrowser -and (-not $NoOpenLiveBrowser)
+            if ($shouldOpenLiveBrowser) {
                 try {
                     Open-LiveBrowserMaximized -Url 'http://localhost:3002'
                     Write-Host 'Live browser opened in separate maximized window: http://localhost:3002' -ForegroundColor Green
@@ -130,6 +177,8 @@ try {
             if ($LASTEXITCODE -ne 0) {
                 throw 'Aggiornamento report TEST_* fallito dopo live run.'
             }
+
+            Show-ReportRefreshSummary -TestingDir $testingDir
         }
 
         if ($runExitCode -ne 0) {

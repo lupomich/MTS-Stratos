@@ -225,6 +225,10 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const handleDragMove = useCallback((event) => {
     if (!dragRef.current.dragging) return;
 
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
     const nextX = dragRef.current.originX + (event.clientX - dragRef.current.startX);
     const nextY = dragRef.current.originY + (event.clientY - dragRef.current.startY);
     setPosition(clampPosition(nextX, nextY));
@@ -234,9 +238,20 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     dragRef.current.dragging = false;
     activeWindow.removeEventListener('mousemove', handleDragMove);
     activeWindow.removeEventListener('mouseup', handleDragEnd);
+    activeWindow.removeEventListener('mouseleave', handleDragEnd);
+    activeWindow.removeEventListener('blur', handleDragEnd);
   }, [activeWindow, handleDragMove]);
 
   const handleDragStart = useCallback((event) => {
+    if (event.button !== 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (activeWindow.getSelection) {
+      activeWindow.getSelection().removeAllRanges();
+    }
+
     dragRef.current = {
       dragging: true,
       startX: event.clientX,
@@ -247,12 +262,16 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
 
     activeWindow.addEventListener('mousemove', handleDragMove);
     activeWindow.addEventListener('mouseup', handleDragEnd);
+    activeWindow.addEventListener('mouseleave', handleDragEnd);
+    activeWindow.addEventListener('blur', handleDragEnd);
   }, [activeWindow, handleDragEnd, handleDragMove, position.x, position.y]);
 
   useEffect(() => {
     return () => {
       activeWindow.removeEventListener('mousemove', handleDragMove);
       activeWindow.removeEventListener('mouseup', handleDragEnd);
+      activeWindow.removeEventListener('mouseleave', handleDragEnd);
+      activeWindow.removeEventListener('blur', handleDragEnd);
     };
   }, [activeWindow, handleDragEnd, handleDragMove]);
 

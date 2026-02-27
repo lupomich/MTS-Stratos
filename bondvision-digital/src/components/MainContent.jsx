@@ -159,6 +159,7 @@ const MainContent = () => {
   const [selectedTopTab, setSelectedTopTab] = useState('ALL')
   const [selectedCountry, setSelectedCountry] = useState('IT')
   const [countryTabHydrated, setCountryTabHydrated] = useState(false)
+  const countryTabHydrationDoneRef = useRef(false)
   const [expandedRFQ, setExpandedRFQ] = useState(false)
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
   const [searchTerm, setSearchTerm] = useState('')
@@ -184,7 +185,7 @@ const MainContent = () => {
 
   // Load persisted country tab preference when available
   useEffect(() => {
-    if (preferencesLoading) return
+    if (preferencesLoading || countryTabHydrationDoneRef.current) return
 
     const persistedCountry = preferences?.selectedCountryTab
     const isValidCountry = countries.some((country) => country.code === persistedCountry && country.code !== '+')
@@ -193,8 +194,9 @@ const MainContent = () => {
       setSelectedCountry(persistedCountry)
     }
 
+    countryTabHydrationDoneRef.current = true
     setCountryTabHydrated(true)
-  }, [preferencesLoading, preferences])
+  }, [preferencesLoading, preferences?.selectedCountryTab])
 
   // Persist selected country tab (skip the '+' action tab)
   useEffect(() => {
@@ -204,7 +206,7 @@ const MainContent = () => {
     if (preferences?.selectedCountryTab !== selectedCountry) {
       setSelectedCountryTab(selectedCountry)
     }
-  }, [selectedCountry, preferencesLoading, countryTabHydrated, preferences, setSelectedCountryTab])
+  }, [selectedCountry, preferencesLoading, countryTabHydrated, preferences?.selectedCountryTab, setSelectedCountryTab])
 
   // Carica bond casuali quando cambia il paese
   useEffect(() => {

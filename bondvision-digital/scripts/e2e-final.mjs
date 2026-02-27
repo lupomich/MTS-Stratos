@@ -166,6 +166,17 @@ async function runTest(testId, description, type, testFn) {
 // Utility: Login GUI
 async function loginGUI(page, username, password) {
     await page.goto(runtimeConfig.BASE_URL);
+
+    const loginVisible = await page.locator('#username').isVisible().catch(() => false);
+    if (!loginVisible) {
+        const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
+        if (mainVisible) {
+            await logoutGUI(page);
+            await page.goto(runtimeConfig.BASE_URL);
+        }
+    }
+
+    await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
     await page.locator('#username').fill(username);
     await page.locator('#password').fill(password);
     await page.locator('button[type="submit"]').click();
@@ -312,6 +323,75 @@ async function cleanupResidualTestUsersAPI() {
 async function waitForBondGrid(page) {
     await page.locator('.bond-grid .custom-header-wrapper').first().waitFor({ state: 'visible', timeout: 5000 });
     await page.waitForTimeout(300);
+}
+
+async function getActiveCountryCode(page) {
+    return page.evaluate(() => {
+        const active = document.querySelector('.country-tabs .country-tab.active .code');
+        return active?.textContent?.trim() || null;
+    });
+}
+
+async function waitForStableActiveCountry(page, options = {}) {
+    const {
+        expectedCode = null,
+        stableMs = 700,
+        timeoutMs = 10000,
+        pollMs = 100
+    } = options;
+
+    const startAt = Date.now();
+    let lastCode = null;
+    let stableSince = Date.now();
+
+    while ((Date.now() - startAt) < timeoutMs) {
+        const code = await getActiveCountryCode(page);
+
+        if (!code || code === '+') {
+            await page.waitForTimeout(pollMs);
+            continue;
+        }
+
+        if (code !== lastCode) {
+            lastCode = code;
+            stableSince = Date.now();
+        }
+
+        const expectedOk = expectedCode ? code === expectedCode : true;
+        const stableEnough = (Date.now() - stableSince) >= stableMs;
+
+        if (expectedOk && stableEnough) {
+            return code;
+        }
+
+        await page.waitForTimeout(pollMs);
+    }
+
+    throw new Error(
+        expectedCode
+            ? `Active country did not stabilize to ${expectedCode} within ${timeoutMs}ms`
+            : `Active country did not stabilize within ${timeoutMs}ms`
+    );
+}
+
+async function waitForUiSettingsSave(page, options = {}) {
+    const { timeoutMs = 8000 } = options;
+
+    try {
+        await page.waitForResponse(
+            (response) => {
+                const request = response.request();
+                return request.method() === 'PUT'
+                    && response.url().includes('/preferences/ui_settings')
+                    && response.status() >= 200
+                    && response.status() < 300;
+            },
+            { timeout: timeoutMs }
+        );
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 async function ensureUserExistsAPI({ username, email, password, role }) {
@@ -512,15 +592,11 @@ async function getCellValueFromFirstRow(page, field) {
 // SECTION 1: USER MANAGEMENT - ADMIN PANEL (Tests 1-24)
 // ============================================================================
 
-async function runSection1(browser) {
+async function runSection1(page) {
     console.log('\n\n========================================');
     console.log('SECTION 1: USER MANAGEMENT - ADMIN PANEL');
     console.log('========================================\n');
     
-    const context = await browser.newContext(getContextOptions());
-    const page = await context.newPage();
-    await maximizePageWindow(page);
-
     await cleanupResidualTestUsersAPI();
     
     // --- Subsection A: Admin Profile (T01-T11) ---
@@ -889,22 +965,17 @@ async function runSection1(browser) {
         }
     });
     
-    await context.close();
 }
 
 // ============================================================================
 // SECTION 2: SETTINGS PERSISTENCE - GUI (Tests 25-37)
 // ============================================================================
 
-async function runSection2(browser) {
+async function runSection2(page) {
     console.log('\n\n========================================');
     console.log('SECTION 2: SETTINGS PERSISTENCE - GUI');
     console.log('========================================\n');
     
-    const context = await browser.newContext(getContextOptions());
-    const page = await context.newPage();
-    await maximizePageWindow(page);
-
     await ensureUserExistsAPI({
         username: 'trader-final',
         email: 'trader-final@stratos.local',
@@ -1011,10 +1082,7 @@ async function runSection2(browser) {
     });
     
     await runTest('T32', 'Persist country tab after logout', 'GUI', async () => {
-        const activeCountry = await page.evaluate(() => {
-            const active = document.querySelector('.country-tabs .country-tab.active .code');
-            return active?.textContent?.trim() || null;
-        });
+        const activeCountry = await waitForStableActiveCountry(page, { stableMs: 900, timeoutMs: 12000 });
 
         const targetCountry = activeCountry === 'DE' ? 'IT' : 'DE';
         const countryButton = page
@@ -1023,6 +1091,7 @@ async function runSection2(browser) {
             .first()
             .locator('xpath=ancestor::button[contains(@class,"country-tab")]');
 
+        const countrySaveObservedPromise = waitForUiSettingsSave(page, { timeoutMs: 9000 });
         await countryButton.scrollIntoViewIfNeeded();
         await countryButton.click({ force: true });
         await page.waitForFunction(
@@ -1036,6 +1105,13 @@ async function runSection2(browser) {
             { timeout: 5000 }
         );
 
+        await waitForStableActiveCountry(page, { expectedCode: targetCountry, stableMs: 900, timeoutMs: 12000 });
+
+        const countrySaveObserved = await countrySaveObservedPromise;
+        if (!countrySaveObserved) {
+            console.log('  [T32] WARNING: ui_settings PUT not observed before logout; relying on post-login persistence check');
+        }
+
         const selectedBeforeLogout = await countryButton.evaluate((el) => el.classList.contains('active'));
         if (!selectedBeforeLogout) {
             throw new Error(`Expected ${targetCountry} country tab to be active before logout`);
@@ -1045,27 +1121,69 @@ async function runSection2(browser) {
         await loginGUI(page, 'trader-final', 'Trader123!');
         await waitForBondGrid(page);
 
-        const selectedAfterRelogin = await page
-            .locator('.country-tabs .country-tab')
-            .filter({ hasText: targetCountry })
-            .first()
-            .evaluate((el) => el.classList.contains('active'));
+        const persistedCountry = await waitForStableActiveCountry(page, {
+            expectedCode: targetCountry,
+            stableMs: 900,
+            timeoutMs: 12000
+        });
 
-        if (!selectedAfterRelogin) {
+        if (persistedCountry !== targetCountry) {
             throw new Error(`Expected ${targetCountry} country tab to persist after relogin`);
         }
     });
 
     await runTest('T33', 'Persist sort after logout', 'GUI', async () => {
-        await page.waitForTimeout(1500);
+        const stateBeforeToggle = await getGridState(page);
+        const descriptionBefore = stateBeforeToggle.columnState.find(c => c.colId === 'description');
+        const targetSort = descriptionBefore?.sort === 'asc' ? 'desc' : 'asc';
+
+        const sortSaveObservedPromise = waitForUiSettingsSave(page, { timeoutMs: 9000 });
+        await openHeaderMenu(page, 'DESCRIPTION');
+        await clickHeaderMenuAction(page, targetSort === 'asc' ? 'sortAsc' : 'sortDesc');
+
+        const sortAppliedNow = await page.waitForFunction(() => {
+            const api = window.__bondGridApi;
+            if (!api || typeof api.getColumnState !== 'function') return false;
+            const state = api.getColumnState();
+            const description = state.find((c) => c.colId === 'description');
+            return description?.sort;
+        }, { timeout: 8000 }).then(() => true).catch(() => false);
+
+        if (!sortAppliedNow) {
+            throw new Error(`Expected description ${targetSort} sort before logout, but sort was not applied`);
+        }
+
+        const stateAfterToggle = await getGridState(page);
+        const descriptionAfter = stateAfterToggle.columnState.find(c => c.colId === 'description');
+        if (descriptionAfter?.sort !== targetSort) {
+            throw new Error(`Expected description ${targetSort} sort before logout, got ${descriptionAfter?.sort || 'none'}`);
+        }
+
+        const sortSaveObserved = await sortSaveObservedPromise;
+        if (!sortSaveObserved) {
+            console.log('  [T33] WARNING: ui_settings PUT not observed before logout; relying on post-login persistence check');
+        }
+
         await logoutGUI(page);
         await loginGUI(page, 'trader-final', 'Trader123!');
         await waitForBondGrid(page);
 
+        const sortPersisted = await page.waitForFunction(() => {
+            const api = window.__bondGridApi;
+            if (!api || typeof api.getColumnState !== 'function') return false;
+            const state = api.getColumnState();
+            const description = state.find((c) => c.colId === 'description');
+            return description?.sort;
+        }, { timeout: 12000 }).then(() => true).catch(() => false);
+
+        if (!sortPersisted) {
+            throw new Error(`Expected persisted description ${targetSort} sort after relogin, but it was not applied in time`);
+        }
+
         const state = await getGridState(page);
         const description = state.columnState.find(c => c.colId === 'description');
-        if (description?.sort !== 'asc') {
-            throw new Error(`Expected persisted description asc sort, got ${description?.sort || 'none'}`);
+        if (description?.sort !== targetSort) {
+            throw new Error(`Expected persisted description ${targetSort} sort, got ${description?.sort || 'none'}`);
         }
     });
     
@@ -1145,28 +1263,33 @@ async function runSection2(browser) {
         }
     });
     
-    await context.close();
 }
 
 // ============================================================================
 // SECTION 3: FULL PERSISTENCE & CLEANUP (Tests 38-41)
 // ============================================================================
 
-async function runSection3(browser) {
+async function runSection3(page) {
     console.log('\n\n========================================');
     console.log('SECTION 3: FULL PERSISTENCE & CLEANUP');
     console.log('========================================\n');
     
-    const context = await browser.newContext(getContextOptions());
-    const page = await context.newPage();
-    await maximizePageWindow(page);
+    let section3SessionInitialized = false;
 
     const ensureTraderLoggedIn = async () => {
         for (let attempt = 1; attempt <= 3; attempt += 1) {
             try {
                 const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
-                if (!mainVisible) {
+                if (!section3SessionInitialized) {
+                    if (mainVisible) {
+                        await logoutGUI(page);
+                    }
+
                     console.log(`[ensureTraderLoggedIn] Attempt ${attempt}: Logging in demo admin...`);
+                    await loginGUI(page, 'admin', 'admin123');
+                    section3SessionInitialized = true;
+                } else if (!mainVisible) {
+                    console.log(`[ensureTraderLoggedIn] Attempt ${attempt}: Restoring demo admin session...`);
                     await loginGUI(page, 'admin', 'admin123');
                 }
 
@@ -1371,8 +1494,11 @@ async function runSection3(browser) {
             console.log(`  [T45] Drag attempt ${attempt}...`);
             await page.mouse.move(startX, startY);
             await page.mouse.down();
-            await page.mouse.move(endX, endY, { steps: 10 });
-            await page.mouse.up();
+            try {
+                await page.mouse.move(endX, endY, { steps: 10 });
+            } finally {
+                await page.mouse.up();
+            }
             await page.waitForTimeout(200);
 
             const after = await rfqWindow.boundingBox();
@@ -1536,7 +1662,6 @@ async function runSection3(browser) {
         }
     });
     
-    await context.close();
 }
 
 // ============================================================================
@@ -1583,20 +1708,25 @@ export async function runE2ESuite(overrides = {}) {
         slowMo: Number.isNaN(runtimeConfig.SLOW_MO) ? 0 : runtimeConfig.SLOW_MO,
         args: launchArgs
     });
+
+    const context = await browser.newContext(getContextOptions());
+    const page = await context.newPage();
+    await maximizePageWindow(page);
     
     try {
         if (runtimeConfig.START_FROM <= 24) {
-            await runSection1(browser);
+            await runSection1(page);
         }
         if (runtimeConfig.START_FROM <= 40) {
-            await runSection2(browser);
+            await runSection2(page);
         }
         if (runtimeConfig.START_FROM <= 47) {
-            await runSection3(browser);
+            await runSection3(page);
         }
     } catch (error) {
         console.error('\n\n❌ FATAL ERROR:', error);
     } finally {
+        await context.close();
         await browser.close();
     }
     
