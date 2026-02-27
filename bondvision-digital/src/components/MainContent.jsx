@@ -899,105 +899,109 @@ const MainContent = () => {
         </div>
       </div>
 
-      <div className="top-tabs">
-        {topTabs.map((t, i) => (
-          <button
-            key={`top-${t.code}-${i}`}
-            className={`country-tab ${selectedTopTab === t.code ? 'active' : ''}`}
-            onClick={() => setSelectedTopTab(t.code)}
-            title={t.name}
-          >
-            <span className="flag">{t.flag}</span>
-            <span className="code">{getTopTabLabel(t.code, t.name)}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="country-tabs">
-        <div className="gov-selector-container">
-          <select id="gov-selector" className="gov-selector">
-            <option>{t('mainContent.govOptions.govCountry')}</option>
-            <option>{t('mainContent.govOptions.govMaturity')}</option>
-            <option>{t('mainContent.govOptions.govSwitches')}</option>
-            <option>{t('mainContent.govOptions.govGtdSsa')}</option>
-            <option>{t('mainContent.govOptions.coveredMaturity')}</option>
-            <option>{t('mainContent.govOptions.ssasMaturity')}</option>
-            <option>{t('mainContent.govOptions.corporateIndustry')}</option>
-            <option>{t('mainContent.govOptions.banksFinancials')}</option>
-          </select>
-        </div>
-        {countries.map((country, idx) => (
-          <button
-            key={`${country.code}-${idx}`}
-            className={`country-tab ${country.code === '+' ? 'country-add' : ''} ${selectedCountry === country.code ? 'active' : ''}`}
-            onClick={() => setSelectedCountry(country.code)}
-            title={country.name}
-          >
-            {country.flag && (
-              <img src={country.flag} alt={country.code} className="country-flag-img" />
-            )}
-            {!country.flag && country.code !== '+' && (
-              <span className="flag-placeholder">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </span>
-            )}
-            <span className="code">{country.code}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="content-body" ref={contentBodyRef} style={{ cursor: isDraggingVertical ? 'col-resize' : 'default' }}>
-        <div className="trading-area-container" style={{ flex: isMarketDepthCollapsed ? '0 0 100%' : `0 0 ${tradingWidth}%` }}>
-          <BondTable 
-            onSelectBond={setSelectedBond} 
-            onDoubleClickBond={handleBondDoubleClick}
-            countryBonds={dataTableRows} 
-            searchTerm={searchTerm} 
-          />
-
-          <div
-            className={`resize-handle-horizontal ${isDataPanelCollapsed ? 'collapsed' : ''}`}
-            onMouseDown={handleMouseDownHorizontal}
-          >
-            <button
-              className="panel-split-toggle panel-split-toggle-horizontal"
-              onMouseDown={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-              onClick={toggleDataPanelCollapse}
-              aria-label={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
-              title={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {isDataPanelCollapsed ? (
-                  <polyline points="18 15 12 9 6 15"/>
-                ) : (
-                  <polyline points="6 9 12 15 18 9"/>
-                )}
-              </svg>
-            </button>
+      <div className="workspace-body" ref={contentBodyRef} style={{ cursor: isDraggingVertical ? 'col-resize' : 'default' }}>
+        <div className="left-workspace" style={{ flex: isMarketDepthCollapsed ? '0 0 100%' : `0 0 ${tradingWidth}%` }}>
+          <div className="top-tabs">
+            {topTabs.map((t, i) => (
+              <button
+                key={`top-${t.code}-${i}`}
+                className={`country-tab ${selectedTopTab === t.code ? 'active' : ''}`}
+                onClick={() => setSelectedTopTab(t.code)}
+                title={t.name}
+              >
+                <span className="flag">{t.flag}</span>
+                <span className="code">{getTopTabLabel(t.code, t.name)}</span>
+              </button>
+            ))}
           </div>
 
-          {!isDataPanelCollapsed && (
-            <div className="data-section" style={{ flex: `0 0 ${dataHeight}%` }}>
-              <div className="data-header">
-                <span className="data-title">{t('mainContent.dataTitle')}</span>
-              </div>
-              <div className="ag-theme-alpine-dark data-grid">
-                <AgGridReact
-                  rowData={dataTableRows}
-                  columnDefs={dataColumnDefs}
-                  defaultColDef={dataDefaultColDef}
-                  domLayout='normal'
-                  suppressCellFocus={true}
-                />
-              </div>
+          <div className="country-tabs">
+            <div className="gov-selector-container">
+              <select id="gov-selector" className="gov-selector">
+                <option>{t('mainContent.govOptions.govCountry')}</option>
+                <option>{t('mainContent.govOptions.govMaturity')}</option>
+                <option>{t('mainContent.govOptions.govSwitches')}</option>
+                <option>{t('mainContent.govOptions.govGtdSsa')}</option>
+                <option>{t('mainContent.govOptions.coveredMaturity')}</option>
+                <option>{t('mainContent.govOptions.ssasMaturity')}</option>
+                <option>{t('mainContent.govOptions.corporateIndustry')}</option>
+                <option>{t('mainContent.govOptions.banksFinancials')}</option>
+              </select>
             </div>
-          )}
+            {countries.map((country, idx) => (
+              <button
+                key={`${country.code}-${idx}`}
+                className={`country-tab ${country.code === '+' ? 'country-add' : ''} ${selectedCountry === country.code ? 'active' : ''}`}
+                onClick={() => setSelectedCountry(country.code)}
+                title={country.name}
+              >
+                {country.flag && (
+                  <img src={country.flag} alt={country.code} className="country-flag-img" />
+                )}
+                {!country.flag && country.code !== '+' && (
+                  <span className="flag-placeholder">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </span>
+                )}
+                <span className="code">{country.code}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="content-body">
+            <div className="trading-area-container">
+              <BondTable 
+                onSelectBond={setSelectedBond} 
+                onDoubleClickBond={handleBondDoubleClick}
+                countryBonds={dataTableRows} 
+                searchTerm={searchTerm} 
+              />
+
+              <div
+                className={`resize-handle-horizontal ${isDataPanelCollapsed ? 'collapsed' : ''}`}
+                onMouseDown={handleMouseDownHorizontal}
+              >
+                <button
+                  className="panel-split-toggle panel-split-toggle-horizontal"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }}
+                  onClick={toggleDataPanelCollapse}
+                  aria-label={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+                  title={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {isDataPanelCollapsed ? (
+                      <polyline points="18 15 12 9 6 15"/>
+                    ) : (
+                      <polyline points="6 9 12 15 18 9"/>
+                    )}
+                  </svg>
+                </button>
+              </div>
+
+              {!isDataPanelCollapsed && (
+                <div className="data-section" style={{ flex: `0 0 ${dataHeight}%` }}>
+                  <div className="data-header">
+                    <span className="data-title">{t('mainContent.dataTitle')}</span>
+                  </div>
+                  <div className="ag-theme-alpine-dark data-grid">
+                    <AgGridReact
+                      rowData={dataTableRows}
+                      columnDefs={dataColumnDefs}
+                      defaultColDef={dataDefaultColDef}
+                      domLayout='normal'
+                      suppressCellFocus={true}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div
