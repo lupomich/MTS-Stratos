@@ -76,17 +76,6 @@ router.post('/login',
       const match = await bcrypt.compare(password, user.password_hash);
       if (!match) return res.status(401).json({ error: 'Invalid credentials' });
 
-      if (user.is_logged_in && isSessionStale(user.active_session_at)) {
-        try {
-          await clearUserSessionState(pool, redis, user.id);
-          user.is_logged_in = false;
-          user.active_session_id = null;
-          user.active_session_at = null;
-        } catch (cleanupErr) {
-          console.error('Stale session cleanup error on login:', cleanupErr.message);
-        }
-      }
-
       let cachedSessionId = null;
       try {
         cachedSessionId = await redis?.get(getOnlineKey(user.id));
@@ -105,25 +94,27 @@ router.post('/login',
 
       if (!cachedSessionId && user.is_logged_in) {
         if (isSessionStale(user.active_session_at)) {
-          await clearUserSessionState(pool, redis, user.id);
-          user.is_logged_in = false;
-          user.active_session_id = null;
-          user.active_session_at = null;
+          try {
+            await clearUserSessionState(pool, redis, user.id);
+            user.is_logged_in = false;
+            user.active_session_id = null;
+            user.active_session_at = null;
+          } catch (cleanupErr) {
+            console.error('Stale session cleanup error on login:', cleanupErr.message);
+          }
+        } else {
+          try {
+            await syncOnlineCache(redis, user.id, user.active_session_id || randomUUID());
+          } catch (cacheErr) {
+            console.error('Redis sync error on login conflict path:', cacheErr.message);
+          }
+          const language = await getUserPreferredLanguage(pool, user.id);
+          return res.status(409).json({
+            error: getAlreadyLoggedMessage(language),
+            code: 'ALREADY_LOGGED_IN',
+            language
+          });
         }
-      }
-
-      if (!cachedSessionId && user.is_logged_in) {
-        try {
-          await syncOnlineCache(redis, user.id, user.active_session_id || randomUUID());
-        } catch (cacheErr) {
-          console.error('Redis sync error on login conflict path:', cacheErr.message);
-        }
-        const language = await getUserPreferredLanguage(pool, user.id);
-        return res.status(409).json({
-          error: getAlreadyLoggedMessage(language),
-          code: 'ALREADY_LOGGED_IN',
-          language
-        });
       }
 
       if (cachedSessionId && !user.is_logged_in) {

@@ -5,12 +5,31 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
-function requireAdmin(req, res, next) {
+async function requireAdmin(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth) return res.status(401).json({ error: 'No token' });
   try {
     const token = auth.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const pool = req.app.get('pool');
+    const result = await pool.query(
+      `SELECT id, role, is_logged_in, active_session_id
+       FROM users
+       WHERE id = $1 AND is_active = true
+       LIMIT 1`,
+      [decoded.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid token user' });
+    }
+
+    const user = result.rows[0];
+    if (!user.is_logged_in || !user.active_session_id || user.active_session_id !== decoded.sessionId) {
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
     if (decoded.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
     req.user = decoded;
     next();

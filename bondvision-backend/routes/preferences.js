@@ -32,7 +32,8 @@ function decodeUserFromRequest(req) {
     return {
       id: decoded.id,
       username: decoded.username,
-      role: decoded.role
+      role: decoded.role,
+      sessionId: decoded.sessionId
     };
   } catch {
     return null;
@@ -47,7 +48,7 @@ async function resolveAuthenticatedUser(req) {
 
   const pool = req.app.get('pool');
   const result = await pool.query(
-    'SELECT id, username, role FROM users WHERE id = $1 AND is_active = true LIMIT 1',
+    'SELECT id, username, role, is_logged_in, active_session_id FROM users WHERE id = $1 AND is_active = true LIMIT 1',
     [decodedUser.id]
   );
 
@@ -55,7 +56,12 @@ async function resolveAuthenticatedUser(req) {
     return { user: null, hasAuthHeader: true, invalidTokenUser: true };
   }
 
-  return { user: result.rows[0], hasAuthHeader: true };
+  const user = result.rows[0];
+  if (!user.is_logged_in || !user.active_session_id || user.active_session_id !== decodedUser.sessionId) {
+    return { user: null, hasAuthHeader: true, invalidSession: true };
+  }
+
+  return { user, hasAuthHeader: true };
 }
 
 async function getUiSettingsFromDb(pool, userId) {
@@ -83,10 +89,14 @@ async function getUiSettingsFromDb(pool, userId) {
 
 // Get user preferences
 router.get('/', async (req, res) => {
-  const { user, invalidTokenUser } = await resolveAuthenticatedUser(req);
+  const { user, invalidTokenUser, invalidSession } = await resolveAuthenticatedUser(req);
 
   if (invalidTokenUser) {
     return res.status(401).json({ error: 'Invalid token user' });
+  }
+
+  if (invalidSession) {
+    return res.status(401).json({ error: 'Session expired' });
   }
 
   if (!user) {
@@ -114,10 +124,14 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/ui_settings', async (req, res) => {
-  const { user, invalidTokenUser } = await resolveAuthenticatedUser(req);
+  const { user, invalidTokenUser, invalidSession } = await resolveAuthenticatedUser(req);
 
   if (invalidTokenUser) {
     return res.status(401).json({ error: 'Invalid token user' });
+  }
+
+  if (invalidSession) {
+    return res.status(401).json({ error: 'Session expired' });
   }
 
   if (!user) {
@@ -146,10 +160,14 @@ router.get('/ui_settings', async (req, res) => {
 
 // Update user preference
 router.put('/ui_settings', async (req, res) => {
-  const { user, invalidTokenUser } = await resolveAuthenticatedUser(req);
+  const { user, invalidTokenUser, invalidSession } = await resolveAuthenticatedUser(req);
 
   if (invalidTokenUser) {
     return res.status(401).json({ error: 'Invalid token user' });
+  }
+
+  if (invalidSession) {
+    return res.status(401).json({ error: 'Session expired' });
   }
 
   if (!user) {
