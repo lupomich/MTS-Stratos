@@ -5,7 +5,10 @@ import { randomUUID } from 'crypto';
 import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
-const SESSION_IDLE_TIMEOUT_SECONDS = Number(process.env.SESSION_IDLE_TIMEOUT_SECONDS || 120);
+const SESSION_IDLE_TIMEOUT_SECONDS = Number(process.env.SESSION_IDLE_TIMEOUT_SECONDS || 60);
+const SESSION_ONLINE_TTL_SECONDS = Number(
+  process.env.SESSION_ONLINE_TTL_SECONDS || (SESSION_IDLE_TIMEOUT_SECONDS + 15)
+);
 
 const getOnlineKey = (userId) => `auth:online:${userId}`;
 
@@ -33,7 +36,7 @@ const getUserPreferredLanguage = async (pool, userId) => {
 
 const syncOnlineCache = async (redis, userId, sessionId) => {
   if (!redis) return;
-  await redis.set(getOnlineKey(userId), sessionId, { EX: 60 * 60 * 24 });
+  await redis.set(getOnlineKey(userId), sessionId, { EX: SESSION_ONLINE_TTL_SECONDS });
 };
 
 const clearOnlineCache = async (redis, userId) => {
@@ -84,12 +87,24 @@ router.post('/login',
       }
 
       if (cachedSessionId && user.is_logged_in) {
-        const language = await getUserPreferredLanguage(pool, user.id);
-        return res.status(409).json({
-          error: getAlreadyLoggedMessage(language),
-          code: 'ALREADY_LOGGED_IN',
-          language
-        });
+        if (isSessionStale(user.active_session_at)) {
+          try {
+            await clearUserSessionState(pool, redis, user.id);
+            user.is_logged_in = false;
+            user.active_session_id = null;
+            user.active_session_at = null;
+            cachedSessionId = null;
+          } catch (cleanupErr) {
+            console.error('Stale session cleanup error on login (cached path):', cleanupErr.message);
+          }
+        } else {
+          const language = await getUserPreferredLanguage(pool, user.id);
+          return res.status(409).json({
+            error: getAlreadyLoggedMessage(language),
+            code: 'ALREADY_LOGGED_IN',
+            language
+          });
+        }
       }
 
       if (!cachedSessionId && user.is_logged_in) {
