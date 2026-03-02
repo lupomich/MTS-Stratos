@@ -16,8 +16,8 @@ services:
       - DATABASE_URL=postgresql://stratos:stratos2026@postgres:5432/stratos_db
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=stratos-secret-key-2026
-      - SESSION_IDLE_TIMEOUT_SECONDS=60
-      - SESSION_ONLINE_TTL_SECONDS=75
+      - SESSION_IDLE_TIMEOUT_SECONDS=300
+      - SESSION_ONLINE_TTL_SECONDS=315
       - CORS_ORIGIN=http://bondvision-digital:3002
     depends_on:
       - postgres

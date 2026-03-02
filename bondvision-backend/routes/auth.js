@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
-const SESSION_IDLE_TIMEOUT_SECONDS = Number(process.env.SESSION_IDLE_TIMEOUT_SECONDS || 60);
+const SESSION_IDLE_TIMEOUT_SECONDS = Number(process.env.SESSION_IDLE_TIMEOUT_SECONDS || 300);
 const SESSION_ONLINE_TTL_SECONDS = Number(
   process.env.SESSION_ONLINE_TTL_SECONDS || (SESSION_IDLE_TIMEOUT_SECONDS + 15)
 );
