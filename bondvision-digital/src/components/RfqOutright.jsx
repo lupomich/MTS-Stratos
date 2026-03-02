@@ -51,11 +51,26 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const [activeDealerMode, setActiveDealerMode] = useState('bestQuotes');
   const [processedTradeEnabled, setProcessedTradeEnabled] = useState(false);
   const [position, setPosition] = useState(initialPosition || { x: 140, y: 90 });
+  const [windowState, setWindowState] = useState('normal');
+  const [windowSize, setWindowSize] = useState({ width: null, height: null });
+  const [restoreSnapshot, setRestoreSnapshot] = useState(null);
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
+  const resizeRef = useRef({
+    resizing: false,
+    handle: null,
+    startX: 0,
+    startY: 0,
+    startWidth: 0,
+    startHeight: 0,
+    startLeft: 0,
+    startTop: 0
+  });
   const windowRef = useRef(null);
   const dealerActionsRef = useRef(null);
   const activeWindow = hostWindow || window;
   const maxDealersInRfq = Math.min(20, Math.max(1, Number.parseInt(preferences?.rfqMaxDealers, 10) || 6));
+  const MIN_WINDOW_WIDTH = 760;
+  const MIN_WINDOW_HEIGHT = 320;
 
   const clampPosition = useCallback((x, y) => {
     const fallbackWidth = Math.min(1070, Math.max(320, activeWindow.innerWidth - 20));
@@ -70,6 +85,81 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
       y: Math.min(Math.max(8, y), maxY)
     };
   }, [activeWindow]);
+
+  const clampSize = useCallback((width, height) => {
+    const maxWidth = Math.max(MIN_WINDOW_WIDTH, activeWindow.innerWidth - 16);
+    const maxHeight = Math.max(MIN_WINDOW_HEIGHT, activeWindow.innerHeight - 16);
+    return {
+      width: Math.min(Math.max(MIN_WINDOW_WIDTH, width), maxWidth),
+      height: Math.min(Math.max(MIN_WINDOW_HEIGHT, height), maxHeight)
+    };
+  }, [activeWindow]);
+
+  const getCurrentSnapshot = useCallback(() => {
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (!rect) {
+      const fallback = clampPosition(position.x, position.y);
+      const fallbackWidth = windowSize.width || Math.min(1250, Math.max(320, activeWindow.innerWidth - 20));
+      const fallbackHeight = windowSize.height || Math.min(760, Math.max(220, activeWindow.innerHeight - 20));
+      return {
+        x: fallback.x,
+        y: fallback.y,
+        width: fallbackWidth,
+        height: fallbackHeight
+      };
+    }
+
+    return {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }, [activeWindow, clampPosition, position.x, position.y, windowSize.height, windowSize.width]);
+
+  const restoreWindow = useCallback(() => {
+    const snapshot = restoreSnapshot || getCurrentSnapshot();
+    const clampedSize = clampSize(snapshot.width, snapshot.height);
+    const clampedPos = clampPosition(snapshot.x, snapshot.y);
+    setWindowSize(clampedSize);
+    setPosition(clampedPos);
+    setWindowState('normal');
+  }, [clampPosition, clampSize, getCurrentSnapshot, restoreSnapshot]);
+
+  const maximizeWindow = useCallback(() => {
+    if (windowState !== 'maximized') {
+      setRestoreSnapshot(getCurrentSnapshot());
+    }
+
+    const width = Math.max(MIN_WINDOW_WIDTH, activeWindow.innerWidth - 16);
+    const height = Math.max(MIN_WINDOW_HEIGHT, activeWindow.innerHeight - 16);
+    setWindowSize({ width, height });
+    setPosition({ x: 8, y: 8 });
+    setWindowState('maximized');
+  }, [activeWindow, getCurrentSnapshot, windowState]);
+
+  const minimizeWindow = useCallback(() => {
+    if (windowState !== 'minimized') {
+      setRestoreSnapshot(getCurrentSnapshot());
+    }
+    setWindowState('minimized');
+  }, [getCurrentSnapshot, windowState]);
+
+  const toggleMaximizeRestore = useCallback(() => {
+    if (windowState === 'maximized') {
+      restoreWindow();
+      return;
+    }
+    maximizeWindow();
+  }, [maximizeWindow, restoreWindow, windowState]);
+
+  const toggleMinimizeRestore = useCallback(() => {
+    if (windowState === 'minimized') {
+      restoreWindow();
+      return;
+    }
+    minimizeWindow();
+  }, [minimizeWindow, restoreWindow, windowState]);
 
   const defaultDealerPool = [
     '_D01', '_D02', '_D03', '_D04', '_D05', '_D06', '_D07', '_D09', '_D10', '_D11',
@@ -268,6 +358,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   }, [activeWindow, handleDragMove]);
 
   const handleDragStart = useCallback((event) => {
+    if (windowState !== 'normal') return;
     if (event.button !== 0) return;
 
     event.preventDefault();
@@ -289,7 +380,96 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     activeWindow.addEventListener('mouseup', handleDragEnd);
     activeWindow.addEventListener('mouseleave', handleDragEnd);
     activeWindow.addEventListener('blur', handleDragEnd);
-  }, [activeWindow, handleDragEnd, handleDragMove, position.x, position.y]);
+  }, [activeWindow, handleDragEnd, handleDragMove, position.x, position.y, windowState]);
+
+  const handleResizeMove = useCallback((event) => {
+    if (!resizeRef.current.resizing) return;
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    const {
+      handle,
+      startX,
+      startY,
+      startWidth,
+      startHeight,
+      startLeft,
+      startTop
+    } = resizeRef.current;
+
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+
+    let nextWidth = startWidth;
+    let nextHeight = startHeight;
+    let nextLeft = startLeft;
+    let nextTop = startTop;
+
+    if (handle.includes('e')) {
+      nextWidth = startWidth + dx;
+    }
+    if (handle.includes('s')) {
+      nextHeight = startHeight + dy;
+    }
+    if (handle.includes('w')) {
+      nextWidth = startWidth - dx;
+      nextLeft = startLeft + dx;
+    }
+    if (handle.includes('n')) {
+      nextHeight = startHeight - dy;
+      nextTop = startTop + dy;
+    }
+
+    const clampedSize = clampSize(nextWidth, nextHeight);
+
+    if (handle.includes('w')) {
+      nextLeft = startLeft + (startWidth - clampedSize.width);
+    }
+    if (handle.includes('n')) {
+      nextTop = startTop + (startHeight - clampedSize.height);
+    }
+
+    const clampedPos = clampPosition(nextLeft, nextTop);
+    setWindowSize(clampedSize);
+    setPosition(clampedPos);
+  }, [clampPosition, clampSize]);
+
+  const handleResizeEnd = useCallback(() => {
+    resizeRef.current.resizing = false;
+    activeWindow.removeEventListener('mousemove', handleResizeMove);
+    activeWindow.removeEventListener('mouseup', handleResizeEnd);
+    activeWindow.removeEventListener('mouseleave', handleResizeEnd);
+    activeWindow.removeEventListener('blur', handleResizeEnd);
+  }, [activeWindow, handleResizeMove]);
+
+  const handleResizeStart = useCallback((event, handle) => {
+    if (windowState !== 'normal') return;
+    if (event.button !== 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    resizeRef.current = {
+      resizing: true,
+      handle,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      startLeft: rect.left,
+      startTop: rect.top
+    };
+
+    activeWindow.addEventListener('mousemove', handleResizeMove);
+    activeWindow.addEventListener('mouseup', handleResizeEnd);
+    activeWindow.addEventListener('mouseleave', handleResizeEnd);
+    activeWindow.addEventListener('blur', handleResizeEnd);
+  }, [activeWindow, handleResizeEnd, handleResizeMove, windowState]);
 
   useEffect(() => {
     return () => {
@@ -297,8 +477,12 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
       activeWindow.removeEventListener('mouseup', handleDragEnd);
       activeWindow.removeEventListener('mouseleave', handleDragEnd);
       activeWindow.removeEventListener('blur', handleDragEnd);
+      activeWindow.removeEventListener('mousemove', handleResizeMove);
+      activeWindow.removeEventListener('mouseup', handleResizeEnd);
+      activeWindow.removeEventListener('mouseleave', handleResizeEnd);
+      activeWindow.removeEventListener('blur', handleResizeEnd);
     };
-  }, [activeWindow, handleDragEnd, handleDragMove]);
+  }, [activeWindow, handleDragEnd, handleDragMove, handleResizeEnd, handleResizeMove]);
 
   useEffect(() => {
     if (!showDealerActions) return;
@@ -466,8 +650,13 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     <div className="rfq-window-layer">
       <div
         ref={windowRef}
-        className="rfq-modal rfq-floating-window"
-        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        className={`rfq-modal rfq-floating-window ${windowState}`}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          width: windowSize.width ? `${windowSize.width}px` : undefined,
+          height: windowSize.height ? `${windowSize.height}px` : undefined
+        }}
       >
         <div className="rfq-titlebar rfq-drag-handle" onMouseDown={handleDragStart}>
           <div className="rfq-title-left">
@@ -475,8 +664,8 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
             <span className="rfq-title-text">{`${rfqSequence}.${t('rfq.title')}`}</span>
           </div>
           <div className="rfq-window-controls">
-            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label={t('rfq.minimizeAria')}>−</button>
-            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} aria-label={t('rfq.maximizeAria')}>□</button>
+            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} onClick={toggleMinimizeRestore} aria-label={windowState === 'minimized' ? t('rfq.maximizeAria') : t('rfq.minimizeAria')}>{windowState === 'minimized' ? '▢' : '−'}</button>
+            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} onClick={toggleMaximizeRestore} aria-label={windowState === 'maximized' ? t('rfq.minimizeAria') : t('rfq.maximizeAria')}>{windowState === 'maximized' ? '❐' : '□'}</button>
             <button className="rfq-window-btn rfq-window-btn-close" onMouseDown={(e) => e.stopPropagation()} onClick={onClose} aria-label={t('rfq.closeAria')}>✕</button>
           </div>
         </div>
@@ -685,6 +874,15 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
           <button className="rfq-btn rfq-btn-primary" onClick={handleSubmit}>{t('rfq.sendRfq')}</button>
           <button className="rfq-btn rfq-btn-close" onClick={onClose}>{t('rfq.close')}</button>
         </div>
+
+        {windowState === 'normal' && (
+          <>
+            <div className="rfq-resize-handle rfq-resize-handle-nw" onMouseDown={(event) => handleResizeStart(event, 'nw')} />
+            <div className="rfq-resize-handle rfq-resize-handle-ne" onMouseDown={(event) => handleResizeStart(event, 'ne')} />
+            <div className="rfq-resize-handle rfq-resize-handle-sw" onMouseDown={(event) => handleResizeStart(event, 'sw')} />
+            <div className="rfq-resize-handle rfq-resize-handle-se" onMouseDown={(event) => handleResizeStart(event, 'se')} />
+          </>
+        )}
       </div>
     </div>
   );

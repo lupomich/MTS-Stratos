@@ -83,6 +83,38 @@ function Show-ReportRefreshSummary {
     }
 }
 
+function Invoke-PostRunCleanup {
+    Write-Host 'Post-run cleanup: clearing auth/session state and residual test users...' -ForegroundColor Yellow
+
+    try {
+        docker exec mts-stratos-postgres psql -U stratos -d stratos_db -c "UPDATE users SET is_logged_in = false, active_session_id = NULL, active_session_at = NULL;" | Out-Null
+    }
+    catch {
+        Write-Host "Post-run cleanup warning (users session reset): $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+
+    try {
+        docker exec mts-stratos-postgres psql -U stratos -d stratos_db -c "UPDATE user_sessions SET is_active = false WHERE is_active = true;" | Out-Null
+    }
+    catch {
+        Write-Host "Post-run cleanup warning (user_sessions reset): $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+
+    try {
+        docker exec mts-stratos-postgres psql -U stratos -d stratos_db -c "DELETE FROM users WHERE username IN ('admin-test','trader-test','viewer-test','trader-final','viewer-final');" | Out-Null
+    }
+    catch {
+        Write-Host "Post-run cleanup warning (test users delete): $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+
+    try {
+        docker exec mts-stratos-redis sh -lc "redis-cli --scan --pattern 'auth:online:*' | xargs -r redis-cli del >/dev/null" | Out-Null
+    }
+    catch {
+        Write-Host "Post-run cleanup warning (redis keys reset): $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
 Push-Location $root
 try {
     Write-Host '=== MTS-Stratos E2E Live View ===' -ForegroundColor Cyan
@@ -223,5 +255,6 @@ try {
     }
 }
 finally {
+    Invoke-PostRunCleanup
     Pop-Location
 }
