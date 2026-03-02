@@ -3,70 +3,70 @@
 **Data creazione**: 2026-02-20  
 **Ultima esecuzione**: 2026-03-02  
 **Timeout per test**: 30 secondi (30000 ms)  
-**Totale test**: 1  
+**Totale test**: 46  
 **Focus**: GUI con API secondarie
 
 ---
 
 | ID | Test Description | Type | Status | Pass/Fail | Duration | Notes |
 |----|----|-----|--------|-----------|----------|--------|
-| T47 | Final cleanup | GUI | âœ… RUN | PASS | 828 ms | - |
-| T01 | - | GUI | NOT RUN | - | - | - |
-| T02 | - | GUI | NOT RUN | - | - | - |
-| T03 | - | GUI | NOT RUN | - | - | - |
-| T04 | - | GUI | NOT RUN | - | - | - |
-| T05 | - | GUI | NOT RUN | - | - | - |
-| T06 | - | GUI | NOT RUN | - | - | - |
-| T07 | - | GUI | NOT RUN | - | - | - |
-| T08 | - | GUI | NOT RUN | - | - | - |
-| T09 | - | GUI | NOT RUN | - | - | - |
-| T10 | - | GUI | NOT RUN | - | - | - |
-| T11 | - | GUI | NOT RUN | - | - | - |
-| T12 | - | GUI | NOT RUN | - | - | - |
-| T13 | - | GUI | NOT RUN | - | - | - |
-| T14 | - | GUI | NOT RUN | - | - | - |
-| T15 | - | GUI | NOT RUN | - | - | - |
-| T16 | - | GUI | NOT RUN | - | - | - |
-| T17 | - | GUI | NOT RUN | - | - | - |
-| T18 | - | GUI | NOT RUN | - | - | - |
-| T19 | - | GUI | NOT RUN | - | - | - |
-| T20 | - | GUI | NOT RUN | - | - | - |
-| T21 | - | GUI | NOT RUN | - | - | - |
-| T22 | - | GUI | NOT RUN | - | - | - |
-| T23 | - | GUI | NOT RUN | - | - | - |
-| T24 | - | GUI | NOT RUN | - | - | - |
-| T25 | - | GUI | NOT RUN | - | - | - |
-| T26 | - | GUI | NOT RUN | - | - | - |
-| T27 | - | GUI | NOT RUN | - | - | - |
-| T28 | - | GUI | NOT RUN | - | - | - |
-| T29 | - | GUI | NOT RUN | - | - | - |
-| T30 | - | GUI | NOT RUN | - | - | - |
-| T31 | - | GUI | NOT RUN | - | - | - |
-| T32 | - | GUI | NOT RUN | - | - | - |
-| T33 | - | GUI | NOT RUN | - | - | - |
-| T34 | - | GUI | NOT RUN | - | - | - |
-| T35 | - | GUI | NOT RUN | - | - | - |
-| T36 | - | GUI | NOT RUN | - | - | - |
-| T37 | - | GUI | NOT RUN | - | - | - |
-| T38 | - | GUI | NOT RUN | - | - | - |
-| T39 | - | GUI | NOT RUN | - | - | - |
-| T40 | - | GUI | NOT RUN | - | - | - |
+| T01 | Login Admin (GUI) | GUI | âœ… RUN | PASS | 3364 ms | - |
+| T02 | Open Admin Panel | GUI | âœ… RUN | PASS | 695 ms | - |
+| T03 | Create Admin user | GUI | âœ… RUN | PASS | 1696 ms | - |
+| T04 | Login nuovo Admin | GUI | âœ… RUN | PASS | 3280 ms | - |
+| T05 | Logout Admin-test | GUI | âœ… RUN | PASS | 308 ms | - |
+| T06 | Disable Admin-test | GUI | âœ… RUN | PASS | 3339 ms | - |
+| T07 | Login utente disabilitato | GUI | âœ… RUN | PASS | 2755 ms | - |
+| T08 | Riattivazione Admin-test | GUI | âœ… RUN | PASS | 3269 ms | - |
+| T09 | Login post-riattivazione | GUI | âœ… RUN | PASS | 2426 ms | - |
+| T10 | Delete Admin-test | GUI | âœ… RUN | PASS | 3556 ms | - |
+| T11 | Verify DB clean (API) | API | âœ… RUN | PASS | 689 ms | - |
+| T12 | Create Trader user | GUI | âœ… RUN | PASS | 4118 ms | - |
+| T13 | Login Trader | GUI | âœ… RUN | PASS | 3068 ms | - |
+| T14 | Logout Trader | GUI | âœ… RUN | PASS | 289 ms | - |
+| T15 | Disable/Enable Trader cycle | GUI | âœ… RUN | PASS | 11954 ms | - |
+| T16 | Delete Trader | GUI | âœ… RUN | PASS | 3765 ms | - |
+| T17 | Create Viewer user | GUI | âœ… RUN | PASS | 1687 ms | - |
+| T18 | Login Viewer | GUI | âœ… RUN | PASS | 3215 ms | - |
+| T19 | Logout Viewer | GUI | âœ… RUN | PASS | 309 ms | - |
+| T20 | Disable/Enable Viewer cycle | GUI | âœ… RUN | PASS | 12214 ms | - |
+| T21 | Delete Viewer | GUI | âœ… RUN | PASS | 4659 ms | - |
+| T22 | Verify DB clean (API) | API | âœ… RUN | PASS | 791 ms | - |
+| T23 | Verify GUI clean | GUI | âœ… RUN | PASS | 2993 ms | - |
+| T24 | Create users for Section 2 | GUI | âœ… RUN | PASS | 3413 ms | - |
+| T25 | Drag & Drop column | GUI | âœ… RUN | PASS | 553 ms | - |
+| T26 | Hide column | GUI | âœ… RUN | PASS | 534 ms | - |
+| T27 | Show column | GUI | âœ… RUN | PASS | 535 ms | - |
+| T28 | Reset All Columns | GUI | âœ… RUN | PASS | 1700 ms | - |
+| T29 | Sort ascending | GUI | âœ… RUN | PASS | 897 ms | - |
+| T30 | Sort descending | GUI | âœ… RUN | PASS | 879 ms | - |
+| T31 | Sort different column | GUI | âœ… RUN | PASS | 937 ms | - |
+| T32 | Persist country tab after logout | GUI | âœ… RUN | PASS | 6306 ms | - |
+| T33 | Persist sort after logout | GUI | âœ… RUN | PASS | 3737 ms | - |
+| T34 | Single filter | GUI | âœ… RUN | PASS | 454 ms | - |
+| T35 | Multiple filters | GUI | âœ… RUN | PASS | 435 ms | - |
+| T36 | Remove one filter | GUI | âœ… RUN | PASS | 434 ms | - |
+| T37 | Clear all filters | GUI | âœ… RUN | PASS | 815 ms | - |
+| T38 | Mixed modifications | GUI | âœ… RUN | PASS | 5711 ms | - |
+| T39 | Persist all after reload | GUI | âœ… RUN | PASS | 6188 ms | - |
+| T40 | Complete reset | GUI | âœ… RUN | PASS | 2040 ms | - |
+| T42 | Login admin for RFQ tests | GUI | âœ… RUN | PASS | 359 ms | - |
+| T43 | Double-click bond row opens RFQ window | GUI | âœ… RUN | PASS | 2366 ms | - |
+| T44 | RFQ window displays pricing data | GUI | âœ… RUN | PASS | 1364 ms | - |
+| T45 | RFQ window draggable and closable | GUI | âœ… RUN | PASS | 4873 ms | - |
+| T46 | Open RFQ from OPEN RFQ button | GUI | âœ… RUN | PASS | 1670 ms | - |
+| T47 | Final cleanup | GUI | âœ… RUN | PASS | 556 ms | - |
 | T41 | - | GUI | NOT RUN | - | - | - |
-| T42 | - | GUI | NOT RUN | - | - | - |
-| T43 | - | GUI | NOT RUN | - | - | - |
-| T44 | - | GUI | NOT RUN | - | - | - |
-| T45 | - | GUI | NOT RUN | - | - | - |
-| T46 | - | GUI | NOT RUN | - | - | - |
 
 ## SUMMARY
 
-- **Start Time**: 2026-03-02 11:17:26 CET (UTC: 2026-03-02T10:17:26.251Z)
-- **End Time**: 2026-03-02 11:17:29 CET (UTC: 2026-03-02T10:17:29.171Z)
-- **Total Duration**: 2.92s
-- **Total Tests**: 1
-- **Passed**: 1
+- **Start Time**: 2026-03-02 12:24:09 CET (UTC: 2026-03-02T11:24:09.324Z)
+- **End Time**: 2026-03-02 12:26:15 CET (UTC: 2026-03-02T11:26:15.806Z)
+- **Total Duration**: 126.48s
+- **Total Tests**: 46
+- **Passed**: 46
 - **Failed**: 0
 - **Pass Rate**: 100.0%
-- **Average Test Duration**: 2920 ms
-- **Slowest Test**: T47 (828 ms)
-- **Fastest Test**: T47 (828 ms)
+- **Average Test Duration**: 2750 ms
+- **Slowest Test**: T20 (12214 ms)
+- **Fastest Test**: T14 (289 ms)
