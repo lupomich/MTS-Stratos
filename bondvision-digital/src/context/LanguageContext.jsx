@@ -52,7 +52,10 @@ export const translations = {
     userSettings: {
       title: 'User Settings',
       rfqSettings: 'RFQ Settings',
+      ticketPosition: 'Ticket Position',
+      tradingSettings: 'Trading settings',
       openRfqInPopup: 'Open RFQ in separate window',
+      openRfqInTab: 'Open RFQ in separate tab',
       rfqAlwaysOnTop: 'RFQ Always On Top (best effort)',
       maxNoDealersRfq: 'Max No. of Dealers in the RFQ'
     },
@@ -232,7 +235,10 @@ export const translations = {
     userSettings: {
       title: 'Impostazioni utente',
       rfqSettings: 'Impostazioni RFQ',
+      ticketPosition: 'Posizione ticket',
+      tradingSettings: 'Impostazioni trading',
       openRfqInPopup: 'Apri RFQ in finestra separata',
+      openRfqInTab: 'Apri RFQ in scheda separata',
       rfqAlwaysOnTop: 'RFQ sempre in primo piano (best effort)',
       maxNoDealersRfq: 'N. max di dealer nella RFQ'
     },

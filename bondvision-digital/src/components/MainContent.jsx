@@ -524,21 +524,23 @@ const MainContent = () => {
     })
   }, [restackAllPopups, rfqAlwaysOnTopEnabled])
 
-  const createRfqWindow = useCallback((rfqId, windowIndex) => {
+  const createRfqWindow = useCallback((rfqId, windowIndex, openMode = 'popup') => {
     const windowInfo = rfqWindowsRef.current.get(rfqId)
     if (windowInfo && !windowInfo.window.closed) {
       return windowInfo
     }
 
     const safeIndex = Number.isFinite(windowIndex) ? windowIndex : rfqWindowsRef.current.size
+    const isTabMode = openMode === 'tab'
     const popupPosition = getPopupRfqPosition(safeIndex)
 
-    // Dimensioni ottimizzate per mostrare il modal senza scrollbar indesiderate
-    const popup = window.open(
-      '', 
-      `rfq-outright-window-${rfqId}`, 
-      `width=${RFQ_POPUP_WIDTH},height=${RFQ_POPUP_HEIGHT},left=${popupPosition.left},top=${popupPosition.top},resizable=yes,scrollbars=no`
-    )
+    const popup = isTabMode
+      ? window.open('', `_blank`)
+      : window.open(
+        '',
+        `rfq-outright-window-${rfqId}`,
+        `width=${RFQ_POPUP_WIDTH},height=${RFQ_POPUP_HEIGHT},left=${popupPosition.left},top=${popupPosition.top},resizable=yes,scrollbars=no`
+      )
     if (!popup) {
       console.error('Failed to open RFQ window')
       return null
@@ -788,9 +790,9 @@ const MainContent = () => {
           minimized: false
         }
 
-        // If popup mode, create window first
-        if (preferences?.rfqOpenInPopup) {
-          const windowInfo = createRfqWindow(rfqId, totalModalCount)
+        if (preferences?.rfqOpenInPopup || preferences?.rfqOpenInTab) {
+          const openMode = preferences?.rfqOpenInTab ? 'tab' : 'popup'
+          const windowInfo = createRfqWindow(rfqId, totalModalCount, openMode)
           if (!windowInfo) {
             setErrorMessage(t('rfq.loadingError'))
             setTimeout(() => setErrorMessage(null), 5000)
@@ -812,7 +814,7 @@ const MainContent = () => {
       setErrorMessage(t('rfq.loadingError'))
       setTimeout(() => setErrorMessage(null), 5000)
     }
-  }, [selectedBond, preferences?.rfqOpenInPopup, rfqModals.length, createRfqWindow, getInlineRfqPosition, t])
+  }, [selectedBond, preferences?.rfqOpenInPopup, preferences?.rfqOpenInTab, rfqModals.length, createRfqWindow, getInlineRfqPosition, t])
 
   // Handle double-click on bond row to open RFQ OUTRIGHT (new window each time)
   const handleBondDoubleClick = useCallback((bond) => {
@@ -851,9 +853,9 @@ const MainContent = () => {
             minimized: false
           }
 
-          // If popup mode, create window first
-          if (preferences?.rfqOpenInPopup) {
-            const windowInfo = createRfqWindow(rfqId, totalModalCount)
+          if (preferences?.rfqOpenInPopup || preferences?.rfqOpenInTab) {
+            const openMode = preferences?.rfqOpenInTab ? 'tab' : 'popup'
+            const windowInfo = createRfqWindow(rfqId, totalModalCount, openMode)
             if (!windowInfo) {
               setErrorMessage(t('rfq.loadingError'))
               setTimeout(() => setErrorMessage(null), 5000)
@@ -876,7 +878,7 @@ const MainContent = () => {
         setErrorMessage(t('rfq.loadingError'))
         setTimeout(() => setErrorMessage(null), 5000)
       })
-  }, [rfqModals.length, preferences?.rfqOpenInPopup, createRfqWindow, getInlineRfqPosition, t])
+  }, [rfqModals.length, preferences?.rfqOpenInPopup, preferences?.rfqOpenInTab, createRfqWindow, getInlineRfqPosition, t])
 
   // Handle RFQ submission
   const handleRfqSubmit = useCallback((rfqData) => {

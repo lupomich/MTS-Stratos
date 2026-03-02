@@ -12,6 +12,7 @@ const defaultPreferences = {
   selectedCountryTab: 'IT',
   gridLayout: 'comfortable',
   rfqOpenInPopup: false,
+  rfqOpenInTab: false,
   rfqAlwaysOnTop: false,
   rfqMaxDealers: 6
 };
