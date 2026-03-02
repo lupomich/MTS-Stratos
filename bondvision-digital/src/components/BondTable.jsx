@@ -340,13 +340,14 @@ class CustomHeaderWithMenu {
   }
 }
 
-const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchTerm = '' }) => {
+const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchTerm = '', columnSearchTerm = '' }) => {
   const gridRef = useRef()
   const { t, language } = useLanguage()
   const applyingPreferencesRef = useRef(false)
   const { preferences, setColumnOrder, setSorts, setFilters, setDefaultColumns, resetPreferences } = usePreferences()
   const [rowData, setRowData] = useState(countryBonds.length > 0 ? countryBonds : [])
   const [selectedBondIsin, setSelectedBondIsin] = useState(null)
+  const [highlightedColumnId, setHighlightedColumnId] = useState(null)
 
   useEffect(() => {
     if (countryBonds.length > 0) {
@@ -491,8 +492,9 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
     sortable: true,
     resizable: true,
     filter: true,
-    suppressMenu: false
-  }), [])
+    suppressMenu: false,
+    headerClass: (params) => (params.column.getColId() === highlightedColumnId ? 'bond-column-header-match' : '')
+  }), [highlightedColumnId])
 
   const onRowClicked = useCallback((event) => {
     const clickedIsin = event.data?.isin || null
@@ -535,6 +537,40 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
       gridRef.current.api.refreshHeader()
     }
   }, [language])
+
+  useEffect(() => {
+    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
+
+    const query = columnSearchTerm.trim().toLowerCase()
+    if (!query) {
+      if (highlightedColumnId) {
+        setHighlightedColumnId(null)
+        gridRef.current.api.refreshHeader()
+      }
+      return
+    }
+
+    const allColumns = gridRef.current.api.getColumns
+      ? gridRef.current.api.getColumns()
+      : gridRef.current.columnApi.getAllColumns()
+
+    const matchedColumn = allColumns.find((col) => {
+      const colId = col.getColId()?.toLowerCase() || ''
+      const headerName = String(col.getColDef()?.headerName || '').toLowerCase()
+      return headerName.includes(query) || colId.includes(query)
+    })
+
+    if (!matchedColumn) {
+      setHighlightedColumnId(null)
+      gridRef.current.api.refreshHeader()
+      return
+    }
+
+    const matchedColId = matchedColumn.getColId()
+    gridRef.current.api.ensureColumnVisible(matchedColId)
+    setHighlightedColumnId(matchedColId)
+    gridRef.current.api.refreshHeader()
+  }, [columnSearchTerm, highlightedColumnId])
 
   // Auto-scroll alla riga evidenziata quando c'è una sola corrispondenza
   useEffect(() => {

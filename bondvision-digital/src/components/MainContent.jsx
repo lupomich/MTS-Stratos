@@ -163,6 +163,7 @@ const MainContent = () => {
   const [expandedRFQ, setExpandedRFQ] = useState(false)
   const [selectedRFQ, setSelectedRFQ] = useState('RFQ OUTRIGHT')
   const [searchTerm, setSearchTerm] = useState('')
+  const [columnSearchTerm, setColumnSearchTerm] = useState('')
   const [dataTableRows, setDataTableRows] = useState([])
   
   // Multiple RFQ modals support
@@ -1006,7 +1007,8 @@ const MainContent = () => {
                 onSelectBond={setSelectedBond} 
                 onDoubleClickBond={handleBondDoubleClick}
                 countryBonds={dataTableRows} 
-                searchTerm={searchTerm} 
+                searchTerm={searchTerm}
+                columnSearchTerm={columnSearchTerm}
               />
 
               <div
@@ -1057,6 +1059,16 @@ const MainContent = () => {
           className={`resize-handle-vertical ${isMarketDepthCollapsed ? 'collapsed' : ''}`}
           onMouseDown={handleMouseDownVertical}
         >
+          <div className="column-search-wrap column-search-wrap-edge">
+            <input
+              type="text"
+              className="column-search-input"
+              placeholder="Search Column"
+              value={columnSearchTerm}
+              onChange={(e) => setColumnSearchTerm(e.target.value)}
+            />
+          </div>
+
           <button
             className="fullscreen-toggle-button fullscreen-toggle-edge"
             onMouseDown={(e) => {

@@ -333,7 +333,6 @@
   left: -36px;
   transform: none;
   position: absolute;
-  z-index: 40;
 }
 
 .resize-handle-vertical.collapsed .fullscreen-toggle-edge {
@@ -357,6 +356,49 @@
   background-color: var(--dark-bg);
   border-bottom: 1px solid var(--dark-border);
   overflow-x: auto;
+}
+
+.column-search-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.column-search-wrap-edge {
+  position: absolute;
+  top: 6px;
+  left: calc(-36px - 8px - 220px);
+  height: 28px;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  z-index: 39;
+}
+
+.resize-handle-vertical.collapsed .column-search-wrap-edge {
+  left: auto;
+  right: calc(10px + 28px + 8px);
+}
+
+.column-search-input {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  background: var(--dark-bg);
+  border: 1px solid var(--color-primary);
+  color: var(--color-bg-white);
+  font-size: 11px;
+  font-family: var(--font-family-sans);
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.column-search-input::placeholder {
+  color: var(--color-grey-40);
+}
+
+.column-search-input:focus {
+  outline: none;
+  border-color: var(--color-secondary-yellow);
 }
 
 .gov-selector-container {
