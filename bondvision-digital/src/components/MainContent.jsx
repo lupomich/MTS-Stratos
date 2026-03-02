@@ -1059,12 +1059,20 @@ const MainContent = () => {
           className={`resize-handle-vertical ${isMarketDepthCollapsed ? 'collapsed' : ''}`}
           onMouseDown={handleMouseDownVertical}
         >
-          <div className="column-search-wrap column-search-wrap-edge">
+          <div
+            className="column-search-wrap column-search-wrap-edge"
+            onMouseDown={(e) => {
+              e.stopPropagation()
+            }}
+          >
             <input
               type="text"
               className="column-search-input"
               placeholder="Search Column"
               value={columnSearchTerm}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+              }}
               onChange={(e) => setColumnSearchTerm(e.target.value)}
             />
           </div>
