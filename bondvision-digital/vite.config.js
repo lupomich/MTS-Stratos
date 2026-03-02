@@ -19,10 +19,9 @@ export default defineConfig({
         rewrite: (path) => path
       }
     },
-    hmr: {
-      host: 'bondvision-digital',
-      port: 3002,
-      protocol: 'http'
+    watch: {
+      usePolling: true,
+      interval: 300
     }
   }
 })

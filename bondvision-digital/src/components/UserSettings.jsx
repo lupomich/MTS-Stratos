@@ -53,7 +53,7 @@ const UserSettings = ({ onClose }) => {
                                 </label>
                             </div>
 
-                            <div className="setting-group" style={{ marginTop: '12px' }}>
+                            <div className="setting-group setting-group-sub" style={{ marginTop: '12px' }}>
                                 <label className={`checkbox-label ${!preferences.rfqOpenInPopup ? 'disabled' : ''}`}>
                                     <input
                                         type="checkbox"

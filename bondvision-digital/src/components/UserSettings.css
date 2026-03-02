@@ -78,6 +78,10 @@
     margin-bottom: 0;
 }
 
+.setting-group-sub {
+    margin-left: 18px;
+}
+
 .checkbox-label {
     display: flex;
     align-items: center;

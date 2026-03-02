@@ -14,4 +14,6 @@ services:
       - ./index.html:/app/index.html
     environment:
       - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=300
     restart: unless-stopped
