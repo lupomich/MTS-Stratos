@@ -18,10 +18,6 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path
       }
-    },
-    watch: {
-      usePolling: true,
-      interval: 300
     }
   }
 })
