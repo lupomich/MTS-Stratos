@@ -560,6 +560,53 @@
   font-family: var(--font-family-sans);
 }
 
+.rfq-inline-dock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--dark-bg);
+  border-top: 1px solid var(--dark-border);
+  min-height: 40px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.rfq-inline-dock-item {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--dark-border);
+  background: var(--dark-hover);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.rfq-inline-dock-restore,
+.rfq-inline-dock-close {
+  border: none;
+  background: transparent;
+  color: var(--color-bg-white);
+  height: 26px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font-family-sans);
+}
+
+.rfq-inline-dock-restore {
+  padding: 0 10px;
+  border-right: 1px solid var(--dark-border);
+}
+
+.rfq-inline-dock-close {
+  width: 28px;
+  font-weight: var(--font-weight-bold);
+}
+
+.rfq-inline-dock-restore:hover,
+.rfq-inline-dock-close:hover {
+  background: rgba(0, 141, 127, 0.2);
+}
+
 .data-table thead {
   position: sticky;
   top: 0;

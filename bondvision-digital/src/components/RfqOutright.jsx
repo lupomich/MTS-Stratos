@@ -28,7 +28,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePreferences } from '../context/PreferencesContext';
 import './RfqOutright.css';
 
-const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false, rfqSequence = 1 }) => {
+const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initialPosition, isPopup, centerOnMount = false, rfqSequence = 1, isMinimized = false, onMinimize, onRestore }) => {
   const { t } = useLanguage();
   const { preferences } = usePreferences();
   const [side, setSide] = useState('BUY');
@@ -95,6 +95,16 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     };
   }, [activeWindow]);
 
+  const clampPositionForSize = useCallback((x, y, width, height) => {
+    const maxX = Math.max(8, activeWindow.innerWidth - width - 8);
+    const maxY = Math.max(8, activeWindow.innerHeight - height - 8);
+
+    return {
+      x: Math.min(Math.max(8, x), maxX),
+      y: Math.min(Math.max(8, y), maxY)
+    };
+  }, [activeWindow]);
+
   const getCurrentSnapshot = useCallback(() => {
     const rect = windowRef.current?.getBoundingClientRect();
     if (!rect) {
@@ -120,11 +130,11 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
   const restoreWindow = useCallback(() => {
     const snapshot = restoreSnapshot || getCurrentSnapshot();
     const clampedSize = clampSize(snapshot.width, snapshot.height);
-    const clampedPos = clampPosition(snapshot.x, snapshot.y);
+    const clampedPos = clampPositionForSize(snapshot.x, snapshot.y, clampedSize.width, clampedSize.height);
     setWindowSize(clampedSize);
     setPosition(clampedPos);
     setWindowState('normal');
-  }, [clampPosition, clampSize, getCurrentSnapshot, restoreSnapshot]);
+  }, [clampPositionForSize, clampSize, getCurrentSnapshot, restoreSnapshot]);
 
   const maximizeWindow = useCallback(() => {
     if (windowState !== 'maximized') {
@@ -160,6 +170,20 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     }
     minimizeWindow();
   }, [minimizeWindow, restoreWindow, windowState]);
+
+  const handleMinimizeRestore = useCallback(() => {
+    if (isPopup) {
+      toggleMinimizeRestore();
+      return;
+    }
+
+    if (isMinimized) {
+      onRestore?.();
+      return;
+    }
+
+    onMinimize?.();
+  }, [isMinimized, isPopup, onMinimize, onRestore, toggleMinimizeRestore]);
 
   const defaultDealerPool = [
     '_D01', '_D02', '_D03', '_D04', '_D05', '_D06', '_D07', '_D09', '_D10', '_D11',
@@ -636,6 +660,10 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
     onClose();
   };
 
+  if (!isPopup && isMinimized) {
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="rfq-window-layer">
@@ -664,7 +692,7 @@ const RfqOutright = ({ bond, pricingData, onClose, onSubmit, hostWindow, initial
             <span className="rfq-title-text">{`${rfqSequence}.${t('rfq.title')}`}</span>
           </div>
           <div className="rfq-window-controls">
-            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} onClick={toggleMinimizeRestore} aria-label={windowState === 'minimized' ? t('rfq.maximizeAria') : t('rfq.minimizeAria')}>{windowState === 'minimized' ? '▢' : '−'}</button>
+            <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} onClick={handleMinimizeRestore} aria-label={isPopup && windowState === 'minimized' ? t('rfq.maximizeAria') : t('rfq.minimizeAria')}>{isPopup && windowState === 'minimized' ? '▢' : '−'}</button>
             <button className="rfq-window-btn" onMouseDown={(e) => e.stopPropagation()} onClick={toggleMaximizeRestore} aria-label={windowState === 'maximized' ? t('rfq.minimizeAria') : t('rfq.maximizeAria')}>{windowState === 'maximized' ? '❐' : '□'}</button>
             <button className="rfq-window-btn rfq-window-btn-close" onMouseDown={(e) => e.stopPropagation()} onClick={onClose} aria-label={t('rfq.closeAria')}>✕</button>
           </div>

@@ -602,6 +602,18 @@ const MainContent = () => {
     setRfqModals(prev => prev.filter(m => m.id !== rfqId))
   }, [])
 
+  const minimizeInlineRfqWindow = useCallback((rfqId) => {
+    setRfqModals(prev => prev.map((modal) => (
+      modal.id === rfqId ? { ...modal, minimized: true } : modal
+    )))
+  }, [])
+
+  const restoreInlineRfqWindow = useCallback((rfqId) => {
+    setRfqModals(prev => prev.map((modal) => (
+      modal.id === rfqId ? { ...modal, minimized: false } : modal
+    )))
+  }, [])
+
   useEffect(() => {
     if (!rfqAlwaysOnTopEnabled) {
       return
@@ -772,7 +784,8 @@ const MainContent = () => {
           bond: selectedBond,
           pricingData: data,
           initialPosition,
-          centerOnMount
+          centerOnMount,
+          minimized: false
         }
 
         // If popup mode, create window first
@@ -834,7 +847,8 @@ const MainContent = () => {
             bond: bond,
             pricingData: data,
             initialPosition,
-            centerOnMount
+            centerOnMount,
+            minimized: false
           }
 
           // If popup mode, create window first
@@ -1139,6 +1153,9 @@ const MainContent = () => {
             initialPosition={modal.initialPosition}
             centerOnMount={!!modal.centerOnMount}
             isPopup={isPopup}
+            isMinimized={!!modal.minimized}
+            onMinimize={() => minimizeInlineRfqWindow(modal.id)}
+            onRestore={() => restoreInlineRfqWindow(modal.id)}
             onClose={() => closeRfqWindow(modal.id)}
             onSubmit={handleRfqSubmit}
           />
@@ -1152,6 +1169,33 @@ const MainContent = () => {
         // Otherwise render inline
         return rfqNode
       })}
+
+      {rfqModals.some((modal) => !modal.container && modal.minimized) && (
+        <div className="rfq-inline-dock" role="toolbar" aria-label={t('mainContent.openRfq')}>
+          {rfqModals
+            .filter((modal) => !modal.container && modal.minimized)
+            .map((modal) => {
+              const sequence = rfqModals.findIndex((item) => item.id === modal.id) + 1
+              return (
+                <div key={`dock-${modal.id}`} className="rfq-inline-dock-item">
+                  <button
+                    className="rfq-inline-dock-restore"
+                    onClick={() => restoreInlineRfqWindow(modal.id)}
+                  >
+                    {`${sequence}. ${t('rfq.title')}`}
+                  </button>
+                  <button
+                    className="rfq-inline-dock-close"
+                    onClick={() => closeRfqWindow(modal.id)}
+                    aria-label={t('rfq.closeAria')}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )
+            })}
+        </div>
+      )}
     </div>
   )
 }
