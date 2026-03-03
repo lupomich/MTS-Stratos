@@ -98,6 +98,53 @@ class SkipTest extends Error {
 // Utility: Sleep
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function waitForAppReady() {
+    const timeoutMs = Math.max(15000, Number.parseInt(String(runtimeConfig.TEST_TIMEOUT), 10) || 30000);
+    const startedAt = Date.now();
+    let lastError = null;
+
+    while ((Date.now() - startedAt) < timeoutMs) {
+        try {
+            const response = await fetch(runtimeConfig.BASE_URL, { method: 'GET' });
+            if (response.ok) {
+                return;
+            }
+            lastError = new Error(`HTTP ${response.status}`);
+        } catch (error) {
+            lastError = error;
+        }
+        await sleep(500);
+    }
+
+    throw new Error(`Base URL not ready: ${lastError?.message || 'timeout'}`);
+}
+
+async function gotoWithRetry(page, url, options = {}) {
+    const attempts = Number.isInteger(options.attempts) ? options.attempts : 3;
+    const timeout = Number.isInteger(options.timeout) ? options.timeout : 15000;
+    const waitUntil = options.waitUntil || 'domcontentloaded';
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+            await page.goto(url, { timeout, waitUntil });
+            return;
+        } catch (error) {
+            lastError = error;
+            if (attempt < attempts) {
+                try {
+                    await page.goto('about:blank', { timeout: 4000, waitUntil: 'load' });
+                } catch {
+                    // no-op
+                }
+                await page.waitForTimeout(300);
+            }
+        }
+    }
+
+    throw new Error(`Navigation failed for ${url}: ${lastError?.message || 'unknown error'}`);
+}
+
 const safeAcceptDialog = async (dialog) => {
     try {
         await dialog.accept();
@@ -165,49 +212,64 @@ async function runTest(testId, description, type, testFn) {
 
 // Utility: Login GUI
 async function loginGUI(page, username, password) {
-    await ensureLoggedOutBeforeLogin(page);
-    await page.goto(runtimeConfig.BASE_URL);
+    let lastError = null;
 
-    const loginVisible = await page.locator('#username').isVisible().catch(() => false);
-    if (!loginVisible) {
-        const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
-        if (mainVisible) {
-            await logoutGUI(page);
-            await page.goto(runtimeConfig.BASE_URL);
-        }
-    }
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+            await ensureLoggedOutBeforeLogin(page);
+            await gotoWithRetry(page, runtimeConfig.BASE_URL);
 
-    await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
-    await page.locator('#username').fill(username);
-    await page.locator('#password').fill(password);
-    await page.locator('button[type="submit"]').click();
-
-    const loginErrorLocator = page.locator('.message.error').first();
-    const loginDeadline = Date.now() + 6000;
-
-    while (Date.now() < loginDeadline) {
-        const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
-        if (mainVisible) {
-            return;
-        }
-
-        const errorVisible = await loginErrorLocator.isVisible().catch(() => false);
-        if (errorVisible) {
-            const loginErrorText = ((await loginErrorLocator.textContent().catch(() => '')) || '').trim();
-            if (/already\s+logged|gi[aà]\s+collegat/i.test(loginErrorText)) {
-                throw new Error(`Login blocked immediately: ${loginErrorText}`);
+            const loginVisible = await page.locator('#username').isVisible().catch(() => false);
+            if (!loginVisible) {
+                const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
+                if (mainVisible) {
+                    await logoutGUI(page);
+                    await gotoWithRetry(page, runtimeConfig.BASE_URL);
+                }
             }
-            throw new Error(`Login error: ${loginErrorText || 'Unknown login error'}`);
-        }
 
-        await page.waitForTimeout(100);
+            await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
+            await page.locator('#username').fill(username);
+            await page.locator('#password').fill(password);
+            await page.locator('button[type="submit"]').click();
+
+            const loginErrorLocator = page.locator('.message.error').first();
+            const loginDeadline = Date.now() + 8000;
+
+            while (Date.now() < loginDeadline) {
+                const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
+                if (mainVisible) {
+                    return;
+                }
+
+                const errorVisible = await loginErrorLocator.isVisible().catch(() => false);
+                if (errorVisible) {
+                    const loginErrorText = ((await loginErrorLocator.textContent().catch(() => '')) || '').trim();
+                    if (/already\s+logged|gi[aà]\s+collegat/i.test(loginErrorText)) {
+                        throw new Error(`Login blocked immediately: ${loginErrorText}`);
+                    }
+                    throw new Error(`Login error: ${loginErrorText || 'Unknown login error'}`);
+                }
+
+                await page.waitForTimeout(120);
+            }
+
+            throw new Error('Login timeout: main content not visible and no explicit login error shown');
+        } catch (error) {
+            lastError = error;
+            const message = String(error?.message || '');
+            if (/already\s+logged|gi[aà]\s+collegat/i.test(message) || message.startsWith('Login error:') || attempt === 2) {
+                break;
+            }
+            await page.waitForTimeout(400);
+        }
     }
 
-    throw new Error('Login timeout: main content not visible and no explicit login error shown');
+    throw lastError || new Error('Login failed');
 }
 
 async function ensureLoggedOutBeforeLogin(page) {
-    await page.goto(runtimeConfig.BASE_URL);
+    await gotoWithRetry(page, runtimeConfig.BASE_URL);
 
     const tokenFromStorage = await page.evaluate(() => {
         try {
@@ -237,7 +299,7 @@ async function ensureLoggedOutBeforeLogin(page) {
         await logoutGUI(page);
     }
 
-    await page.goto(runtimeConfig.BASE_URL);
+    await gotoWithRetry(page, runtimeConfig.BASE_URL);
     await page.locator('#username').waitFor({ state: 'visible', timeout: 5000 });
 }
 
@@ -346,20 +408,48 @@ async function deleteUserGUI(page, username) {
     await sleep(500); // Wait for API call and table reload
 }
 
+function getApiTimeoutMs() {
+    const configured = Number.parseInt(String(runtimeConfig.TEST_TIMEOUT), 10) || 30000;
+    return Math.max(8000, Math.min(configured - 2000, 15000));
+}
+
+async function parseJsonSafe(response) {
+    return response.json().catch(() => ({}));
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = getApiTimeoutMs(), label = 'API request') {
+    const controller = new AbortController();
+    const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            throw new Error(`${label} timed out after ${timeoutMs}ms`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutHandle);
+    }
+}
+
 async function withAdminApiToken(action) {
-    const response = await fetch(`${runtimeConfig.API_BASE}/auth/login`, {
+    const response = await fetchWithTimeout(`${runtimeConfig.API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ADMIN_USER)
-    });
+    }, getApiTimeoutMs(), 'Admin API login');
 
     if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
+        const payload = await parseJsonSafe(response);
         const reason = payload?.error || payload?.message || `HTTP ${response.status}`;
         throw new Error(`Admin API login failed: ${reason}`);
     }
 
-    const { token } = await response.json();
+    const { token } = await parseJsonSafe(response);
     if (!token) {
         throw new Error('Admin API login failed: missing token');
     }
@@ -367,30 +457,49 @@ async function withAdminApiToken(action) {
     try {
         return await action(token);
     } finally {
-        await fetch(`${runtimeConfig.API_BASE}/auth/logout`, {
+        await fetchWithTimeout(`${runtimeConfig.API_BASE}/auth/logout`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => {});
+        }, getApiTimeoutMs(), 'Admin API logout').catch(() => {});
     }
 }
 
 // Utility: API call to get users
-async function getUsersAPI() {
-    return withAdminApiToken(async (token) => {
-        const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await usersResponse.json();
-        return data.users;
-    });
+async function getUsersAPI(options = {}) {
+    const retries = Number.isInteger(options.retries) ? options.retries : 1;
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+        try {
+            return await withAdminApiToken(async (token) => {
+                const usersResponse = await fetchWithTimeout(`${runtimeConfig.API_BASE}/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }, getApiTimeoutMs(), 'Get users API');
+                const data = await parseJsonSafe(usersResponse);
+                if (!usersResponse.ok) {
+                    const reason = data?.error || data?.message || `HTTP ${usersResponse.status}`;
+                    throw new Error(`Get users API failed: ${reason}`);
+                }
+                return data.users || [];
+            });
+        } catch (error) {
+            lastError = error;
+            if (attempt < retries) {
+                await sleep(300);
+                continue;
+            }
+        }
+    }
+
+    throw lastError || new Error('Get users API failed');
 }
 
 async function cleanupResidualTestUsersAPI() {
     await withAdminApiToken(async (token) => {
-        const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
+        const usersResponse = await fetchWithTimeout(`${runtimeConfig.API_BASE}/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await usersResponse.json();
+        }, getApiTimeoutMs(), 'Cleanup users fetch');
+        const data = await parseJsonSafe(usersResponse);
         const testUsers = new Set([
             'admin-test',
             'trader-test',
@@ -401,10 +510,10 @@ async function cleanupResidualTestUsersAPI() {
 
         for (const user of data.users || []) {
             if (testUsers.has(user.username)) {
-                await fetch(`${runtimeConfig.API_BASE}/users/${encodeURIComponent(user.id)}`, {
+                await fetchWithTimeout(`${runtimeConfig.API_BASE}/users/${encodeURIComponent(user.id)}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
-                });
+                }, getApiTimeoutMs(), `Cleanup delete user ${user.username}`);
             }
         }
     });
@@ -464,6 +573,54 @@ async function waitForStableActiveCountry(page, options = {}) {
     );
 }
 
+async function activateCountryTab(page, targetCountry, attempts = 3) {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+            const clicked = await page.evaluate((code) => {
+                const buttons = Array.from(document.querySelectorAll('.country-tabs .country-tab'));
+                const target = buttons.find((button) => {
+                    const codeEl = button.querySelector('.code');
+                    return codeEl?.textContent?.trim() === code;
+                });
+
+                if (!target) {
+                    return false;
+                }
+
+                target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                target.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                }));
+                return true;
+            }, targetCountry);
+
+            if (!clicked) {
+                throw new Error(`Country tab ${targetCountry} not found`);
+            }
+
+            await waitForStableActiveCountry(page, {
+                expectedCode: targetCountry,
+                stableMs: 700,
+                timeoutMs: 7000
+            });
+
+            return;
+        } catch (error) {
+            lastError = error;
+            if (attempt < attempts) {
+                await page.waitForTimeout(250);
+                continue;
+            }
+        }
+    }
+
+    throw new Error(`Unable to activate country tab ${targetCountry}: ${lastError?.message || 'unknown error'}`);
+}
+
 async function waitForUiSettingsSave(page, options = {}) {
     const { timeoutMs = 8000 } = options;
 
@@ -486,21 +643,21 @@ async function waitForUiSettingsSave(page, options = {}) {
 
 async function ensureUserExistsAPI({ username, email, password, role }) {
     await withAdminApiToken(async (token) => {
-        const usersResponse = await fetch(`${runtimeConfig.API_BASE}/users`, {
+        const usersResponse = await fetchWithTimeout(`${runtimeConfig.API_BASE}/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const usersData = await usersResponse.json();
+        }, getApiTimeoutMs(), 'Ensure user exists fetch users');
+        const usersData = await parseJsonSafe(usersResponse);
         const exists = (usersData.users || []).some(u => u.username === username);
 
         if (!exists) {
-            await fetch(`${runtimeConfig.API_BASE}/users`, {
+            await fetchWithTimeout(`${runtimeConfig.API_BASE}/users`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ username, email, password, role })
-            });
+            }, getApiTimeoutMs(), `Ensure user exists create ${username}`);
         }
     });
 }
@@ -757,7 +914,7 @@ async function runSection1(page) {
         await logoutGUI(page);
         
         // Try login as disabled admin-test
-        await page.goto(runtimeConfig.BASE_URL);
+        await gotoWithRetry(page, runtimeConfig.BASE_URL);
         await page.locator('#username').fill('admin-test');
         await page.locator('#password').fill('Admin123!');
         await page.locator('button[type="submit"]').click();
@@ -875,7 +1032,7 @@ async function runSection1(page) {
         await logoutGUI(page);
         
         // Try login trader-test (should fail)
-        await page.goto(runtimeConfig.BASE_URL);
+        await gotoWithRetry(page, runtimeConfig.BASE_URL);
         await page.locator('#username').fill('trader-test');
         await page.locator('#password').fill('Trader123!');
         await page.locator('button[type="submit"]').click();
@@ -959,7 +1116,7 @@ async function runSection1(page) {
         await page.locator('.admin-modal .close-btn').click();
         await logoutGUI(page);
         
-        await page.goto(runtimeConfig.BASE_URL);
+        await gotoWithRetry(page, runtimeConfig.BASE_URL);
         await page.locator('#username').fill('viewer-test');
         await page.locator('#password').fill('Viewer123!');
         await page.locator('button[type="submit"]').click();
@@ -1007,7 +1164,7 @@ async function runSection1(page) {
     await runTest('T22', 'Verify DB clean (API)', 'API', async () => {
         await closeAdminModalIfOpen(page);
         await logoutGUI(page);
-        const users = await getUsersAPI();
+        const users = await getUsersAPI({ retries: 2 });
         if (users.length !== 2) {
             throw new Error(`Expected 2 users (admin + demo), got ${users.length}`);
         }
@@ -1179,26 +1336,8 @@ async function runSection2(page) {
         const activeCountry = await waitForStableActiveCountry(page, { stableMs: 900, timeoutMs: 12000 });
 
         const targetCountry = activeCountry === 'DE' ? 'IT' : 'DE';
-        const countryButton = page
-            .locator('.country-tabs .country-tab .code')
-            .filter({ hasText: new RegExp(`^${targetCountry}$`) })
-            .first()
-            .locator('xpath=ancestor::button[contains(@class,"country-tab")]');
-
         const countrySaveObservedPromise = waitForUiSettingsSave(page, { timeoutMs: 9000 });
-        await countryButton.scrollIntoViewIfNeeded();
-        await countryButton.click({ force: true });
-        await page.waitForFunction(
-            ({ code }) => {
-                const codes = Array.from(document.querySelectorAll('.country-tabs .country-tab .code'));
-                const match = codes.find(el => el.textContent?.trim() === code);
-                const button = match?.closest('.country-tab');
-                return Boolean(button?.classList.contains('active'));
-            },
-            { code: targetCountry },
-            { timeout: 5000 }
-        );
-
+        await activateCountryTab(page, targetCountry, 3);
         await waitForStableActiveCountry(page, { expectedCode: targetCountry, stableMs: 900, timeoutMs: 12000 });
 
         const countrySaveObserved = await countrySaveObservedPromise;
@@ -1206,7 +1345,14 @@ async function runSection2(page) {
             console.log('  [T32] WARNING: ui_settings PUT not observed before logout; relying on post-login persistence check');
         }
 
-        const selectedBeforeLogout = await countryButton.evaluate((el) => el.classList.contains('active'));
+        const selectedBeforeLogout = await page.evaluate((code) => {
+            const buttons = Array.from(document.querySelectorAll('.country-tabs .country-tab'));
+            const target = buttons.find((button) => {
+                const codeEl = button.querySelector('.code');
+                return codeEl?.textContent?.trim() === code;
+            });
+            return Boolean(target?.classList.contains('active'));
+        }, targetCountry);
         if (!selectedBeforeLogout) {
             throw new Error(`Expected ${targetCountry} country tab to be active before logout`);
         }
@@ -1790,6 +1936,8 @@ export async function runE2ESuite(overrides = {}) {
         console.log(`PWDEBUG: ${process.env.PWDEBUG}`);
     }
     console.log('='.repeat(60));
+
+    await waitForAppReady();
 
     const launchArgs = [];
     if (IN_DOCKER) {
