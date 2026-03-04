@@ -34,7 +34,7 @@ Verification:
 - No regressions in toggle/fullscreen logic.
 
 ### Step 2 — Workspace state model
-Status: ☐ Not started
+Status: ☑ Done
 Goal:
 - Introduce workspace entities (`id`, `name`, `layout`, metadata).
 - Set current layout as default workspace.
@@ -103,7 +103,7 @@ Verification:
 
 ## Progress Board
 - [x] Step 1 — Baseline layout abstraction
-- [ ] Step 2 — Workspace state model
+- [x] Step 2 — Workspace state model
 - [ ] Step 3 — Workspace selector UI
 - [ ] Step 4 — Dockable panel shell
 - [ ] Step 5 — Mock BLOTTER panel
@@ -139,6 +139,7 @@ Verification:
 ## Change Log
 - 2026-03-04: Document created.
 - 2026-03-04: Step 1 completed — centralized layout UI state in MainContent without UX changes.
+- 2026-03-04: Step 2 completed — introduced default workspace model and bound active workspace layout to MainContent state.
 
 ---
 

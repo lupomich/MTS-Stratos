@@ -57,6 +57,24 @@ const RFQ_POPUP_HEIGHT = 800
 const RFQ_CASCADE_X = 30
 const RFQ_CASCADE_Y = 10
 
+const DEFAULT_LAYOUT_STATE = {
+  tradingWidth: 60,
+  marketWidth: 40,
+  dataHeight: 35,
+  isMarketDepthCollapsed: false,
+  isDataPanelCollapsed: false
+}
+
+const areLayoutStatesEqual = (first, second) => {
+  if (!first || !second) return false
+
+  return first.tradingWidth === second.tradingWidth
+    && first.marketWidth === second.marketWidth
+    && first.dataHeight === second.dataHeight
+    && first.isMarketDepthCollapsed === second.isMarketDepthCollapsed
+    && first.isDataPanelCollapsed === second.isDataPanelCollapsed
+}
+
 const dataTableRows = [
   {
     isin: 'IT0005415416',
@@ -152,7 +170,7 @@ const dataTableRows = [
   }
 ]
 
-const MainContent = ({ panelCommand }) => {
+const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange }) => {
   const { preferences, loading: preferencesLoading, setSelectedCountryTab } = usePreferences()
   const { t } = useLanguage()
   const [selectedBond, setSelectedBond] = useState(null)
@@ -176,13 +194,7 @@ const MainContent = ({ panelCommand }) => {
   const priceUpdateIntervalRef = useRef(null)
   
   // State per il resize dinamico
-  const [layoutState, setLayoutState] = useState({
-    tradingWidth: 60,
-    marketWidth: 40,
-    dataHeight: 35,
-    isMarketDepthCollapsed: false,
-    isDataPanelCollapsed: false
-  })
+  const [layoutState, setLayoutState] = useState(() => workspaceLayout || DEFAULT_LAYOUT_STATE)
   const {
     tradingWidth,
     marketWidth,
@@ -213,6 +225,23 @@ const MainContent = ({ panelCommand }) => {
   const contentBodyRef = useRef(null)
   const mainContentRef = useRef(null)
   const isBondTableFullScreen = isMarketDepthCollapsed && isDataPanelCollapsed
+
+  useEffect(() => {
+    if (!workspaceLayout) return
+
+    setLayoutState((previousLayoutState) => {
+      if (areLayoutStatesEqual(previousLayoutState, workspaceLayout)) {
+        return previousLayoutState
+      }
+
+      return { ...workspaceLayout }
+    })
+  }, [workspaceLayout])
+
+  useEffect(() => {
+    if (!onWorkspaceLayoutChange) return
+    onWorkspaceLayoutChange(layoutState)
+  }, [layoutState, onWorkspaceLayoutChange])
 
   const getRfqTypeLabel = useCallback((type) => {
     switch (type) {

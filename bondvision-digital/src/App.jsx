@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { PreferencesProvider } from './context/PreferencesContext'
 import { LanguageProvider } from './context/LanguageContext'
@@ -11,13 +11,57 @@ import UserSettings from './components/UserSettings'
 import './App.css'
 import './components/Badge.css'
 
+const DEFAULT_WORKSPACE_LAYOUT = {
+  tradingWidth: 60,
+  marketWidth: 40,
+  dataHeight: 35,
+  isMarketDepthCollapsed: false,
+  isDataPanelCollapsed: false
+}
+
+const areWorkspaceLayoutsEqual = (first, second) => {
+  if (!first || !second) return false
+
+  return first.tradingWidth === second.tradingWidth
+    && first.marketWidth === second.marketWidth
+    && first.dataHeight === second.dataHeight
+    && first.isMarketDepthCollapsed === second.isMarketDepthCollapsed
+    && first.isDataPanelCollapsed === second.isDataPanelCollapsed
+}
+
 function AppContent() {
+  const defaultWorkspace = useMemo(() => ({
+    id: 'workspace-default',
+    name: 'Default Workspace',
+    layout: DEFAULT_WORKSPACE_LAYOUT
+  }), [])
+
+  const [workspaces, setWorkspaces] = useState([defaultWorkspace])
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(defaultWorkspace.id)
   const [activeMarket, setActiveMarket] = useState('BV')
   const [activeSidebarPanel, setActiveSidebarPanel] = useState('trading')
   const [sidebarPanelCommand, setSidebarPanelCommand] = useState(null)
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [showUserSettings, setShowUserSettings] = useState(false)
   const { isAuthenticated, loading } = useAuth()
+
+  const activeWorkspace = useMemo(() => {
+    return workspaces.find((workspace) => workspace.id === activeWorkspaceId) || workspaces[0]
+  }, [workspaces, activeWorkspaceId])
+
+  const handleWorkspaceLayoutChange = useCallback((nextLayout) => {
+    if (!nextLayout) return
+
+    setWorkspaces((previousWorkspaces) => previousWorkspaces.map((workspace) => {
+      if (workspace.id !== activeWorkspaceId) return workspace
+      if (areWorkspaceLayoutsEqual(workspace.layout, nextLayout)) return workspace
+
+      return {
+        ...workspace,
+        layout: { ...nextLayout }
+      }
+    }))
+  }, [activeWorkspaceId])
 
   const handleSidebarPanelSelect = (panelKey) => {
     setActiveSidebarPanel(panelKey)
@@ -54,7 +98,11 @@ function AppContent() {
             activePanel={activeSidebarPanel}
             onPanelSelect={handleSidebarPanelSelect}
           />
-          <MainContent panelCommand={sidebarPanelCommand} />
+          <MainContent
+            panelCommand={sidebarPanelCommand}
+            workspaceLayout={activeWorkspace?.layout}
+            onWorkspaceLayoutChange={handleWorkspaceLayoutChange}
+          />
         </div>
         {showAdminPanel && (
           <AdminPanel onClose={() => setShowAdminPanel(false)} />
