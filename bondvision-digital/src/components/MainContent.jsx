@@ -176,11 +176,35 @@ const MainContent = ({ panelCommand }) => {
   const priceUpdateIntervalRef = useRef(null)
   
   // State per il resize dinamico
-  const [tradingWidth, setTradingWidth] = useState(60) // percentage
-  const [marketWidth, setMarketWidth] = useState(40) // percentage
-  const [dataHeight, setDataHeight] = useState(35) // percentage
-  const [isMarketDepthCollapsed, setIsMarketDepthCollapsed] = useState(false)
-  const [isDataPanelCollapsed, setIsDataPanelCollapsed] = useState(false)
+  const [layoutState, setLayoutState] = useState({
+    tradingWidth: 60,
+    marketWidth: 40,
+    dataHeight: 35,
+    isMarketDepthCollapsed: false,
+    isDataPanelCollapsed: false
+  })
+  const {
+    tradingWidth,
+    marketWidth,
+    dataHeight,
+    isMarketDepthCollapsed,
+    isDataPanelCollapsed
+  } = layoutState
+  const setTradingWidth = useCallback((value) => {
+    setLayoutState((prev) => ({ ...prev, tradingWidth: value }))
+  }, [])
+  const setMarketWidth = useCallback((value) => {
+    setLayoutState((prev) => ({ ...prev, marketWidth: value }))
+  }, [])
+  const setDataHeight = useCallback((value) => {
+    setLayoutState((prev) => ({ ...prev, dataHeight: value }))
+  }, [])
+  const setIsMarketDepthCollapsed = useCallback((value) => {
+    setLayoutState((prev) => ({ ...prev, isMarketDepthCollapsed: value }))
+  }, [])
+  const setIsDataPanelCollapsed = useCallback((value) => {
+    setLayoutState((prev) => ({ ...prev, isDataPanelCollapsed: value }))
+  }, [])
   const previousMarketWidthRef = useRef(40)
   const previousDataHeightRef = useRef(35)
   const lastProcessedPanelCommandAtRef = useRef(null)
