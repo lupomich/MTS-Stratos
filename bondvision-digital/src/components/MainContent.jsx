@@ -152,7 +152,7 @@ const dataTableRows = [
   }
 ]
 
-const MainContent = () => {
+const MainContent = ({ panelCommand }) => {
   const { preferences, loading: preferencesLoading, setSelectedCountryTab } = usePreferences()
   const { t } = useLanguage()
   const [selectedBond, setSelectedBond] = useState(null)
@@ -183,6 +183,7 @@ const MainContent = () => {
   const [isDataPanelCollapsed, setIsDataPanelCollapsed] = useState(false)
   const previousMarketWidthRef = useRef(40)
   const previousDataHeightRef = useRef(35)
+  const lastProcessedPanelCommandAtRef = useRef(null)
   const [isDraggingVertical, setIsDraggingVertical] = useState(false)
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const contentBodyRef = useRef(null)
@@ -356,6 +357,27 @@ const MainContent = () => {
     expandMarketDepthPanel,
     expandDataPanel
   ])
+
+  useEffect(() => {
+    if (!panelCommand?.panelKey || !panelCommand?.requestedAt) return
+    if (lastProcessedPanelCommandAtRef.current === panelCommand.requestedAt) return
+
+    lastProcessedPanelCommandAtRef.current = panelCommand.requestedAt
+
+    if (panelCommand.panelKey === 'trading') {
+      toggleBondTableFullScreen()
+      return
+    }
+
+    if (panelCommand.panelKey === 'data') {
+      toggleDataPanelCollapse()
+      return
+    }
+
+    if (panelCommand.panelKey === 'depth') {
+      toggleMarketDepthCollapse()
+    }
+  }, [panelCommand, toggleBondTableFullScreen, toggleDataPanelCollapse, toggleMarketDepthCollapse])
 
   React.useEffect(() => {
     document.addEventListener('mousemove', handleMouseMoveVertical)

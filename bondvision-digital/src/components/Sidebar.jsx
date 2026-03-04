@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext'
 import { useAuth } from '../context/AuthContext'
 import './Sidebar.css'
 
-const Sidebar = ({ onAdminClick, onOpenSettings }) => {
+const Sidebar = ({ onAdminClick, onOpenSettings, activePanel = 'trading', onPanelSelect }) => {
   const { t } = useLanguage()
   const { logout, user } = useAuth()
   const [showOverlayMenu, setShowOverlayMenu] = useState(false)
@@ -39,6 +39,12 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
       onAdminClick()
     }
   }
+
+  const handlePanelSelect = (panelKey) => {
+    if (onPanelSelect) {
+      onPanelSelect(panelKey)
+    }
+  }
   
   const menuItems = [
     { 
@@ -54,7 +60,7 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
     { 
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, 
       label: t('sidebar.trading'), 
-      active: true 
+      panelKey: 'trading'
     },
     { 
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, 
@@ -64,12 +70,17 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
     { 
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, 
       label: t('sidebar.data'), 
-      active: false 
+      panelKey: 'data'
     },
     { 
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, 
       label: t('sidebar.alerts'), 
       active: false 
+    },
+    {
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="4" x2="12" y2="20"/><line x1="3" y1="7" x2="10" y2="7"/><line x1="14" y1="7" x2="21" y2="7"/><line x1="5" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="19" y2="11"/><line x1="4" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="20" y2="15"/><line x1="6" y1="19" x2="10" y2="19"/><line x1="14" y1="19" x2="18" y2="19"/></svg>,
+      label: t('sidebar.depth'),
+      panelKey: 'depth'
     }
   ]
 
@@ -78,8 +89,16 @@ const Sidebar = ({ onAdminClick, onOpenSettings }) => {
       {menuItems.map((item, index) => (
         <div
           key={index}
-          className={`sidebar-item ${item.active ? 'active' : ''}`}
-          onClick={index === 0 ? () => setShowOverlayMenu(true) : undefined}
+          className={`sidebar-item ${item.panelKey && activePanel === item.panelKey ? 'active' : ''}`}
+          onClick={() => {
+            if (index === 0) {
+              setShowOverlayMenu(true)
+              return
+            }
+            if (item.panelKey) {
+              handlePanelSelect(item.panelKey)
+            }
+          }}
         >
           <div className="sidebar-icon">{item.icon}</div>
           <div className="sidebar-label">{item.label}</div>

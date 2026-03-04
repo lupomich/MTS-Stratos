@@ -7,14 +7,14 @@
 **Totale Test**: 47
 
 <!-- RUN_SUMMARY_START -->
-- **Data esecuzione**: 2026-03-03
+- **Data esecuzione**: 2026-03-04
 - **Timeout per test**: 30 secondi (30000 ms)
-- **Start Time**: 2026-03-03 16:47:54 CET (UTC: 2026-03-03T15:47:54.944Z)
-- **End Time**: 2026-03-03 16:51:18 CET (UTC: 2026-03-03T15:51:18.023Z)
+- **Start Time**: 2026-03-04 15:53:15 CET (UTC: 2026-03-04T14:53:15.812Z)
+- **End Time**: 2026-03-04 15:55:31 CET (UTC: 2026-03-04T14:55:31.804Z)
 - **Suite eseguita**: T01-T46
 - **Risultato**: 46 PASS, 0 FAIL
 - **Pass rate**: 100.0%
-- **Durata totale**: 203.08s
+- **Durata totale**: 135.99s
 - **Report generati**:
    - Testing/test-report.html
    - Testing/test-results.csv

@@ -13,9 +13,19 @@ import './components/Badge.css'
 
 function AppContent() {
   const [activeMarket, setActiveMarket] = useState('BV')
+  const [activeSidebarPanel, setActiveSidebarPanel] = useState('trading')
+  const [sidebarPanelCommand, setSidebarPanelCommand] = useState(null)
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [showUserSettings, setShowUserSettings] = useState(false)
   const { isAuthenticated, loading } = useAuth()
+
+  const handleSidebarPanelSelect = (panelKey) => {
+    setActiveSidebarPanel(panelKey)
+    setSidebarPanelCommand({
+      panelKey,
+      requestedAt: Date.now()
+    })
+  }
 
   if (loading) {
     return (
@@ -41,8 +51,10 @@ function AppContent() {
           <Sidebar
             onAdminClick={() => setShowAdminPanel(true)}
             onOpenSettings={() => setShowUserSettings(true)}
+            activePanel={activeSidebarPanel}
+            onPanelSelect={handleSidebarPanelSelect}
           />
-          <MainContent />
+          <MainContent panelCommand={sidebarPanelCommand} />
         </div>
         {showAdminPanel && (
           <AdminPanel onClose={() => setShowAdminPanel(false)} />
