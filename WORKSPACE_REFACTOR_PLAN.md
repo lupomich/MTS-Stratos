@@ -42,7 +42,7 @@ Verification:
 - App can load and render from `activeWorkspace` state.
 
 ### Step 3 — Workspace selector UI
-Status: ☐ Not started
+Status: ☑ Done
 Goal:
 - Add UI for workspace selection and “Save as new workspace”.
 Verification:
@@ -104,7 +104,7 @@ Verification:
 ## Progress Board
 - [x] Step 1 — Baseline layout abstraction
 - [x] Step 2 — Workspace state model
-- [ ] Step 3 — Workspace selector UI
+- [x] Step 3 — Workspace selector UI
 - [ ] Step 4 — Dockable panel shell
 - [ ] Step 5 — Mock BLOTTER panel
 - [ ] Step 6 — Mock ALERTS panel
@@ -140,6 +140,7 @@ Verification:
 - 2026-03-04: Document created.
 - 2026-03-04: Step 1 completed — centralized layout UI state in MainContent without UX changes.
 - 2026-03-04: Step 2 completed — introduced default workspace model and bound active workspace layout to MainContent state.
+- 2026-03-04: Step 3 completed — added workspace selector and “Save as New” controls in App toolbar.
 
 ---
 

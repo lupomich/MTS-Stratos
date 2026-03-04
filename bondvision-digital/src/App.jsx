@@ -29,6 +29,8 @@ const areWorkspaceLayoutsEqual = (first, second) => {
     && first.isDataPanelCollapsed === second.isDataPanelCollapsed
 }
 
+const createWorkspaceId = () => `workspace-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
 function AppContent() {
   const defaultWorkspace = useMemo(() => ({
     id: 'workspace-default',
@@ -71,6 +73,19 @@ function AppContent() {
     })
   }
 
+  const handleCreateWorkspace = useCallback(() => {
+    const baseName = 'Workspace'
+    const nextIndex = workspaces.length + 1
+    const newWorkspace = {
+      id: createWorkspaceId(),
+      name: `${baseName} ${nextIndex}`,
+      layout: { ...(activeWorkspace?.layout || DEFAULT_WORKSPACE_LAYOUT) }
+    }
+
+    setWorkspaces((previous) => [...previous, newWorkspace])
+    setActiveWorkspaceId(newWorkspace.id)
+  }, [workspaces.length, activeWorkspace?.layout])
+
   if (loading) {
     return (
       <div className="app-loading">
@@ -91,6 +106,28 @@ function AppContent() {
           activeMarket={activeMarket} 
           setActiveMarket={setActiveMarket}
         />
+        <div className="workspace-toolbar">
+          <label htmlFor="workspace-select" className="workspace-toolbar-label">Workspace</label>
+          <select
+            id="workspace-select"
+            className="workspace-toolbar-select"
+            value={activeWorkspaceId}
+            onChange={(event) => setActiveWorkspaceId(event.target.value)}
+          >
+            {workspaces.map((workspace) => (
+              <option key={workspace.id} value={workspace.id}>
+                {workspace.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="workspace-toolbar-button"
+            onClick={handleCreateWorkspace}
+          >
+            Save as New
+          </button>
+        </div>
         <div className="app-body">
           <Sidebar
             onAdminClick={() => setShowAdminPanel(true)}
