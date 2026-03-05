@@ -1,10 +1,10 @@
 # MTS-Stratos - BondVision Trading Platform
 
-Workspace full-stack containerizzato per la piattaforma di trading MTS BondVision.
+Fully containerized full-stack workspace for the MTS BondVision trading platform.
 
-## Architettura del Progetto
+## Project Architecture
 
-### Stack Tecnologico
+### Technology Stack
 - **Frontend:** React 18 + Vite
 - **Backend:** Node.js/Express
 - **Database:** PostgreSQL
@@ -12,84 +12,124 @@ Workspace full-stack containerizzato per la piattaforma di trading MTS BondVisio
 - **Testing:** Playwright E2E
 - **Admin:** pgAdmin
 
-### Servizi
+### Services
 
-#### BondVision Digital - Frontend (porta 3002)
-Applicazione di trading MTS BondVision con interfaccia moderna.
+#### BondVision Digital - Frontend (port 3002)
+MTS BondVision trading application with a modern interface.
 - **URL:** http://localhost:3002
-- **Tecnologia:** React 18 + Vite
-- **Documentazione:** [bondvision-digital/README.md](bondvision-digital/README.md)
+- **Technology:** React 18 + Vite
+- **Documentation:** [bondvision-digital/README.md](bondvision-digital/README.md)
 
-#### BondVision Backend - API (porta 5000)
-Server API RESTful per la piattaforma BondVision.
+#### BondVision Backend - API (port 5000)
+RESTful API server for the BondVision platform.
 - **URL:** http://localhost:5000
-- **Tecnologia:** Express.js
-- **Database:** PostgreSQL (connessione via Docker)
+- **Technology:** Express.js
+- **Database:** PostgreSQL (Docker connection)
 
-#### PostgreSQL (porta 5432)
-Database relazionale per la piattaforma.
+#### PostgreSQL (port 5432)
+Relational database for the platform.
 - **Database:** stratos_db
 - **User:** stratos
 - **Snapshots:** `Testing/db-snapshots/`
 
-#### Redis (porta 6379)
-Servizio di caching e sessioni.
+#### Redis (port 6379)
+Caching and session service.
 
-#### pgAdmin (porta 5050)
-Strumento di amministrazione PostgreSQL.
+#### pgAdmin (port 5050)
+PostgreSQL administration tool.
 - **URL:** http://localhost:5050
 
-## Struttura del Progetto
+## Workspace System
+
+The platform supports multiple workspaces with per-user persistence on the DB.
+
+### Features
+- **Tab bar** in the top bar: shows all user workspaces
+- **DB Persistence**: workspaces survive logout/login (`user_workspaces` table)
+- **Creation**: Click `+` → automatically enters edit mode
+- **Edit mode**: shows all empty slots, drag & drop panels, click `X` to remove a slot, click **Done** to finish (remaining empty slots are automatically hidden)
+- **Rename**: double-click on the tab or ⋮ menu → Rename
+- **Reorder**: drag & drop tabs
+- **⋮ menu**: Rename, Edit layout (blank only), Duplicate, Delete
+- **Workspace types**: `legacy` (fixed layout with Trading+MarketDepth) and `blank` (free 3×2 grid)
+
+### Available panels (blank workspace)
+| Key | Title | Content |
+|-----|-------|---------|
+| `trading` | TRADING | Bond table with top-tabs, country-tabs, Search Column |
+| `depth` | MARKET DEPTH | Order book |
+| `blotter` | BLOTTER | Trade blotter |
+| `data` | DATA | Historical data |
+| `alerts` | ALERTS | Configured alerts |
+
+### DB Schema (`user_workspaces`)
+```sql
+id            UUID PRIMARY KEY
+user_id       INTEGER REFERENCES users(id)
+name          TEXT
+mode          TEXT  -- 'legacy' | 'blank'
+slots         JSONB -- 6-element array with panel key or null
+layout        JSONB -- {tradingWidth, marketWidth, dataHeight, ...}
+hidden_slots  JSONB -- array of hidden slot indices
+sort_order    INTEGER
+last_active_at TIMESTAMP
+```
+
+### Localization
+All workspace strings are localized in `src/context/LanguageContext.jsx` under the `workspace.*` key (EN + IT).
+
+
+## Project Structure
 
 ```
 .
-├── bondvision-digital/       # Frontend React (porta 3002)
+├── bondvision-digital/       # React Frontend (port 3002)
 │   ├── src/
 │   ├── scripts/              # E2E tests (Playwright)
 │   ├── package.json
 │   ├── vite.config.js
 │   └── Dockerfile
-├── bondvision-backend/       # Backend Express (porta 5000)
+├── bondvision-backend/       # Express Backend (port 5000)
 │   ├── routes/
 │   ├── server.js
 │   ├── package.json
 │   └── Dockerfile
 ├── db/                       # Database initialization
 │   └── init.sql
-├── Testing/                  # E2E test suite e automation
-│   ├── run-e2e-full.ps1     # Orchestratore test (PowerShell)
-│   ├── E2E_DB_SNAPSHOT_RUNBOOK.md  # Procedura snapshot
+├── Testing/                  # E2E test suite and automation
+│   ├── run-e2e-full.ps1     # Test orchestrator (PowerShell)
+│   ├── E2E_DB_SNAPSHOT_RUNBOOK.md  # Snapshot procedure
 │   ├── TEST_CHECKLIST.md    # Test results checklist
 │   ├── TEST_PLAN.md         # Test plan
 │   ├── TEST_RESULTS.xlsx    # Excel report
-│   └── db-snapshots/        # Database snapshots pre/post test
-├── docker-compose.master.yml # Orchestrazione multi-servizio
-└── DOCKER.md                # Documentazione Docker
+│   └── db-snapshots/        # DB snapshots pre/post test
+├── docker-compose.master.yml # Multi-service orchestration
+└── DOCKER.md                # Docker documentation
 ```
 
-## Come Avviare l'Applicazione
+## How to Start the Application
 
-### Con Docker Compose (raccomandato)
+### With Docker Compose (recommended)
 
 ```bash
-# Avvia tutti i servizi
+# Start all services
 docker-compose -f docker-compose.master.yml up -d
 
-# Arresta tutti i servizi
+# Stop all services
 docker-compose -f docker-compose.master.yml down
 ```
 
-### Servizi e porte
+### Services and ports
 
-| Servizio | Porta | URL |
-|----------|-------|-----|
+| Service | Port | URL |
+|---------|------|-----|
 | BondVision Frontend | 3002 | http://localhost:3002 |
 | BondVision Backend | 5000 | http://localhost:5000 |
 | PostgreSQL | 5432 | localhost:5432 |
 | Redis | 6379 | localhost:6379 |
 | pgAdmin | 5050 | http://localhost:5050 |
 
-### BondVision Digital (porta 3002)
+### BondVision Digital (port 3002)
 
 ```bash
 cd bondvision-digital
@@ -97,9 +137,9 @@ npm install
 npm run dev
 ```
 
-Vedi [bondvision-digital/README.md](bondvision-digital/README.md) per maggiori dettagli.
+See [bondvision-digital/README.md](bondvision-digital/README.md) for more details.
 
-### BondVision Backend (porta 5000)
+### BondVision Backend (port 5000)
 
 ```bash
 cd bondvision-backend
@@ -107,57 +147,56 @@ npm install
 npm start
 ```
 
-## Utilizzo Piattaforma
+## Platform Usage
 
-### Login alla Piattaforma
-1. Naviga su http://localhost:3002
-2. Credenziali predefinite:
+### Platform Login
+1. Navigate to http://localhost:3002
+2. Default credentials:
    - **Admin:** username: `admin`, password: `admin123`
    - **Demo User:** username: `demo`, password: `demo123`
-3. Accedi alla dashboard di trading
+3. Access the trading dashboard
 
-### Amministrazione Database
-1. Accedi a http://localhost:5050
-2. Connettiti al database PostgreSQL
-3. Gestisci tabelle e dati
-2. Versione prototipo della piattaforma di trading MTS BondVision
+### Database Administration
+1. Access http://localhost:5050
+2. Connect to the PostgreSQL database
+3. Manage tables and data
 
-## Riepilogo Porte
+## Port Summary
 
-| Applicazione | Porta | URL |
-|--------------|-------|-----|
+| Application | Port | URL |
+|-------------|------|-----|
 | Hello App | 3000 | http://localhost:3000 |
 | BondVision Mockup | 3001 | http://localhost:3001 |
 | BondVision Digital | 3002 | http://localhost:3002 |
 
-## Testing E2E - Convenzioni operative
+## E2E Testing - Operational Conventions
 
-### Esecuzione test completa con protezione dati
+### Full test run with data protection
 
 ```powershell
-# Run standard con backup/restore automatico DB
+# Standard run with automatic DB backup/restore
 powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1
 
-# Run consigliato con snapshot post-test su FAIL (troubleshooting)
+# Recommended run: save post-test snapshot on FAIL (troubleshooting)
 powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepPostTestDbOnFailure
 
-# Run audit con snapshot pre + post sempre persistenti
+# Audit run: always keep pre + post snapshots
 powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -KeepDbSnapshots
 
-# Run CI veloce (niente backup/restore)
+# Fast CI run (no backup/restore)
 powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -SkipDbBackupRestore
 ```
 
-### Comportamento predefinito
-- **Pre-test**: snapshot DB automatico (`Testing/db-snapshots/pre-e2e-<runId>.dump`)
-- **Esecuzione suite**: test TC01-TC41 su ambiente resettato
-- **Post-test**: restore automatico DB pre-test (preserva utenti/dati manuali)
-- **Report**: `Testing/test-report.html`, `test-results.csv`, `test-results.json`
+### Default behavior
+- **Pre-test**: automatic DB snapshot (`Testing/db-snapshots/pre-e2e-<runId>.dump`)
+- **Test suite**: TC01-TC41 on a reset environment
+- **Post-test**: automatic restore of pre-test DB (preserves manual users/data)
+- **Reports**: `Testing/test-report.html`, `test-results.csv`, `test-results.json`
 
-### Troubleshooting con snapshot post-test
-1. Usa `-KeepPostTestDbOnFailure` in fase di test
-2. In caso di FAIL, conserva `post-e2e-<runId>.dump` in `Testing/db-snapshots/`
-3. Ripristina snapshot in DB debug isolato (`stratos_debug`) per indagine
+### Troubleshooting with post-test snapshots
+1. Use `-KeepPostTestDbOnFailure` during testing
+2. On FAIL, the `post-e2e-<runId>.dump` in `Testing/db-snapshots/` is preserved
+3. Restore snapshot to an isolated debug DB (`stratos_debug`) for investigation
 4. L'ambiente principale è già tornato allo stato pre-test
 
 **Runbook dettagliato**: `Testing/E2E_DB_SNAPSHOT_RUNBOOK.md`

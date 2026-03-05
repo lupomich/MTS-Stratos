@@ -1,90 +1,90 @@
-# Implementazione Design System Stratos - BondVision Digital
+# Stratos Design System Implementation - BondVision Digital
 
-## Panoramica
+## Overview
 
-L'applicazione BondVision Digital è stata completamente aggiornata per utilizzare il **Stratos Design System** di Euronext/MyEuronext, mantenendo intatta tutta la funzionalità esistente.
+The BondVision Digital application has been fully updated to use the **Stratos Design System** from Euronext/MyEuronext, while keeping all existing functionality intact.
 
-## Modifiche Implementate
+## Changes Implemented
 
-### 1. CSS Variables Globali (`src/index.css`)
+### 1. Global CSS Variables (`src/index.css`)
 
-Aggiunte tutte le variabili CSS del design system Stratos:
+All Stratos design system CSS variables have been added:
 
-#### Colori
-- **Primary Teal**: `--color-primary` (#008D7F) - colore principale dell'identità aziendale
+#### Colors
+- **Primary Teal**: `--color-primary` (#008D7F) - main brand identity color
 - **Semantic Colors**: 
-  - Success (verde): `--color-success` (#00B050)  
-  - Error (rosso): `--color-error` (#AB0027)
-  - Warning (arancione): `--color-warning` (#F59300)
-  - Info (blu): `--color-info` (#0066CC)
-- **Grey Scale**: completa scala di grigi da 900 a 100
-- **Dark Theme**: sfondo principale, secondario, bordi e hover states
-- **Background Colors**: bianco, off-white, grigio chiaro
+  - Success (green): `--color-success` (#00B050)  
+  - Error (red): `--color-error` (#AB0027)
+  - Warning (orange): `--color-warning` (#F59300)
+  - Info (blue): `--color-info` (#0066CC)
+- **Grey Scale**: complete grey scale from 900 to 100
+- **Dark Theme**: main background, secondary background, borders and hover states
+- **Background Colors**: white, off-white, light grey
 
-#### Tipografia
+#### Typography
 - **Font Families**: 
-  - IBM Plex Sans (400, 500, 700) per UI e body text
-  - IBM Plex Serif (400) per headings
-- **Font Sizes**: da 12px (XS) a 24px (XXL)
+  - IBM Plex Sans (400, 500, 700) for UI and body text
+  - IBM Plex Serif (400) for headings
+- **Font Sizes**: from 12px (XS) to 24px (XXL)
 - **Font Weights**: Regular (400), Medium (500), Bold (700)
-- **Line Heights**: ottimizzate per ogni dimensione di testo
+- **Line Heights**: optimized for each text size
 
-#### Classi Utility
-- `.heading-xl`, `.heading-l`, `.heading-m`, `.heading-s` per titoli
-- `.body-l-*`, `.body-m-*`, `.body-s-*` per testo body (varianti regular, medium, bold)
+#### Utility Classes
+- `.heading-xl`, `.heading-l`, `.heading-m`, `.heading-s` for headings
+- `.body-l-*`, `.body-m-*`, `.body-s-*` for body text (regular, medium, bold variants)
 
-### 2. Componenti Aggiornati
+### 2. Updated Components
 
 #### Header (`src/components/Header.css`)
-- Logo e titoli con font IBM Plex Sans e Serif
-- Pulsante market con colore primary Stratos
-- Status indicators con colori semantic (success/error)
-- Icone e pulsanti con hover states aggiornati
+- Logo and titles using IBM Plex Sans and Serif fonts
+- Market button with Stratos primary color
+- Status indicators with semantic colors (success/error)
+- Icons and buttons with updated hover states
 
 #### Sidebar (`src/components/Sidebar.css`)
-- Navigazione con colori dark theme
-- Active state in colore primary
-- Hover effects con `--dark-hover`
-- Border e divider colors aggiornati
+- Navigation with dark theme colors
+- Active state in primary color
+- Hover effects with `--dark-hover`
+- Updated border and divider colors
 
 #### MainContent (`src/components/MainContent.css`)
-- Toolbar con font IBM Plex Sans
-- RFQ menu e options con colori Stratos
-- Country tabs con active state in primary color
-- Data sections e tabelle con colori dark theme
-- Search inputs con nuovi placeholder e border colors
+- Toolbar with IBM Plex Sans font
+- RFQ menu and options with Stratos colors
+- Country tabs with active state in primary color
+- Data sections and tables with dark theme colors
+- Search inputs with new placeholder and border colors
 
 #### BondTable (`src/components/BondTable.css`)
-- AG-Grid customizzato con palette Stratos
-- Headers con colore primary per enfasi
-- Bid values in `--color-error` (rosso)
-- Ask values in `--color-success` (verde)
-- Font IBM Plex Sans per tutte le celle
+- AG-Grid customized with Stratos palette
+- Headers with primary color for emphasis
+- Bid values in `--color-error` (red)
+- Ask values in `--color-success` (green)
+- IBM Plex Sans font for all cells
 
 #### MarketDepth (`src/components/MarketDepth.css`)
-- Order book con colori dark theme
-- Bid/Ask pricing con colori semantic
-- Composite data grid aggiornato
-- Dealer pricing con font e colori Stratos
+- Order book with dark theme colors
+- Bid/Ask pricing with semantic colors
+- Updated composite data grid
+- Dealer pricing with Stratos fonts and colors
 
 #### App (`src/App.css`)
-- Background principale con `--dark-bg`
-- Font family globale IBM Plex Sans
+- Main background with `--dark-bg`
+- Global IBM Plex Sans font family
 
-## Colori Principali Utilizzati
+## Main Colors Used
 
-| Elemento | Variabile CSS | Colore |
-|----------|--------------|--------|
+| Element | CSS Variable | Color |
+|---------|-------------|-------|
 | Primary (Teal) | `--color-primary` | #008D7F |
-| Success (Verde) | `--color-success` | #00B050 |
-| Error (Rosso) | `--color-error` | #AB0027 |
+| Success (Green) | `--color-success` | #00B050 |
+| Error (Red) | `--color-error` | #AB0027 |
 | Dark Background | `--dark-bg` | #0D2828 |
 | Dark Hover | `--dark-hover` | #1A3A3A |
 | Dark Border | `--dark-border` | #2A4A4A |
 | White | `--color-bg-white` | #FFFFFF |
 | Text Light | `--text-light` | #E0E0E0 |
 
-## Tipografia Applicata
+## Typography Applied
 
 - **Body Text**: IBM Plex Sans, 14px regular
 - **Headings**: IBM Plex Serif, bold
@@ -92,12 +92,12 @@ Aggiunte tutte le variabili CSS del design system Stratos:
 - **Tables**: IBM Plex Sans, 9-11px, regular/bold
 - **Labels**: IBM Plex Sans, 10-11px, bold
 
-## Vantaggi dell'Implementazione
+## Implementation Benefits
 
-1. **Consistenza Visiva**: Allineamento completo con il brand Euronext/MyEuronext
-2. **Manutenibilità**: Tutte le modifiche ai colori possono essere fatte centralmente in `index.css`
-3. **Accessibilità**: Contrasti ottimizzati secondo le specifiche Stratos
-4. **Professionalità**: Utilizzo di font IBM Plex per un aspetto moderno e corporate
+1. **Visual Consistency**: Full alignment with the Euronext/MyEuronext brand
+2. **Maintainability**: All color changes can be made centrally in `index.css`
+3. **Accessibility**: Contrasts optimized according to Stratos specifications
+4. **Professionalism**: IBM Plex fonts for a modern, corporate appearance
 5. **Scalabilità**: Facile estendere il design system a nuovi componenti
 
 ## How to Run

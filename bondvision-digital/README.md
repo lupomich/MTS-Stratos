@@ -1,72 +1,72 @@
 # BondVision Digital
 
-Applicazione MTS BondVision Trading Platform - Versione React moderna.
+MTS BondVision Trading Platform application - Modern React version.
 
-## Struttura del progetto
+## Project Structure
 
 ```
 bondvision-digital/
 ├── src/
-│   ├── components/     # Componenti React
-│   ├── App.jsx         # Componente principale
+│   ├── components/     # React components
+│   ├── App.jsx         # Root component
 │   └── main.jsx        # Entry point
-├── public/             # Asset statici
-├── docker-compose.yml  # Configurazione Docker
-├── Dockerfile.dev      # Dockerfile per sviluppo
-├── Dockerfile          # Dockerfile per produzione
-├── package.json        # Dipendenze
-└── vite.config.js      # Configurazione Vite
+├── public/             # Static assets
+├── docker-compose.yml  # Docker configuration
+├── Dockerfile.dev      # Development Dockerfile
+├── Dockerfile          # Production Dockerfile
+├── package.json        # Dependencies
+└── vite.config.js      # Vite configuration
 ```
 
-## Porte
+## Ports
 
-- **Porta esterna (host):** 3002
-- **Porta interna (container):** 3001
-- **Accesso:** http://localhost:3002
+- **External port (host):** 3002
+- **Internal port (container):** 3001
+- **Access:** http://localhost:3002
 
-## Come avviare l'applicazione
+## How to Start the Application
 
-### Con Docker (raccomandato)
+### With Docker (recommended)
 
 ```bash
 cd bondvision-digital
 
-# Costruisci e avvia il container
+# Build and start the container
 docker-compose up --build
 
-# L'app sarà disponibile su http://localhost:3002
+# The app will be available at http://localhost:3002
 ```
 
-### Senza Docker
+### Without Docker
 
 ```bash
 cd bondvision-digital
 
-# Installa le dipendenze
+# Install dependencies
 npm install
 
-# Avvia il server di sviluppo
+# Start the development server
 npm run dev
 
-# L'app sarà disponibile su http://localhost:3001
+# The app will be available at http://localhost:3001
 ```
 
-## Comandi disponibili
+## Available Commands
 
 ```bash
-# Sviluppo con hot-reload
+# Development with hot-reload
 npm run dev
 
-# Build per produzione
+# Production build
 npm run build
 
-# Anteprima build di produzione
+# Preview production build
 npm run preview
 ```
 
-## Stack Tecnologico
+## Technology Stack
 
 - **Framework:** React 18 + Vite
 - **Styling:** CSS modules
-- **Containerizzazione:** Docker + Docker Compose
+- **Containerization:** Docker + Docker Compose
 - **Node.js:** v18-alpine

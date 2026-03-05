@@ -1,17 +1,17 @@
 # MTS-Stratos Deployment Status
 
-## ✅ Deployment Completato con Successo
+## ✅ Deployment Completed Successfully
 
-**Data:** 18 Febbraio 2026  
-**Ambiente:** Docker Desktop per Windows (WSL2 backend)
+**Date:** February 18, 2026  
+**Environment:** Docker Desktop for Windows (WSL2 backend)
 
 ---
 
-## Servizi Attivi
+## Active Services
 
-Tutti i servizi sono correttamente deployati e in esecuzione:
+All services are correctly deployed and running:
 
-| Servizio | Container | Porta | Status | URL |
+| Service | Container | Port | Status | URL |
 |----------|-----------|-------|--------|-----|
 | **Backend API** | `mts-stratos-hello-app` | 3000 | ✅ Running | http://localhost:3000 |
 | **Frontend Digital** | `mts-stratos-bondvision-digital` | 3002 | ✅ Running | http://localhost:3002 |
@@ -22,25 +22,25 @@ Tutti i servizi sono correttamente deployati e in esecuzione:
 
 ---
 
-## Credenziali di Accesso
+## Access Credentials
 
-### Applicazione (Frontend)
+### Application (Frontend)
 - **URL:** http://localhost:3002
-- **Account Demo:**
-  - **Utente:** demo  
+- **Demo Account:**
+  - **Username:** demo  
   - **Password:** user123  
-  - **Ruolo:** user
-- **Account Admin:**
-  - **Utente:** admin  
+  - **Role:** user
+- **Admin Account:**
+  - **Username:** admin  
   - **Password:** admin123  
-  - **Ruolo:** admin
+  - **Role:** admin
 
 ### pgAdmin (Database UI)
 - **URL:** http://localhost:5050
 - **Email:** admin@stratos.com
 - **Password:** admin
 
-### PostgreSQL (Connessione Diretta)
+### PostgreSQL (Direct Connection)
 ```
 Host: localhost
 Port: 5432
@@ -49,16 +49,16 @@ Username: stratos
 Password: stratos2026
 ```
 
-### Redis (Connessione Diretta)
+### Redis (Direct Connection)
 ```
 Host: localhost
 Port: 6379
-Password: (nessuna)
+Password: (none)
 ```
 
 ---
 
-## Architettura
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -93,70 +93,70 @@ Password: (nessuna)
 
 ---
 
-## Funzionalità Implementate
+## Implemented Features
 
-### Sistema di Autenticazione
-- ✅ Login/Logout con JWT
-- ✅ Registrazione utenti
-- ✅ Gestione password con bcrypt (hash sicuro)
-- ✅ Token blacklisting (invalidazione logout)
-- ✅ Session tracking (tracciamento sessioni attive)
-- ✅ Rate limiting (5 tentativi ogni 15 minuti per login)
+### Authentication System
+- ✅ Login/Logout with JWT
+- ✅ User registration
+- ✅ Password management with bcrypt (secure hash)
+- ✅ Token blacklisting (logout invalidation)
+- ✅ Session tracking (active session monitoring)
+- ✅ Rate limiting (5 attempts per 15 minutes for login)
 
-### Gestione Utenti
-- ✅ CRUD completo (Crea, Leggi, Aggiorna, Elimina)
-- ✅ 4 ruoli: admin, trader, user, viewer
-- ✅ Cambio password
-- ✅ Attivazione/Disattivazione account
-- ✅ Pannello admin (solo per ruolo admin)
+### User Management
+- ✅ Full CRUD (Create, Read, Update, Delete)
+- ✅ 4 roles: admin, trader, user, viewer
+- ✅ Password change
+- ✅ Account activation/deactivation
+- ✅ Admin panel (admin role only)
 
-### Preferenze Utente
-- ✅ Salvataggio preferenze personalizzate (tema, lingua, layout)
-- ✅ Caching Redis (1 ora TTL)
-- ✅ Visibilità colonne griglia
-- ✅ Export formato (CSV, Excel, PDF)
+### User Preferences
+- ✅ Custom preference saving (theme, language, layout)
+- ✅ Redis caching (1 hour TTL)
+- ✅ Grid column visibility
+- ✅ Export formats (CSV, Excel, PDF)
 
-### Audit & Sicurezza
-- ✅ Audit log per tutte le operazioni critiche
-- ✅ Helmet.js per header di sicurezza
-- ✅ CORS configurato
-- ✅ Rate limiting generale (100 richieste ogni 15 minuti)
+### Audit & Security
+- ✅ Audit log for all critical operations
+- ✅ Helmet.js for security headers
+- ✅ CORS configured
+- ✅ General rate limiting (100 requests per 15 minutes)
 
 ---
 
-## Comandi Utili
+## Useful Commands
 
-### Avvio/Arresto Servizi
+### Service Start/Stop
 ```powershell
-# Avvia tutti i servizi
+# Start all services
 cd "c:\Users\MALupo\OneDrive - Euronext\Github\MTS-Stratos"
 docker-compose -f docker-compose.master.yml up -d
 
-# Arresta tutti i servizi
+# Stop all services
 docker-compose -f docker-compose.master.yml down
 
-# Arresta e rimuovi volumi (ATTENZIONE: cancella i dati del database!)
+# Stop and remove volumes (WARNING: deletes database data!)
 docker-compose -f docker-compose.master.yml down -v
 
-# Ricostruisci e riavvia
+# Rebuild and restart
 docker-compose -f docker-compose.master.yml up --build -d
 ```
 
-### Monitoraggio
+### Monitoring
 ```powershell
-# Verifica stato container
+# Check container status
 docker ps -a --filter "name=mts-stratos"
 
-# Log backend (ultimi 50 righe)
+# Backend logs (last 50 lines)
 docker logs mts-stratos-hello-app --tail 50
 
-# Log frontend (ultimi 50 righe)
+# Frontend logs (last 50 lines)
 docker logs mts-stratos-bondvision-digital --tail 50
 
-# Log PostgreSQL
+# PostgreSQL logs
 docker logs mts-stratos-postgres --tail 50
 
-# Segui log in tempo reale
+# Follow logs in real time
 docker logs -f mts-stratos-hello-app
 ```
 
@@ -175,7 +175,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:3000/api/auth/login" `
 
 ## Database Schema
 
-### Tabella: users
+### Table: users
 ```sql
 - id (UUID, PK)
 - username (UNIQUE, NOT NULL)
@@ -190,7 +190,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:3000/api/auth/login" `
 - updated_at
 ```
 
-### Tabella: user_preferences
+### Table: user_preferences
 ```sql
 - id (UUID, PK)
 - user_id (FK -> users)
@@ -199,7 +199,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:3000/api/auth/login" `
 - updated_at
 ```
 
-### Tabella: user_sessions
+### Table: user_sessions
 ```sql
 - id (UUID, PK)
 - user_id (FK -> users)
@@ -210,7 +210,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:3000/api/auth/login" `
 - created_at
 ```
 
-### Tabella: audit_log
+### Table: audit_log
 ```sql
 - id (UUID, PK)
 - user_id (FK -> users, optional)
@@ -224,118 +224,118 @@ Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:3000/api/auth/login" `
 
 ---
 
-## Problemi Risolti Durante il Deployment
+## Issues Resolved During Deployment
 
-### 1. Firewall Aziendale
-**Problema:** Corporate firewall bloccava:
+### 1. Corporate Firewall
+**Problem:** Corporate firewall was blocking:
 - Docker Hub authentication
 - Node.js package downloads
 - Alpine Linux package manager
 
-**Soluzione:**
+**Solution:**
 ```dockerfile
-# Disabilitato SSL verification per npm
+# Disabled SSL verification for npm
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 RUN npm config set strict-ssl false
 
-# Configurato apk per usare HTTP e permettere pacchetti untrusted
+# Configured apk to use HTTP and allow untrusted packages
 RUN wget --no-check-certificate -O /etc/apk/keys/... && \
     apk add --allow-untrusted python3 make g++
 ```
 
-### 2. Compilazione bcrypt
-**Problema:** bcrypt richiede build tools nativi (Python, make, g++) che non sono presenti in `node:18-alpine`
+### 2. bcrypt Compilation
+**Problem:** bcrypt requires native build tools (Python, make, g++) not present in `node:18-alpine`
 
-**Soluzione:**
+**Solution:**
 ```dockerfile
 RUN apk add --no-cache --allow-untrusted python3 make g++
 ```
 
-### 3. Download Node.js Headers
-**Problema:** node-gyp non riusciva a scaricare gli header di Node.js per compilare moduli nativi
+### 3. Node.js Headers Download
+**Problem:** node-gyp was unable to download Node.js headers to compile native modules
 
-**Soluzione:**
+**Solution:**
 ```dockerfile
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
 ---
 
-## Prossimi Passi Consigliati
+## Recommended Next Steps
 
-### Sicurezza (PRODUZIONE)
-- [ ] Cambiare JWT_SECRET in `.env` (attualmente: `stratos-secret-key-2026-change-in-production`)
-- [ ] Cambiare password PostgreSQL (attualmente: `stratos2026`)
-- [ ] Cambiare password pgAdmin (attualmente: `admin`)
-- [ ] Rimuovere `NODE_TLS_REJECT_UNAUTHORIZED=0` e configurare certificati aziendali
-- [ ] Configurare HTTPS con certificati SSL
-- [ ] Abilitare strict-ssl per npm in produzione
+### Security (PRODUCTION)
+- [ ] Change JWT_SECRET in `.env` (currently: `stratos-secret-key-2026-change-in-production`)
+- [ ] Change PostgreSQL password (currently: `stratos2026`)
+- [ ] Change pgAdmin password (currently: `admin`)
+- [ ] Remove `NODE_TLS_REJECT_UNAUTHORIZED=0` and configure corporate certificates
+- [ ] Configure HTTPS with SSL certificates
+- [ ] Enable strict-ssl for npm in production
 
-### Funzionalità Aggiuntive
+### Additional Features
 - [ ] Password reset via email
 - [ ] Two-factor authentication (2FA)
-- [ ] Activity log per utenti
+- [ ] User activity log
 - [ ] Export audit log
-- [ ] Backup automatico database
-- [ ] Notifiche in-app
+- [ ] Automatic database backup
+- [ ] In-app notifications
 
 ### DevOps
-- [ ] CI/CD pipeline con GitHub Actions
-- [ ] Health checks automatici
-- [ ] Monitoring con Prometheus/Grafana
-- [ ] Log aggregation con ELK stack
+- [ ] CI/CD pipeline with GitHub Actions
+- [ ] Automatic health checks
+- [ ] Monitoring with Prometheus/Grafana
+- [ ] Log aggregation with ELK stack
 
 ---
 
-## Documentazione Aggiuntiva
+## Additional Documentation
 
-- [Sistema di Autenticazione](AUTH_SYSTEM.md)
-- [Deployment Docker](DEPLOYMENT-DOCKER.md)
-- [Implementazione Stratos](bondvision-digital/STRATOS_IMPLEMENTATION.md)
+- [Authentication System](AUTH_SYSTEM.md)
+- [Docker Deployment](DEPLOYMENT-DOCKER.md)
+- [Stratos Implementation](bondvision-digital/STRATOS_IMPLEMENTATION.md)
 
 ---
 
-## Test di Verifica
+## Verification Tests
 
-### ✅ Test di Funzionamento
+### ✅ Functional Tests
 
-1. **Accesso Frontend:**
-   - Aprire http://localhost:3002
-   - Login con `demo` / `user123`
-   - Verificare visualizzazione dashboard
+1. **Frontend Access:**
+   - Open http://localhost:3002
+   - Log in with `demo` / `user123`
+   - Verify dashboard is displayed
 
-2. **Gestione Preferenze:**
-   - Cliccare icona settings (⚙️) in alto a destra
-   - Cambiare tema da Light a Dark
-   - Cliccare "Save Changes"
-   - Ricaricare pagina → tema persistente
+2. **Preferences Management:**
+   - Click the settings icon (⚙️) in the top right
+   - Change theme from Light to Dark
+   - Click "Save Changes"
+   - Reload page → theme persists
 
-3. **Pannello Admin:**
+3. **Admin Panel:**
    - Logout
-   - Login con `admin` / `admin123`
-   - Aprire Settings → scheda "Admin"
-   - Verificare lista utenti
+   - Log in with `admin` / `admin123`
+   - Open Settings → "Admin" tab
+   - Verify user list
 
 4. **Database:**
-   - Aprire http://localhost:5050
-   - Login con `admin@stratos.local` / `admin`
-   - Aggiungere server PostgreSQL:
+   - Open http://localhost:5050
+   - Log in with `admin@stratos.local` / `admin`
+   - Add PostgreSQL server:
      - Host: `postgres`
      - Port: `5432`
      - Database: `stratos_db`
      - Username: `stratos`
      - Password: `stratos2026`
-   - Esplorare tabelle in Schemas → public → Tables
+   - Browse tables in Schemas → public → Tables
 
 ---
 
-## Supporto
+## Support
 
-Per problemi o domande:
-1. Verificare i log: `docker logs mts-stratos-hello-app`
-2. Controllare lo stato dei container: `docker ps -a`
-3. Riavviare i servizi: `docker-compose -f docker-compose.master.yml restart`
+For issues or questions:
+1. Check logs: `docker logs mts-stratos-hello-app`
+2. Check container status: `docker ps -a`
+3. Restart services: `docker-compose -f docker-compose.master.yml restart`
 
 ---
 
-**Deployment completato con successo! 🎉**
+**Deployment completed successfully! 🎉**

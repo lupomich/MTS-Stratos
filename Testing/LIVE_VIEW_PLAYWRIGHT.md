@@ -1,89 +1,89 @@
 # Live View E2E (Playwright)
 
-Per una guida completa aggiornata di tutti gli script E2E (hot/full/live), vedi anche `Testing/E2E_SCRIPTS_USER_MANUAL.md`.
+For a complete up-to-date guide to all E2E scripts (hot/full/live), see also `Testing/E2E_SCRIPTS_USER_MANUAL.md`.
 
-## Browser massimizzato
+## Maximized browser
 
-In modalità visibile (`headless=false`) il browser viene aperto sempre massimizzato, sia in live classica che in Playwright UI.
+In visible mode (`headless=false`) the browser is always opened maximized, both in classic live mode and in Playwright UI.
 
-## Come lanciare la suite
+## How to launch the suite
 
-### A) Senza UI (live classica)
-Esegue la suite custom con browser visibile.
+### A) Without UI (classic live)
+Runs the custom suite with the browser visible.
 
 ```powershell
 .\Testing\run-e2e-live.ps1 -StartFromOverride 1 -SlowMoMs 250
 ```
 
-Con inspector Playwright:
+With Playwright inspector:
 
 ```powershell
 .\Testing\run-e2e-live.ps1 -StartFromOverride 1 -SlowMoMs 250 -DebugInspector
 ```
 
-### B) Con UI (Playwright `--ui`)
-Apre la UI Playwright per avvio/stop interattivo del wrapper suite.
+### B) With UI (Playwright `--ui`)
+Opens the Playwright UI for interactive start/stop of the suite wrapper.
 
 ```powershell
 .\Testing\run-e2e-live.ps1 -UsePlaywrightUI -StartFromOverride 1 -SlowMoMs 250
 ```
 
-## Parametri utili
+## Useful parameters
 
-- `-StartFromOverride 1` → esecuzione completa da T1
-- `-StartFromOverride 46` → esecuzione da test specifico
-- `-SlowMoMs 250` → rallentamento azioni per osservazione
+- `-StartFromOverride 1` → full run from T1
+- `-StartFromOverride 46` → run from a specific test
+- `-SlowMoMs 250` → slow down actions for observation
 
-## Note operative
+## Operational notes
 
-- Servizi richiesti: `postgres`, `redis`, `bondvision-backend`, `bondvision-digital`.
-- Lo script PowerShell avvia automaticamente i servizi necessari.
-- URL usati in locale:
+- Required services: `postgres`, `redis`, `bondvision-backend`, `bondvision-digital`.
+- The PowerShell script automatically starts the required services.
+- URLs used locally:
   - Frontend: `http://localhost:3002`
   - Backend API: `http://localhost:3000/api`
 
-## Esecuzione rapida (container E2E sempre attivo)
+## Fast run (always-running E2E container)
 
-La suite full ora usa un container `e2e` persistente (`mts-stratos-e2e`) e lancia i test con `docker exec`.
-Questo evita la creazione del container ad ogni run e riduce il tempo di start.
+The full suite now uses a persistent `e2e` container (`mts-stratos-e2e`) and launches tests with `docker exec`.
+This avoids recreating the container on every run and reduces startup time.
 
-Run completo (da T1):
+Full run (from T1):
 
 ```powershell
 .\Testing\run-e2e-full.ps1 -StartFromOverride 1
 ```
 
-Run da test specifico:
+Run from a specific test:
 
 ```powershell
 .\Testing\run-e2e-full.ps1 -StartFromOverride 43
 ```
 
-### Backup/Restore DB
+### DB Backup/Restore
 
-- Rimane attivo il backup DB pre-run e restore automatico a fine run.
-- Per saltarlo (solo quando serve): `-SkipDbBackupRestore`.
+- DB pre-run backup and automatic restore at end of run remain active.
+- To skip it (only when needed): `-SkipDbBackupRestore`.
 
-## Script hot parametrico (UI / no UI)
+## Parametric hot script (UI / headless)
 
-Per run rapidi con parametri runtime usa:
+For fast runs with runtime parameters, use:
 
 ```powershell
 .\Testing\run-e2e-hot.ps1 -StartFromOverride 1
 ```
 
-Esempi:
+Examples:
 
 ```powershell
-# no UI (headless), da T43
+# headless, from T43
 .\Testing\run-e2e-hot.ps1 -StartFromOverride 43 -SlowMoMs 0
 
-# Playwright UI (apri poi http://localhost:9323)
+# Playwright UI (then open http://localhost:9323)
 .\Testing\run-e2e-hot.ps1 -UsePlaywrightUI -StartFromOverride 1 -UiPort 9323
 ```
 
-Comportamento DB nello script hot:
+DB behavior in the hot script:
 
-- Backup pre-run automatico
-- Restore automatico a fine run (anche in caso di errore)
-- Snapshot post-run opzionale con `-KeepDbSnapshots`
+- Automatic pre-run backup
+- Automatic restore at end of run (even on error)
+- Optional post-run snapshot with `-KeepDbSnapshots`

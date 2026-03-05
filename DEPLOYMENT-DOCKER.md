@@ -1,39 +1,39 @@
-# 🚀 Guida al Deployment Docker - MTS-Stratos
+# 🚀 Docker Deployment Guide - MTS-Stratos
 
-## ✅ Stato del Sistema
+## ✅ System Status
 
-Tutti i container sono stati testati e sono completamente funzionanti su Windows!
+All containers have been tested and are fully working on Windows!
 
-## 📦 Servizi Disponibili
+## 📦 Available Services
 
-| Servizio | Porta | URL | Descrizione |
-|----------|-------|-----|-------------|
-| **Hello App** | 3000 | http://localhost:3000 | Server Express Node.js |
-| **BondVision Mockup** | 3001 | http://localhost:3001 | App React (prototipo) |
-| **BondVision Digital** | 3002 | http://localhost:3002 | App React (versione completa) |
+| Service | Port | URL | Description |
+|---------|------|-----|-------------|
+| **Hello App** | 3000 | http://localhost:3000 | Node.js Express Server |
+| **BondVision Mockup** | 3001 | http://localhost:3001 | React App (prototype) |
+| **BondVision Digital** | 3002 | http://localhost:3002 | React App (full version) |
 
-## 🎯 Comandi Principali
+## 🎯 Main Commands
 
-### ✅ Avviare tutti i servizi insieme (raccomandato)
-Usa il **docker-compose.master.yml** per gestire tutti i servizi con un unico comando:
+### ✅ Start all services together (recommended)
+Use **docker-compose.master.yml** to manage all services with a single command:
 ```bash
 docker-compose -f docker-compose.master.yml up -d
 ```
 
-### Avviare con rebuild completo
+### Start with full rebuild
 ```bash
 docker-compose -f docker-compose.master.yml up --build -d
 ```
 
-### 🎨 Avviare un singolo servizio
-Ogni servizio ha il suo docker-compose.yml per lavorare in modo isolato:
+### 🎨 Start a single service
+Each service has its own docker-compose.yml to work in isolation:
 
-### Visualizzare lo stato dei container
+### View container status
 ```bash
 docker ps
 ```
 
-### Visualizzare i log di un servizio
+### View service logs
 ```bash
 # Hello App
 docker logs mts-stratos-hello-app
@@ -45,150 +45,150 @@ docker logs mts-stratos-bondvision-mockup -f
 docker logs mts-stratos-bondvision-digital -f
 ```
 
-### Fermare tutti i servizi
+### Stop all services
 ```bash
 docker-compose -f docker-compose.master.yml down
 ```
 
-### Fermare e rimuovere anche i volumi
+### Stop and remove volumes
 ```bash
 docker-compose -f docker-compose.master.yml down -v
 ```
 
-### Riavviare un singolo servizio
+### Restart a single service
 ```bash
-# Riavvia solo BondVision Digital
+# Restart only BondVision Digital
 docker-compose -f docker-compose.master.yml restart bondvision-digital
 ```
 
-## 🔧 Lavorare su un Singolo Servizio
+## 🔧 Working on a Single Service
 
-Ogni servizio mantiene il proprio `docker-compose.yml` per massima flessibilità.
-Utile quando lavori solo su una specifica applicazione senza avviare le altre.
+Each service keeps its own `docker-compose.yml` for maximum flexibility.
+Useful when working on a specific application without starting the others.
 
-### Hello App (porta 3000)
+### Hello App (port 3000)
 ```bash
-# Dalla root del progetto
+# From project root
 docker-compose up -d
 
-# Fermare
+# Stop
 docker-compose down
 ```
 
-### BondVision Mockup (porta 3001)
+### BondVision Mockup (port 3001)
 ```bash
 cd bondvision-mockup
 docker-compose up -d
 
-# Fermare
+# Stop
 docker-compose down
 cd ..
 ```
 
-### BondVision Digital (porta 3002)
+### BondVision Digital (port 3002)
 ```bash
 cd bondvision-digital
 docker-compose up -d
 
-# Fermare
+# Stop
 docker-compose down
 cd ..
 ```
 
-**💡 Nota**: Puoi avere contemporaneamente:
-- Tutti i servizi via master: `docker-compose -f docker-compose.master.yml up -d`
-- OPPURE i singoli servizi: `cd bondvision-digital && docker-compose up -d`
-- Ma non mescolare! Usa sempre o il master o i singoli per evitare conflitti di rete.
+**💡 Note**: You can run concurrently:
+- All services via master: `docker-compose -f docker-compose.master.yml up -d`
+- OR individual services: `cd bondvision-digital && docker-compose up -d`
+- But don’t mix both! Always use either the master or the individual ones to avoid network conflicts.
 
 ## 🛠️ Troubleshooting
 
-### Porta già in uso
-Se ricevi errori tipo "port is already allocated":
+### Port already in use
+If you get errors like "port is already allocated":
 ```bash
-# Verifica quali processi usano la porta (esempio porta 3000)
+# Check which processes are using the port (e.g. port 3000)
 netstat -ano | findstr :3000
 
-# Ferma tutti i container
+# Stop all containers
 docker-compose -f docker-compose.master.yml down
 ```
 
-### Ricostruire da zero
+### Rebuild from scratch
 ```bash
-# Ferma tutto e rimuovi i container
+# Stop everything and remove containers
 docker-compose -f docker-compose.master.yml down
 
-# Rimuovi le immagini vecchie
+# Remove old images
 docker rmi mts-stratos-hello-app mts-stratos-bondvision-mockup mts-stratos-bondvision-digital
 
-# Ricostruisci e avvia
+# Rebuild and start
 docker-compose -f docker-compose.master.yml up --build -d
 ```
 
-### Pulire completamente Docker
+### Full Docker cleanup
 ```bash
-# ⚠️ ATTENZIONE: Questo rimuove TUTTI i container e immagini
+# ⚠️ WARNING: This removes ALL containers and images
 docker system prune -a
 ```
 
-## 📊 Monitoraggio
+## 📊 Monitoring
 
-### Visualizzare l'utilizzo delle risorse
+### View resource usage
 ```bash
 docker stats
 ```
 
-### Ispezionare un container
+### Inspect a container
 ```bash
 docker inspect mts-stratos-hello-app
 ```
 
-### Accedere alla shell di un container
+### Access a container shell
 ```bash
-# Accedi al container BondVision Digital
+# Access the BondVision Digital container
 docker exec -it mts-stratos-bondvision-digital /bin/sh
 ```
 
-## 🌐 Rete Docker
+## 🌐 Docker Network
 
-Tutti i servizi sono connessi alla rete `mts-stratos_mts-network`. I container possono comunicare tra loro usando i nomi dei servizi:
+All services are connected to the `mts-stratos_mts-network` network. Containers can communicate with each other using service names:
 - `hello-app`
 - `bondvision-mockup`
 - `bondvision-digital`
 
 ## 📝 Hot Reload
 
-BondVision Mockup e Digital hanno volumi montati per il hot reload:
-- Modifiche in `/src` si riflettono automaticamente
-- Modifiche in `/public` si riflettono automaticamente
-- Modifiche in `index.html` si riflettono automaticamente
+BondVision Mockup and Digital have mounted volumes for hot reload:
+- Changes in `/src` are reflected automatically
+- Changes in `/public` are reflected automatically
+- Changes in `index.html` are reflected automatically
 
-## 🚨 Note Importanti
+## 🚨 Important Notes
 
-1. **SSL Configuration**: I Dockerfile includono `npm config set strict-ssl false` per ambienti con proxy/firewall aziendali
-2. **Restart Policy**: Tutti i container hanno `restart: unless-stopped` per ripartire automaticamente
-3. **Windows Path**: I percorsi Windows con spazi (es. "OneDrive - Euronext") sono gestiti correttamente da Docker
+1. **SSL Configuration**: Dockerfiles include `npm config set strict-ssl false` for environments with corporate proxies/firewalls
+2. **Restart Policy**: All containers have `restart: unless-stopped` to restart automatically
+3. **Windows Path**: Windows paths with spaces (e.g. "OneDrive - Euronext") are handled correctly by Docker
 
-## 🎉 Verifica Rapida
+## 🎉 Quick Verification
 
 ```bash
-# Verifica che tutti i servizi siano attivi
+# Verify all services are active
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-# Testa gli endpoint
+# Test endpoints
 curl.exe http://localhost:3000
 curl.exe http://localhost:3001
 curl.exe http://localhost:3002
 ```
 
-## 📚 File di Configurazione
+## 📚 Configuration Files
 
-- **docker-compose.master.yml**: Orchestrazione di tutti i servizi
-- **docker-compose.yml** (root): Solo Hello App
-- **bondvision-mockup/docker-compose.yml**: Solo Mockup
-- **bondvision-digital/docker-compose.yml**: Solo Digital
+- **docker-compose.master.yml**: Orchestration of all services
+- **docker-compose.yml** (root): Hello App only
+- **bondvision-mockup/docker-compose.yml**: Mockup only
+- **bondvision-digital/docker-compose.yml**: Digital only
 
-## 🔄 Migrazione da WSL
+## 🔄 Migration from WSL
 
-✅ Il progetto è stato migrato con successo da WSL a Windows
-✅ Tutti i container sono stati testati e funzionano correttamente
-✅ Non sono richieste modifiche ai Dockerfile o ai docker-compose.yml
+✅ Project successfully migrated from WSL to Windows  
+✅ All containers tested and working correctly  
+✅ No changes required to Dockerfiles or docker-compose.yml
