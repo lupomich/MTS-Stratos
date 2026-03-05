@@ -195,7 +195,8 @@ const MainContent = ({
   workspaceSlots = [],
   onWorkspaceSlotChange,
   workspaceHiddenSlots = [],
-  onWorkspaceHiddenSlotsChange
+  onWorkspaceHiddenSlotsChange,
+  isWorkspaceEditMode = false
 }) => {
   const { preferences, loading: preferencesLoading, setSelectedCountryTab } = usePreferences()
   const { t } = useLanguage()
@@ -1347,7 +1348,8 @@ const MainContent = ({
 
   if (isBlankWorkspace) {
     const hasFullScreen = blankFullScreenSlotIndex !== null
-    const collapsedSet = new Set(workspaceHiddenSlots || [])
+    // In edit mode every slot is visible (ignore hidden/collapsed state)
+    const collapsedSet = new Set(isWorkspaceEditMode ? [] : (workspaceHiddenSlots || []))
 
     // A column collapses when BOTH its slots are empty AND both are explicitly hidden
     const isColCollapsed = [0, 1, 2].map((col) =>

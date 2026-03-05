@@ -1,0 +1,189 @@
+/* ── Workspace Tabs Bar ──────────────────────────────────────────────────────── */
+
+.workspace-tabs-bar {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--dark-bg);
+  border-bottom: 1px solid var(--dark-border);
+  overflow: hidden;
+}
+
+.workspace-tabs-label {
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  font-size: 9px;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-right: 1px solid var(--dark-border);
+}
+
+.workspace-tabs-list {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.workspace-tabs-list::-webkit-scrollbar { display: none; }
+
+/* ── Individual tab ──────────────────────────────────────────────────────────── */
+
+.workspace-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 12px;
+  min-width: 110px;
+  max-width: 200px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-muted, #6b8a8f);
+  border-right: 1px solid var(--dark-border);
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.workspace-tab:hover {
+  background: var(--dark-hover);
+  color: var(--text-light);
+}
+
+.workspace-tab.active {
+  color: var(--text-light);
+  background: var(--dark-hover);
+  border-bottom-color: var(--color-primary);
+}
+
+.workspace-tab.edit-mode {
+  border-bottom-color: #f0a500;
+}
+
+/* Tab name label */
+.workspace-tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-semibold, 600);
+  letter-spacing: 0.2px;
+}
+
+.workspace-tab-edit-badge {
+  color: #f0a500;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+/* Inline rename input */
+.workspace-tab-rename {
+  flex: 1;
+  background: var(--dark-bg-secondary, #132126);
+  border: 1px solid var(--color-primary);
+  color: var(--text-light);
+  font-size: 11px;
+  padding: 2px 5px;
+  outline: none;
+  min-width: 80px;
+  max-width: 150px;
+}
+
+/* "Done" button in edit mode */
+.workspace-tab-done {
+  background: #f0a500;
+  color: #000;
+  border: none;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.workspace-tab-done:hover { background: #d4920a; }
+
+/* ⋮ menu trigger */
+.workspace-tab-menu-trigger {
+  background: none;
+  border: none;
+  color: var(--text-muted, #6b8a8f);
+  cursor: pointer;
+  padding: 0 3px;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+.workspace-tab:hover .workspace-tab-menu-trigger,
+.workspace-tab.active .workspace-tab-menu-trigger {
+  opacity: 1;
+}
+.workspace-tab-menu-trigger:hover { color: var(--text-light); }
+
+/* Dropdown menu */
+.workspace-tab-menu {
+  position: absolute;
+  top: calc(100% + 1px);
+  right: 0;
+  z-index: 500;
+  background: var(--dark-bg-secondary, #132126);
+  border: 1px solid var(--dark-border);
+  min-width: 148px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-tab-menu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.workspace-tab-menu button:hover { background: var(--dark-hover); }
+.workspace-tab-menu button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.workspace-tab-menu .workspace-tab-menu-delete { color: #ff5252; }
+.workspace-tab-menu .workspace-tab-menu-delete:hover { background: rgba(255, 82, 82, 0.1); }
+.workspace-tab-menu button + button { border-top: 1px solid var(--dark-border); }
+
+/* ── "+" New workspace button ──────────────────────────────────────────────── */
+
+.workspace-tab-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--dark-border);
+  color: var(--color-primary);
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s, background 0.15s;
+}
+.workspace-tab-new:hover { opacity: 1; background: var(--dark-hover); }

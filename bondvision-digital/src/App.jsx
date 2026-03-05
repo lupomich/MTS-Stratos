@@ -1,186 +1,93 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import React, { useCallback, useMemo, useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { PreferencesProvider } from './context/PreferencesContext'
 import { LanguageProvider } from './context/LanguageContext'
+import { WorkspaceProvider, useWorkspace, EMPTY_WORKSPACE_SLOTS, DEFAULT_WORKSPACE_LAYOUT } from './context/WorkspaceContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import MainContent from './components/MainContent'
+import WorkspaceTabs from './components/WorkspaceTabs'
 import Login from './components/Login'
 import AdminPanel from './components/AdminPanel'
 import UserSettings from './components/UserSettings'
 import './App.css'
 import './components/Badge.css'
 
-const DEFAULT_WORKSPACE_LAYOUT = {
-  tradingWidth: 60,
-  marketWidth: 40,
-  dataHeight: 35,
-  isMarketDepthCollapsed: false,
-  isDataPanelCollapsed: false
-}
-
-const EMPTY_WORKSPACE_SLOTS = Array.from({ length: 6 }, () => null)
-
-const compactWorkspaceSlots = (slots) => {
-  const compacted = (slots || []).filter((panelKey) => panelKey)
-  const remaining = Math.max(0, EMPTY_WORKSPACE_SLOTS.length - compacted.length)
-  return [...compacted, ...Array.from({ length: remaining }, () => null)]
-}
-
+// Layout equality guard to avoid spurious workspace updates
 const areWorkspaceLayoutsEqual = (first, second) => {
   if (!first || !second) return false
-
-  return first.tradingWidth === second.tradingWidth
-    && first.marketWidth === second.marketWidth
-    && first.dataHeight === second.dataHeight
-    && first.isMarketDepthCollapsed === second.isMarketDepthCollapsed
-    && first.isDataPanelCollapsed === second.isDataPanelCollapsed
+  return first.tradingWidth           === second.tradingWidth
+      && first.marketWidth            === second.marketWidth
+      && first.dataHeight             === second.dataHeight
+      && first.isMarketDepthCollapsed === second.isMarketDepthCollapsed
+      && first.isDataPanelCollapsed   === second.isDataPanelCollapsed
 }
 
-const createWorkspaceId = () => `workspace-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-
+// Inner app (needs WorkspaceProvider above it)
 function AppContent() {
-  const defaultWorkspace = useMemo(() => ({
-    id: 'workspace-default',
-    name: 'Default Workspace',
-    mode: 'legacy',
-    slots: [...EMPTY_WORKSPACE_SLOTS],
-    layout: DEFAULT_WORKSPACE_LAYOUT,
-    hiddenSlots: []
-  }), [])
+  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { workspaces, activeWorkspaceId, loading: wsLoading, updateWorkspace } = useWorkspace()
 
-  const [workspaces, setWorkspaces] = useState(() => {
-    try {
-      const saved = localStorage.getItem('mts-bv-workspaces')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch { /* ignore */ }
-    return [defaultWorkspace]
-  })
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState(() => {
-    try {
-      return localStorage.getItem('mts-bv-activeWorkspaceId') || defaultWorkspace.id
-    } catch {
-      return defaultWorkspace.id
-    }
-  })
-  const [activeMarket, setActiveMarket] = useState('BV')
+  const [editingWorkspaceId, setEditingWorkspaceId] = useState(null)
+  const [activeMarket, setActiveMarket]             = useState('BV')
   const [activeSidebarPanel, setActiveSidebarPanel] = useState('trading')
   const [sidebarPanelCommand, setSidebarPanelCommand] = useState(null)
-  const [showAdminPanel, setShowAdminPanel] = useState(false)
-  const [showUserSettings, setShowUserSettings] = useState(false)
-  const { isAuthenticated, loading } = useAuth()
+  const [showAdminPanel, setShowAdminPanel]         = useState(false)
+  const [showUserSettings, setShowUserSettings]     = useState(false)
 
-  // Persist workspaces and active id to localStorage whenever they change
-  useEffect(() => {
-    try { localStorage.setItem('mts-bv-workspaces', JSON.stringify(workspaces)) } catch { /* ignore */ }
-  }, [workspaces])
-  useEffect(() => {
-    try { localStorage.setItem('mts-bv-activeWorkspaceId', activeWorkspaceId) } catch { /* ignore */ }
-  }, [activeWorkspaceId])
-
-  const activeWorkspace = useMemo(() => {
-    return workspaces.find((workspace) => workspace.id === activeWorkspaceId) || workspaces[0]
-  }, [workspaces, activeWorkspaceId])
+  const activeWorkspace = useMemo(
+    () => workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0],
+    [workspaces, activeWorkspaceId]
+  )
 
   const handleWorkspaceLayoutChange = useCallback((nextLayout) => {
-    if (!nextLayout) return
+    if (!nextLayout || !activeWorkspaceId) return
+    if (areWorkspaceLayoutsEqual(activeWorkspace?.layout, nextLayout)) return
+    updateWorkspace(activeWorkspaceId, { layout: nextLayout })
+  }, [activeWorkspaceId, activeWorkspace, updateWorkspace])
 
-    setWorkspaces((previousWorkspaces) => previousWorkspaces.map((workspace) => {
-      if (workspace.id !== activeWorkspaceId) return workspace
-      if (areWorkspaceLayoutsEqual(workspace.layout, nextLayout)) return workspace
+  const handleBlankSlotChange = useCallback((slotIndex, panelKeyOrNull) => {
+    if (!activeWorkspace) return
+    const nextSlots = [...(activeWorkspace.slots || EMPTY_WORKSPACE_SLOTS)]
+    if (slotIndex === -1 && panelKeyOrNull) {
+      const firstEmpty = nextSlots.findIndex((k) => !k)
+      if (firstEmpty === -1) return
+      nextSlots[firstEmpty] = panelKeyOrNull
+    } else {
+      if (slotIndex < 0 || slotIndex >= nextSlots.length) return
+      nextSlots[slotIndex] = panelKeyOrNull
+    }
+    updateWorkspace(activeWorkspaceId, { slots: nextSlots })
+  }, [activeWorkspace, activeWorkspaceId, updateWorkspace])
 
-      return {
-        ...workspace,
-        layout: { ...nextLayout }
+  const handleBlankHiddenSlotsChange = useCallback((nextHiddenSlots) => {
+    updateWorkspace(activeWorkspaceId, { hiddenSlots: nextHiddenSlots })
+  }, [activeWorkspaceId, updateWorkspace])
+
+  // Exit edit mode: auto-collapse remaining empty slots
+  const handleEditEnd = useCallback(() => {
+    if (editingWorkspaceId && activeWorkspace?.mode === 'blank') {
+      const currentHidden = activeWorkspace.hiddenSlots || []
+      const autoHide = (activeWorkspace.slots || EMPTY_WORKSPACE_SLOTS)
+        .map((s, i) => (!s ? i : null))
+        .filter((i) => i !== null)
+      const nextHidden = [...new Set([...currentHidden, ...autoHide])]
+      if (nextHidden.length !== currentHidden.length) {
+        updateWorkspace(editingWorkspaceId, { hiddenSlots: nextHidden }, true)
       }
-    }))
-  }, [activeWorkspaceId])
+    }
+    setEditingWorkspaceId(null)
+  }, [editingWorkspaceId, activeWorkspace, updateWorkspace])
 
   const handleSidebarPanelSelect = (panelKey) => {
     setActiveSidebarPanel(panelKey)
-    setSidebarPanelCommand({
-      panelKey,
-      requestedAt: Date.now()
-    })
+    setSidebarPanelCommand({ panelKey, requestedAt: Date.now() })
   }
 
-  const handleCreateWorkspace = useCallback(() => {
-    const baseName = 'Workspace'
-    const nextIndex = workspaces.length + 1
-    // For blank workspaces: auto-collapse any empty slots that haven’t been dismissed yet
-    const baseHidden = activeWorkspace?.hiddenSlots || []
-    const savedHiddenSlots = activeWorkspace?.mode === 'blank'
-      ? [...new Set([
-          ...baseHidden,
-          ...(activeWorkspace?.slots || EMPTY_WORKSPACE_SLOTS)
-            .map((slot, i) => (!slot ? i : null))
-            .filter((i) => i !== null)
-        ])]
-      : []
-    const newWorkspace = {
-      id: createWorkspaceId(),
-      name: `${baseName} ${nextIndex}`,
-      mode: activeWorkspace?.mode || 'legacy',
-      slots: [...(activeWorkspace?.slots || EMPTY_WORKSPACE_SLOTS)],
-      layout: { ...(activeWorkspace?.layout || DEFAULT_WORKSPACE_LAYOUT) },
-      hiddenSlots: savedHiddenSlots
-    }
-
-    setWorkspaces((previous) => [...previous, newWorkspace])
-    setActiveWorkspaceId(newWorkspace.id)
-  }, [workspaces.length, activeWorkspace?.layout, activeWorkspace?.mode, activeWorkspace?.slots, activeWorkspace?.hiddenSlots])
-
-  const handleCreateBlankWorkspace = useCallback(() => {
-    const nextIndex = workspaces.length + 1
-    const newWorkspace = {
-      id: createWorkspaceId(),
-      name: `Blank Workspace ${nextIndex}`,
-      mode: 'blank',
-      slots: [...EMPTY_WORKSPACE_SLOTS],
-      layout: { ...DEFAULT_WORKSPACE_LAYOUT },
-      hiddenSlots: []
-    }
-
-    setWorkspaces((previous) => [...previous, newWorkspace])
-    setActiveWorkspaceId(newWorkspace.id)
-  }, [workspaces.length])
-
-  const handleBlankSlotChange = useCallback((slotIndex, panelKeyOrNull) => {
-    setWorkspaces((previousWorkspaces) => previousWorkspaces.map((workspace) => {
-      if (workspace.id !== activeWorkspaceId || workspace.mode !== 'blank') return workspace
-      const nextSlots = [...(workspace.slots || EMPTY_WORKSPACE_SLOTS)]
-
-      if (slotIndex === -1 && panelKeyOrNull) {
-        const firstEmptyIndex = nextSlots.findIndex((panelKey) => !panelKey)
-        if (firstEmptyIndex === -1) return workspace
-        nextSlots[firstEmptyIndex] = panelKeyOrNull
-      } else {
-        if (slotIndex < 0 || slotIndex >= nextSlots.length) return workspace
-        nextSlots[slotIndex] = panelKeyOrNull
-      }
-
-      // Do NOT compact — preserve exact slot positions so the 3×2 grid layout stays correct
-      return {
-        ...workspace,
-        slots: nextSlots
-      }
-    }))
-  }, [activeWorkspaceId])
-
-  const handleBlankHiddenSlotsChange = useCallback((nextHiddenSlots) => {
-    setWorkspaces((previousWorkspaces) => previousWorkspaces.map((workspace) => {
-      if (workspace.id !== activeWorkspaceId || workspace.mode !== 'blank') return workspace
-      return { ...workspace, hiddenSlots: Array.isArray(nextHiddenSlots) ? nextHiddenSlots : [] }
-    }))
-  }, [activeWorkspaceId])
-
-  if (loading) {
+  if (authLoading || (isAuthenticated && wsLoading)) {
     return (
       <div className="app-loading">
-        <div className="loading-spinner"></div>
+        <div className="loading-spinner" />
         <p>Loading...</p>
       </div>
     )
@@ -190,42 +97,22 @@ function AppContent() {
     return <Login />
   }
 
+  const isEditMode = editingWorkspaceId === activeWorkspaceId && activeWorkspace?.mode === 'blank'
+
   return (
     <PreferencesProvider>
       <div className="app">
-        <Header 
-          activeMarket={activeMarket} 
+        <Header
+          activeMarket={activeMarket}
           setActiveMarket={setActiveMarket}
         />
-        <div className="workspace-toolbar">
-          <label htmlFor="workspace-select" className="workspace-toolbar-label">Workspace</label>
-          <select
-            id="workspace-select"
-            className="workspace-toolbar-select"
-            value={activeWorkspaceId}
-            onChange={(event) => setActiveWorkspaceId(event.target.value)}
-          >
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="workspace-toolbar-button"
-            onClick={handleCreateWorkspace}
-          >
-            Save as New
-          </button>
-          <button
-            type="button"
-            className="workspace-toolbar-button"
-            onClick={handleCreateBlankWorkspace}
-          >
-            New Blank
-          </button>
-        </div>
+
+        <WorkspaceTabs
+          editingWorkspaceId={editingWorkspaceId}
+          onEditStart={setEditingWorkspaceId}
+          onEditEnd={handleEditEnd}
+        />
+
         <div className="app-body">
           <Sidebar
             onAdminClick={() => setShowAdminPanel(true)}
@@ -243,24 +130,25 @@ function AppContent() {
             onWorkspaceSlotChange={handleBlankSlotChange}
             workspaceHiddenSlots={activeWorkspace?.hiddenSlots || []}
             onWorkspaceHiddenSlotsChange={handleBlankHiddenSlotsChange}
+            isWorkspaceEditMode={isEditMode}
           />
         </div>
-        {showAdminPanel && (
-          <AdminPanel onClose={() => setShowAdminPanel(false)} />
-        )}
-        {showUserSettings && (
-          <UserSettings onClose={() => setShowUserSettings(false)} />
-        )}
+
+        {showAdminPanel   && <AdminPanel   onClose={() => setShowAdminPanel(false)} />}
+        {showUserSettings && <UserSettings onClose={() => setShowUserSettings(false)} />}
       </div>
     </PreferencesProvider>
   )
 }
 
+// Root: provider tree
 function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <AppContent />
+        <WorkspaceProvider>
+          <AppContent />
+        </WorkspaceProvider>
       </LanguageProvider>
     </AuthProvider>
   )
