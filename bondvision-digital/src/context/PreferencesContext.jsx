@@ -16,6 +16,7 @@ const defaultPreferences = {
     rfqOpenInTab: false,
     rfqAlwaysOnTop: false,
     rfqMaxDealers: 6,
+    hideLegacyWorkspace: false,
     columnWidths: {},
     filters: {},
     sorts: []
@@ -165,6 +166,7 @@ export const PreferencesProvider = ({ children }) => {
         setRfqOpenInTab: (enabled) => updatePreference('rfqOpenInTab', enabled, { immediate: true }),
         setRfqAlwaysOnTop: (enabled) => updatePreference('rfqAlwaysOnTop', enabled, { immediate: true }),
         setRfqMaxDealers: (maxDealers) => updatePreference('rfqMaxDealers', maxDealers, { immediate: true }),
+        setHideLegacyWorkspace: (enabled) => updatePreference('hideLegacyWorkspace', enabled, { immediate: true }),
         setColumnOrder: (order) => updatePreference('columnOrder', order),
         setColumnWidths: (widths) => updatePreference('columnWidths', widths),
         setFilters: (filters) => updatePreference('filters', filters),

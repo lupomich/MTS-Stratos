@@ -183,9 +183,18 @@ const alertsColumnDefs = [
   { headerName: 'MESSAGE', field: 'message', flex: 2 }
 ]
 
+const ordersColumnDefs = [
+  { headerName: 'TIME', field: 'time', flex: 1 },
+  { headerName: 'ISIN', field: 'isin', flex: 2 },
+  { headerName: 'SIDE', field: 'side', flex: 1 },
+  { headerName: 'QTY', field: 'qty', flex: 1 },
+  { headerName: 'PRICE', field: 'price', flex: 1 },
+  { headerName: 'STATUS', field: 'status', flex: 1 }
+]
+
 const BLANK_WORKSPACE_SLOT_COUNT = 6
 const SIDEBAR_PANEL_DRAG_MIME = 'application/x-mts-panel'
-const BLANK_WORKSPACE_PANEL_KEYS = new Set(['trading', 'data', 'depth', 'blotter', 'alerts'])
+const BLANK_WORKSPACE_PANEL_KEYS = new Set(['trading', 'data', 'depth', 'blotter', 'alerts', 'orders'])
 
 const MainContent = ({
   panelCommand,
@@ -214,8 +223,11 @@ const MainContent = ({
   const [isBottomPanelFullScreen, setIsBottomPanelFullScreen] = useState(false)
   const [blankFullScreenSlotIndex, setBlankFullScreenSlotIndex] = useState(null)
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState(null)
-  const [colWidths, setColWidths] = useState([1, 1, 1])
-  const [rowHeights, setRowHeights] = useState([1, 1])
+  const [colWidths, setColWidths] = useState(() => workspaceLayout?.colWidths ?? [1, 1, 1])
+  const [rowHeights, setRowHeights] = useState(() => workspaceLayout?.rowHeights ?? [1, 1])
+  // Refs mirror state so drag-end handlers can read latest values synchronously
+  const colWidthsRef  = useRef(workspaceLayout?.colWidths  ?? [1, 1, 1])
+  const rowHeightsRef = useRef(workspaceLayout?.rowHeights ?? [1, 1])
   const [isGridDragging, setIsGridDragging] = useState(false)
   const blankGridRef = useRef(null)
   const gridDragRef = useRef(null)
@@ -238,6 +250,13 @@ const MainContent = ({
     isMarketDepthCollapsed,
     isDataPanelCollapsed
   } = layoutState
+  // Keep layout state ref in sync so drag-end handlers can read it with zero closure deps
+  const layoutStateRef = useRef(layoutState)
+  useEffect(() => { layoutStateRef.current = layoutState }, [layoutState])
+  // Keep grid proportion refs in sync (updated eagerly in handleGridResizeMove too)
+  useEffect(() => { colWidthsRef.current  = colWidths  }, [colWidths])
+  useEffect(() => { rowHeightsRef.current = rowHeights }, [rowHeights])
+
   const setTradingWidth = useCallback((value) => {
     setLayoutState((prev) => ({ ...prev, tradingWidth: value }))
   }, [])
@@ -296,9 +315,17 @@ const MainContent = ({
       if (areLayoutStatesEqual(previousLayoutState, workspaceLayout)) {
         return previousLayoutState
       }
-
       return { ...workspaceLayout }
     })
+
+    // Sync blank-grid proportions when switching workspace or loading from DB.
+    // Always reset — if colWidths/rowHeights are absent (new workspace) fall back to [1,1,1]/[1,1]
+    const nextCols = Array.isArray(workspaceLayout.colWidths)  ? workspaceLayout.colWidths  : [1, 1, 1]
+    const nextRows = Array.isArray(workspaceLayout.rowHeights) ? workspaceLayout.rowHeights : [1, 1]
+    setColWidths(nextCols)
+    colWidthsRef.current  = nextCols
+    setRowHeights(nextRows)
+    rowHeightsRef.current = nextRows
   }, [workspaceLayout])
 
   // Removed the layoutState→parent sync useEffect.
@@ -372,7 +399,10 @@ const MainContent = ({
     setIsDraggingVertical(false)
     // Flush final layout to parent at drag-end only, avoiding mid-drag re-render cascade
     setLayoutState((current) => {
-      onWorkspaceLayoutChangeRef.current?.(current)
+      // Merge in current grid proportions so they are never overwritten
+      const colW = colWidthsRef.current
+      const rowH = rowHeightsRef.current
+      onWorkspaceLayoutChangeRef.current?.({ ...current, colWidths: colW, rowHeights: rowH })
       return current
     })
   }, [])
@@ -425,7 +455,9 @@ const MainContent = ({
   const handleMouseUpHorizontal = useCallback(() => {
     setIsDraggingHorizontal(false)
     setLayoutState((current) => {
-      onWorkspaceLayoutChangeRef.current?.(current)
+      const colW = colWidthsRef.current
+      const rowH = rowHeightsRef.current
+      onWorkspaceLayoutChangeRef.current?.({ ...current, colWidths: colW, rowHeights: rowH })
       return current
     })
   }, [])
@@ -536,6 +568,21 @@ const MainContent = ({
     setActiveBottomPanel('alerts')
   }, [isDataPanelCollapsed, activeBottomPanel, expandDataPanel, collapseDataPanel])
 
+  const toggleOrdersPanel = useCallback(() => {
+    if (isDataPanelCollapsed) {
+      setActiveBottomPanel('orders')
+      expandDataPanel()
+      return
+    }
+
+    if (activeBottomPanel === 'orders') {
+      collapseDataPanel()
+      return
+    }
+
+    setActiveBottomPanel('orders')
+  }, [isDataPanelCollapsed, activeBottomPanel, expandDataPanel, collapseDataPanel])
+
   const toggleBondTableFullScreen = useCallback(() => {
     if (isBondTableFullScreen) {
       expandMarketDepthPanel()
@@ -580,6 +627,11 @@ const MainContent = ({
       return
     }
 
+    if (panelCommand.panelKey === 'orders') {
+      toggleOrdersPanel()
+      return
+    }
+
     if (panelCommand.panelKey === 'depth') {
       toggleMarketDepthCollapse()
     }
@@ -589,6 +641,7 @@ const MainContent = ({
     toggleDataWorkspacePanel,
     toggleBlotterPanel,
     toggleAlertsPanel,
+    toggleOrdersPanel,
     toggleMarketDepthCollapse,
     workspaceMode
   ])
@@ -605,6 +658,8 @@ const MainContent = ({
         return t('sidebar.blotter')
       case 'alerts':
         return t('sidebar.alerts')
+      case 'orders':
+        return t('sidebar.orders')
       default:
         return panelKey
     }
@@ -614,28 +669,40 @@ const MainContent = ({
     event.preventDefault()
     setDragOverSlotIndex(null)
 
-    // Only allow dropping on empty slots — never replace an occupied panel
-    if (normalizedWorkspaceSlots[slotIndex]) return
-
     const droppedPanelKey = event.dataTransfer.getData(SIDEBAR_PANEL_DRAG_MIME)
       || event.dataTransfer.getData('text/plain')
     if (!BLANK_WORKSPACE_PANEL_KEYS.has(droppedPanelKey)) return
 
+    const panelKey = normalizedWorkspaceSlots[slotIndex]
+    if (!panelKey) {
+      // Empty slot: only allow drop on the leftmost empty (non-hidden) slot in this row.
+      // hiddenSlots may contain encoded values (0-5 regular, 6-11 vSpan); decode with % 6.
+      const row = Math.floor(slotIndex / 3)
+      const rowStart = row * 3
+      const hiddenSet = new Set(
+        (workspaceHiddenSlots || []).map((v) => v % 6).filter((i) => i < 6 && !normalizedWorkspaceSlots[i])
+      )
+      const leftmost = [0, 1, 2].find((c) => {
+        const si = rowStart + c
+        return !normalizedWorkspaceSlots[si] && !hiddenSet.has(si)
+      })
+      if (leftmost === undefined || rowStart + leftmost !== slotIndex) return
+    }
+    // Occupied slot → override (replace the panel)
     if (onWorkspaceSlotChange) {
       onWorkspaceSlotChange(slotIndex, droppedPanelKey)
+      if (onWorkspaceHiddenSlotsChange) {
+        // Remove all entries for this slot (encoded as plain index 0-5 OR vSpan +6 offset 6-11)
+        onWorkspaceHiddenSlotsChange((workspaceHiddenSlots || []).filter((v) => v % 6 !== slotIndex))
+      }
     }
-  }, [onWorkspaceSlotChange, normalizedWorkspaceSlots])
+  }, [onWorkspaceSlotChange, onWorkspaceHiddenSlotsChange, normalizedWorkspaceSlots, workspaceHiddenSlots])
 
   const handleBlankSlotDragOver = useCallback((slotIndex, event) => {
-    // Occupied slots do not accept drops — they absorb the event but refuse it
-    if (normalizedWorkspaceSlots[slotIndex]) {
-      event.dataTransfer.dropEffect = 'none'
-      return
-    }
     event.preventDefault()
     event.dataTransfer.dropEffect = 'copy'
     setDragOverSlotIndex(slotIndex)
-  }, [normalizedWorkspaceSlots])
+  }, [])
 
   const handleBlankSlotDragLeave = useCallback((slotIndex) => {
     setDragOverSlotIndex((previous) => (previous === slotIndex ? null : previous))
@@ -648,20 +715,31 @@ const MainContent = ({
     if (blankFullScreenSlotIndex === slotIndex) {
       setBlankFullScreenSlotIndex(null)
     }
-    // When a panel is removed the slot becomes an empty drop zone again — un-collapse it
     if (onWorkspaceHiddenSlotsChange) {
-      onWorkspaceHiddenSlotsChange((workspaceHiddenSlots || []).filter((i) => i !== slotIndex))
+      // Un-hide this slot entirely, AND downgrade the column-partner's vSpan encoding
+      // to regular hidden: the partner was vSpan-encoded because THIS panel was present;
+      // now that this panel is cleared, the partner's vSpan intent is no longer valid.
+      const partnerIndex = slotIndex < 3 ? slotIndex + 3 : slotIndex - 3
+      const partnerVSpanEncoded = partnerIndex + 6  // e.g. 4+6=10
+      onWorkspaceHiddenSlotsChange(
+        (workspaceHiddenSlots || [])
+          .filter((v) => v % 6 !== slotIndex)              // remove all entries for this slot
+          .map((v) => v === partnerVSpanEncoded ? partnerIndex : v)  // downgrade partner vSpan→regular
+      )
     }
   }, [onWorkspaceSlotChange, blankFullScreenSlotIndex, workspaceHiddenSlots, onWorkspaceHiddenSlotsChange])
 
   const handleBlankSlotCollapse = useCallback((slotIndex) => {
-    if (onWorkspaceHiddenSlotsChange) {
-      const current = workspaceHiddenSlots || []
-      if (!current.includes(slotIndex)) {
-        onWorkspaceHiddenSlotsChange([...current, slotIndex])
-      }
-    }
-  }, [workspaceHiddenSlots, onWorkspaceHiddenSlotsChange])
+    if (!onWorkspaceHiddenSlotsChange) return
+    const current = workspaceHiddenSlots || []
+    // Remove any existing entry for this slot (both regular 0-5 and vSpan-encoded 6-11)
+    const filtered = current.filter((v) => v % 6 !== slotIndex)
+    // Encode: +6 if partner already has a panel (vertical-span intent), else plain index
+    const partnerIndex = slotIndex < 3 ? slotIndex + 3 : slotIndex - 3
+    const hasPartnerPanel = Boolean(normalizedWorkspaceSlots[partnerIndex])
+    const encoded = hasPartnerPanel ? slotIndex + 6 : slotIndex
+    onWorkspaceHiddenSlotsChange([...filtered, encoded])
+  }, [workspaceHiddenSlots, onWorkspaceHiddenSlotsChange, normalizedWorkspaceSlots])
 
   const toggleBlankSlotFullScreen = useCallback((slotIndex) => {
     setBlankFullScreenSlotIndex((previous) => (previous === slotIndex ? null : slotIndex))
@@ -695,25 +773,34 @@ const MainContent = ({
       const i = drag.index
       const combined = drag.startColWidths[i] + drag.startColWidths[i + 1]
       const newLeft = Math.max(0.1, Math.min(combined - 0.1, drag.startColWidths[i] + deltaFr))
-      setColWidths((prev) => {
-        const next = [...prev]
-        next[i] = newLeft
-        next[i + 1] = combined - newLeft
-        return next
-      })
+      // Mirror synchronously into drag ref so handleGridResizeEnd can read it immediately
+      const nextCols = [...drag.startColWidths]
+      nextCols[i] = newLeft
+      nextCols[i + 1] = combined - newLeft
+      drag.lastColWidths = nextCols
+      setColWidths(nextCols)
     } else {
       const totalFr = drag.startRowHeights.reduce((a, b) => a + b, 0)
       const deltaFr = ((e.clientY - drag.startY) / drag.containerHeight) * totalFr
       const combined = drag.startRowHeights[0] + drag.startRowHeights[1]
       const newTop = Math.max(0.1, Math.min(combined - 0.1, drag.startRowHeights[0] + deltaFr))
-      setRowHeights([newTop, combined - newTop])
+      drag.lastRowHeights = [newTop, combined - newTop]
+      setRowHeights(drag.lastRowHeights)
     }
   }, [])
 
   const handleGridResizeEnd = useCallback(() => {
-    if (gridDragRef.current) {
+    const drag = gridDragRef.current
+    if (drag) {
+      const cw = drag.lastColWidths  ?? drag.startColWidths
+      const rh = drag.lastRowHeights ?? drag.startRowHeights
+      // Store in refs so handleMouseUpVertical/Horizontal can include them
+      colWidthsRef.current  = cw
+      rowHeightsRef.current = rh
       gridDragRef.current = null
       setIsGridDragging(false)
+      // Call directly — NOT inside a state updater (side-effects in pure updaters are unreliable)
+      onWorkspaceLayoutChangeRef.current?.({ ...layoutStateRef.current, colWidths: cw, rowHeights: rh })
     }
   }, [])
 
@@ -1368,6 +1455,20 @@ const MainContent = ({
       )
     }
 
+    if (panelKey === 'orders') {
+      return (
+        <div className="ag-theme-alpine-dark data-grid">
+          <AgGridReact
+            rowData={[]}
+            columnDefs={ordersColumnDefs}
+            defaultColDef={dataDefaultColDef}
+            domLayout='normal'
+            suppressCellFocus={true}
+          />
+        </div>
+      )
+    }
+
     return (
       <div className="ag-theme-alpine-dark data-grid">
         <AgGridReact
@@ -1422,52 +1523,136 @@ const MainContent = ({
   }, [rfqModals, t])
 
   if (isBlankWorkspace) {
+    const S = normalizedWorkspaceSlots
     const hasFullScreen = blankFullScreenSlotIndex !== null
-    // In edit mode: occupied slots are always visible, but empty slots the user
-    // explicitly closed (hiddenSlots) are respected so the X button actually works.
-    const collapsedSet = isWorkspaceEditMode
-      ? new Set((workspaceHiddenSlots || []).filter((i) => !normalizedWorkspaceSlots[i]))
-      : new Set(workspaceHiddenSlots || [])
 
-    // A column collapses when BOTH its slots are empty AND both are explicitly hidden
-    const isColCollapsed = [0, 1, 2].map((col) =>
-      !normalizedWorkspaceSlots[col] && !normalizedWorkspaceSlots[col + 3]
-      && collapsedSet.has(col) && collapsedSet.has(col + 3)
+    // hiddenSlots encoding: values 0-5 = regular hidden (horizontal-span candidate),
+    // values 6-11 = hidden while partner had a panel (vertical-span intent).
+    // collapsedSet: all effectively hidden slot indices (decoded)
+    const collapsedSet = new Set(
+      (workspaceHiddenSlots || []).map((v) => v % 6).filter((i) => i < 6 && !S[i])
+    )
+    // vSpanSet: subset — only the vertical-span-intended hidden slots
+    const vSpanSet = new Set(
+      (workspaceHiddenSlots || []).filter((v) => v >= 6).map((v) => v % 6).filter((i) => i < 6 && !S[i])
     )
 
-    // A row collapses when ALL 3 of its slots are empty AND all explicitly hidden
-    const isRowCollapsed = [0, 1].map((row) =>
+    // A column is "dead" only when BOTH its slots were independently hidden.
+    // Dead columns collapse to 0px in the CSS template.
+    const isColDead = [0, 1, 2].map((c) =>
+      !S[c] && !S[c + 3] && collapsedSet.has(c) && collapsedSet.has(c + 3)
+    )
+
+    // A row collapses when all its slots are empty+collapsed
+    const isRowCollapsed = [0, 1].map((r) =>
       [0, 1, 2].every((c) => {
-        const si = row * 3 + c
-        return !normalizedWorkspaceSlots[si] && collapsedSet.has(si)
+        const si = r * 3 + c
+        return !S[si] && collapsedSet.has(si)
       })
     )
 
-    // An occupied slot spans both rows when its column-partner is empty+collapsed
-    const slotSpansBothRows = (slotIndex) => {
+    // Vertical span: a panel fills both rows when its column-partner is empty AND was
+    // hidden while this panel was already present (vSpanSet encodes that intent).
+    // Without the vSpanSet check, dropping a panel into a slot whose partner is hidden
+    // for a DIFFERENT reason (e.g. horizontal span by a neighbour) would falsely trigger
+    // vertical expansion.
+    const spansRowsOf = (slotIndex) => {
+      if (!S[slotIndex]) return false
       const col = slotIndex % 3
-      if (isColCollapsed[col]) return false
-      const panelKey = normalizedWorkspaceSlots[slotIndex]
-      if (!panelKey) return false
-      const row = Math.floor(slotIndex / 3)
-      const partnerIndex = row === 0 ? slotIndex + 3 : slotIndex - 3
-      const partnerKey = normalizedWorkspaceSlots[partnerIndex]
-      return !partnerKey && collapsedSet.has(partnerIndex)
+      if (isColDead[col]) return false
+      const partnerIndex = slotIndex < 3 ? slotIndex + 3 : slotIndex - 3
+      return collapsedSet.has(partnerIndex) && vSpanSet.has(partnerIndex)
     }
 
-    // Per-column h-handle: a column needs a handle only when both its slots are
-    // independently visible (neither is spanning the other's space)
-    const colNeedsHHandle = [0, 1, 2].map((col) => {
-      if (isColCollapsed[col]) return false
-      return !slotSpansBothRows(col) && !slotSpansBothRows(col + 3)
-    })
-    const needsHHandle = colNeedsHHandle.some(Boolean)
+    // Horizontal span: a panel grows rightward into consecutive collapsed slots in the
+    // SAME ROW that are NOT reserved for vertical expansion (not in vSpanSet).
+    // Caso A (vertical) and Caso B (horizontal) are mutually exclusive:
+    //   • slots in vSpanSet are "owned" by their partner panel's vertical span
+    //   • horizontalSpanOf stops before any such slot
+    //   • a panel that itself spansRows cannot also span horizontally
+    const horizontalSpanOf = (slotIndex) => {
+      if (!S[slotIndex]) return null
+      if (spansRowsOf(slotIndex)) return null  // Caso A wins — no horizontal span
+      const col = slotIndex % 3
+      const row = Math.floor(slotIndex / 3)
+      let rightEnd = col
+      for (let c = col + 1; c <= 2; c++) {
+        const si = row * 3 + c
+        // Stop if slot is occupied, not collapsed, or reserved for vertical span
+        if (!S[si] && collapsedSet.has(si) && !vSpanSet.has(si)) {
+          rightEnd = c
+        } else break
+      }
+      if (rightEnd === col) return null
+      return `${col * 2 + 1} / ${rightEnd * 2 + 2}`
+    }
 
-    const colTemplate = isColCollapsed.map((collapsed, i) => collapsed ? '0px' : `${colWidths[i]}fr`)
-    const vHandle0 = (isColCollapsed[0] && isColCollapsed[1]) ? '0px' : '5px'
-    const vHandle1 = (isColCollapsed[1] && isColCollapsed[2]) ? '0px' : '5px'
+    // coveredInRow[vHandleIdx][row]: true when a horizontal span crosses that vHandle track.
+    // Mirrors horizontalSpanOf: skip vSpan panels and skip vSpanSet slots.
+    const coveredInRow = [0, 1].map(() => [false, false])
+    for (let si = 0; si < 6; si++) {
+      if (!S[si]) continue
+      if (spansRowsOf(si)) continue  // vSpan panels have no horizontal span
+      const col = si % 3
+      const row = Math.floor(si / 3)
+      for (let c = col + 1; c <= 2; c++) {
+        const rsi = row * 3 + c
+        if (!S[rsi] && collapsedSet.has(rsi) && !vSpanSet.has(rsi)) {
+          coveredInRow[c - 1][row] = true
+        } else break
+      }
+    }
+    // vHandle gridRow: '1/4' if neither row covered, '1' if only bottom covered,
+    // '3' if only top covered, hide entirely if both covered.
+    const vHandleProps = [0, 1].map((vi) => {
+      const [topCovered, botCovered] = coveredInRow[vi]
+      if (topCovered && botCovered) return null   // hidden
+      if (topCovered)  return '3'                 // only bottom row visible
+      if (botCovered)  return '1'                 // only top row visible
+      return '1 / 4'                              // full height
+    })
+
+    // hHandleSegments: contiguous CSS gridColumn spans at gridRow:2 where a row-resize
+    // handle should be rendered. We EXCLUDE content-column tracks for any column whose panel
+    // spans both rows (gridRow:1/4), because the full-width hHandle's border lines would
+    // visually cut through those panels.
+    //
+    // Algorithm:
+    //   1. Mark each content column track (gridCol 1/3/5) needed when neither slot spans rows.
+    //   2. Mark each vHandle track (gridCol 2/4) needed only when BOTH flanking content tracks
+    //      are needed (so the horizontal line is unbroken between them).
+    //   3. Merge consecutive needed tracks into CSS gridColumn span strings.
+    const _hNeed = new Array(5).fill(false)
+    for (let c = 0; c < 3; c++) {
+      if (!isColDead[c] && !spansRowsOf(c) && !spansRowsOf(c + 3)) {
+        _hNeed[c * 2] = true  // content track: c=0→idx0, c=1→idx2, c=2→idx4
+      }
+    }
+    if (_hNeed[0] && _hNeed[2]) _hNeed[1] = true  // vHandle0 track (gridCol 2)
+    if (_hNeed[2] && _hNeed[4]) _hNeed[3] = true  // vHandle1 track (gridCol 4)
+    const hHandleSegments = []
+    let _hSeg = -1
+    for (let t = 0; t <= 5; t++) {
+      const on = t < 5 && _hNeed[t]
+      if (on && _hSeg === -1) { _hSeg = t }
+      else if (!on && _hSeg !== -1) { hHandleSegments.push(`${_hSeg + 1} / ${t + 1}`); _hSeg = -1 }
+    }
+    const needsHHandle = hHandleSegments.length > 0
+
+    const colTemplate = [0, 1, 2].map((c) => isColDead[c] ? '0px' : `${colWidths[c]}fr`)
+    const vHandle0 = (isColDead[0] || isColDead[1] || vHandleProps[0] === null) ? '0px' : '5px'
+    const vHandle1 = (isColDead[1] || isColDead[2] || vHandleProps[1] === null) ? '0px' : '5px'
     const rowTemplate = isRowCollapsed.map((collapsed, i) => collapsed ? '0px' : `${rowHeights[i]}fr`)
     const hHandle = needsHHandle ? '5px' : '0px'
+
+    // In edit mode: only the leftmost visible-and-empty slot per row shows as a drop zone.
+    const leftmostEmptyPerRow = [0, 1].map((r) =>
+      [0, 1, 2].reduce((found, c) => {
+        if (found !== null) return found
+        const si = r * 3 + c
+        return (!S[si] && !collapsedSet.has(si)) ? si : null
+      }, null)
+    )
 
     return (
       <div className="main-content blank-workspace-content">
@@ -1522,57 +1707,77 @@ const MainContent = ({
           }}
         >
           {/* Vertical handle between col 0 and col 1 */}
-          {!isColCollapsed[0] && !isColCollapsed[1] && (
+          {!isColDead[0] && !isColDead[1] && vHandleProps[0] !== null && (
             <div
               className="blank-grid-vhandle"
-              style={{ gridColumn: '2', gridRow: '1 / 4' }}
+              style={{ gridColumn: '2', gridRow: vHandleProps[0] }}
               onMouseDown={(e) => handleGridResizeStart('col', 0, e)}
             />
           )}
           {/* Vertical handle between col 1 and col 2 */}
-          {!isColCollapsed[1] && !isColCollapsed[2] && (
+          {!isColDead[1] && !isColDead[2] && vHandleProps[1] !== null && (
             <div
               className="blank-grid-vhandle"
-              style={{ gridColumn: '4', gridRow: '1 / 4' }}
+              style={{ gridColumn: '4', gridRow: vHandleProps[1] }}
               onMouseDown={(e) => handleGridResizeStart('col', 1, e)}
             />
           )}
-          {/* Per-column horizontal handles between row 0 and row 1 */}
-          {colNeedsHHandle[0] && (
+          {/* Row-resize handle(s) — one div per contiguous track segment at gridRow:2.
+              Segments exclude columns where a panel spans both rows (gridRow:1/4),
+              preventing the handle's border lines from cutting through those panels. */}
+          {hHandleSegments.map((seg, i) => (
             <div
+              key={`blank-hhandle-${i}`}
               className="blank-grid-hhandle"
-              style={{ gridColumn: '1', gridRow: '2' }}
+              style={{ gridColumn: seg, gridRow: '2' }}
               onMouseDown={(e) => handleGridResizeStart('row', 0, e)}
             />
-          )}
-          {colNeedsHHandle[1] && (
-            <div
-              className="blank-grid-hhandle"
-              style={{ gridColumn: '3', gridRow: '2' }}
-              onMouseDown={(e) => handleGridResizeStart('row', 0, e)}
-            />
-          )}
-          {colNeedsHHandle[2] && (
-            <div
-              className="blank-grid-hhandle"
-              style={{ gridColumn: '5', gridRow: '2' }}
-              onMouseDown={(e) => handleGridResizeStart('row', 0, e)}
-            />
-          )}
+          ))}
           {/* 6 slots: 0-2 top row, 3-5 bottom row */}
           {[0, 1, 2, 3, 4, 5].map((slotIndex) => {
             const col = slotIndex % 3
             const row = Math.floor(slotIndex / 3)
-            const gridCol = col * 2 + 1
-            const gridRow = row * 2 + 1
-            const panelKey = normalizedWorkspaceSlots[slotIndex]
+            const panelKey = S[slotIndex]
             const isCollapsed = !panelKey && collapsedSet.has(slotIndex)
             const isFullScreen = blankFullScreenSlotIndex === slotIndex
-            const isHidden = (hasFullScreen && !isFullScreen) || isCollapsed
-            const isDragTarget = dragOverSlotIndex === slotIndex && !panelKey
-            // Span both grid rows when the partner slot in this column is empty+collapsed
-            const spansRows = !isFullScreen && slotSpansBothRows(slotIndex)
-            const effectiveGridRow = spansRows ? '1 / 4' : String(gridRow)
+
+            // Fullscreen mode: hide all other slots
+            if (hasFullScreen && !isFullScreen) return null
+
+            // Explicitly collapsed → remove from DOM entirely
+            if (isCollapsed) return null
+
+            // Fullscreen slot: cover entire grid
+            if (isFullScreen) {
+              return (
+                <div
+                  key={`blank-slot-${slotIndex}`}
+                  className="blank-grid-slot occupied fullscreen"
+                  style={{ gridColumn: '1 / 6', gridRow: '1 / 4', zIndex: 10 }}
+                >
+                  <DockablePanelShell
+                    title={getBlankPanelTitle(panelKey)}
+                    isFullScreen
+                    onToggleFullScreen={() => toggleBlankSlotFullScreen(slotIndex)}
+                    onClose={() => handleBlankSlotClear(slotIndex)}
+                  >
+                    {renderBlankPanelContent(panelKey)}
+                  </DockablePanelShell>
+                </div>
+              )
+            }
+
+            // In edit mode: hide empty slots that are not the leftmost empty in their row
+            if (!panelKey && isWorkspaceEditMode && leftmostEmptyPerRow[row] !== slotIndex) return null
+
+            // Vertical span: panel fills partner row when partner is empty+collapsed
+            const spansRows = spansRowsOf(slotIndex)
+            // Horizontal span: panel extends rightward into consecutively-collapsed row-siblings
+            const hSpan = horizontalSpanOf(slotIndex)
+            const effectiveGridRow = spansRows ? '1 / 4' : String(row * 2 + 1)
+            const effectiveGridCol = hSpan || String(col * 2 + 1)
+
+            const isDragTarget = dragOverSlotIndex === slotIndex
 
             return (
               <div
@@ -1580,13 +1785,9 @@ const MainContent = ({
                 className={[
                   'blank-grid-slot',
                   panelKey ? 'occupied' : 'empty',
-                  isFullScreen ? 'fullscreen' : '',
-                  isHidden ? 'hidden' : '',
                   isDragTarget ? 'drag-over' : '',
                 ].filter(Boolean).join(' ')}
-                style={isFullScreen
-                  ? { gridColumn: '1 / 6', gridRow: '1 / 4', zIndex: 10 }
-                  : { gridColumn: String(gridCol), gridRow: effectiveGridRow }}
+                style={{ gridColumn: effectiveGridCol, gridRow: effectiveGridRow }}
                 onDragOver={(event) => handleBlankSlotDragOver(slotIndex, event)}
                 onDragLeave={() => handleBlankSlotDragLeave(slotIndex)}
                 onDrop={(event) => handleBlankSlotDrop(slotIndex, event)}
@@ -1594,7 +1795,7 @@ const MainContent = ({
                 {panelKey ? (
                   <DockablePanelShell
                     title={getBlankPanelTitle(panelKey)}
-                    isFullScreen={isFullScreen}
+                    isFullScreen={false}
                     onToggleFullScreen={() => toggleBlankSlotFullScreen(slotIndex)}
                     onClose={() => handleBlankSlotClear(slotIndex)}
                   >
@@ -1787,6 +1988,23 @@ const MainContent = ({
                         <AgGridReact
                           rowData={[]}
                           columnDefs={alertsColumnDefs}
+                          defaultColDef={dataDefaultColDef}
+                          domLayout='normal'
+                          suppressCellFocus={true}
+                        />
+                      </div>
+                    </DockablePanelShell>
+                  ) : activeBottomPanel === 'orders' ? (
+                    <DockablePanelShell
+                      title={t('sidebar.orders')}
+                      isFullScreen={isBottomPanelFullScreen}
+                      onToggleFullScreen={toggleBottomPanelFullScreen}
+                      onClose={toggleOrdersPanel}
+                    >
+                      <div className="ag-theme-alpine-dark data-grid">
+                        <AgGridReact
+                          rowData={[]}
+                          columnDefs={ordersColumnDefs}
                           defaultColDef={dataDefaultColDef}
                           domLayout='normal'
                           suppressCellFocus={true}

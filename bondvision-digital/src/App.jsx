@@ -16,11 +16,14 @@ import './components/Badge.css'
 // Layout equality guard to avoid spurious workspace updates
 const areWorkspaceLayoutsEqual = (first, second) => {
   if (!first || !second) return false
+  const arrEq = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => v === b[i])
   return first.tradingWidth           === second.tradingWidth
       && first.marketWidth            === second.marketWidth
       && first.dataHeight             === second.dataHeight
       && first.isMarketDepthCollapsed === second.isMarketDepthCollapsed
       && first.isDataPanelCollapsed   === second.isDataPanelCollapsed
+      && arrEq(first.colWidths,  second.colWidths)
+      && arrEq(first.rowHeights, second.rowHeights)
 }
 
 // Inner app (needs WorkspaceProvider above it)
@@ -73,15 +76,37 @@ function AppContent() {
     updateWorkspace(activeWorkspaceId, { hiddenSlots: nextHiddenSlots })
   }, [activeWorkspaceId, updateWorkspace])
 
-  // Exit edit mode: auto-collapse remaining empty slots
+  // Enter edit mode: reset hiddenSlots so every empty slot reappears as a drop zone
+  const handleEditStart = useCallback((wsId) => {
+    setEditingWorkspaceId(wsId)
+    const ws = workspaces.find((w) => w.id === wsId)
+    if (ws?.mode === 'blank' && (ws?.hiddenSlots || []).length > 0) {
+      updateWorkspace(wsId, { hiddenSlots: [] }, true)
+    }
+  }, [workspaces, updateWorkspace])
+
+  // Exit edit mode: auto-collapse remaining empty slots.
+  // Encoding convention (stored in hiddenSlots):
+  //   value 0-5  → slot hidden normally (horizontal-span candidate)
+  //   value 6-11 → slot hidden while partner already had a panel (vertical-span intent)
+  //                decode with:  slotIndex = value % 6,  isVSpan = value >= 6
   const handleEditEnd = useCallback(() => {
     if (editingWorkspaceId && activeWorkspace?.mode === 'blank') {
       const currentHidden = activeWorkspace.hiddenSlots || []
-      const autoHide = (activeWorkspace.slots || EMPTY_WORKSPACE_SLOTS)
-        .map((s, i) => (!s ? i : null))
-        .filter((i) => i !== null)
-      const nextHidden = [...new Set([...currentHidden, ...autoHide])]
-      if (nextHidden.length !== currentHidden.length) {
+      const slots = activeWorkspace.slots || EMPTY_WORKSPACE_SLOTS
+      // Slots already explicitly hidden during edit (via X presses) — track by decoded index
+      const alreadyHiddenIndices = new Set(currentHidden.map((v) => v % 6))
+      // Auto-hide remaining empty slots with correct vSpan encoding
+      const autoHide = slots
+        .map((s, i) => {
+          if (s) return null                    // has panel → skip
+          if (alreadyHiddenIndices.has(i)) return null  // already hidden → skip
+          const partner = i < 3 ? i + 3 : i - 3
+          return slots[partner] ? (i + 6) : i  // vSpan-encoded or regular
+        })
+        .filter((v) => v !== null)
+      const nextHidden = [...currentHidden, ...autoHide]
+      if (autoHide.length > 0) {
         updateWorkspace(editingWorkspaceId, { hiddenSlots: nextHidden }, true)
       }
     }
@@ -118,7 +143,7 @@ function AppContent() {
 
         <WorkspaceTabs
           editingWorkspaceId={editingWorkspaceId}
-          onEditStart={setEditingWorkspaceId}
+          onEditStart={handleEditStart}
           onEditEnd={handleEditEnd}
         />
 

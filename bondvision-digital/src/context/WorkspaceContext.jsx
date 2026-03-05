@@ -46,15 +46,28 @@ export function WorkspaceProvider({ children }) {
   const [activeWorkspaceId, setActiveWorkspaceIdRaw] = useState('workspace-default');
   const [loading, setLoading] = useState(true);
 
-  const saveTimersRef = useRef({});
+  // pendingSavesRef stores { [wsId]: { timerId, persist } } so we can flush on logout
+  const pendingSavesRef = useRef({});
   const isAuthRef = useRef(isAuthenticated);
+  const tokenRef = useRef(token);
   useEffect(() => { isAuthRef.current = isAuthenticated; }, [isAuthenticated]);
+  useEffect(() => { tokenRef.current = token; }, [token]);
 
   // ── Load on auth state change ────────────────────────────────────────────
   useEffect(() => {
-    // Cancel any pending debounced saves
-    Object.values(saveTimersRef.current).forEach(clearTimeout);
-    saveTimersRef.current = {};
+    if (!isAuthenticated) {
+      // Flush any pending debounced saves before the session is invalidated
+      Object.entries(pendingSavesRef.current).forEach(([wsId, { timerId, payload, capturedToken }]) => {
+        clearTimeout(timerId);
+        axios.put(`/workspaces/${wsId}`, payload, {
+          headers: { Authorization: `Bearer ${capturedToken}` },
+        }).catch((err) => console.error('[WorkspaceContext] Flush-on-logout error:', err));
+      });
+    } else {
+      // Switching accounts / token refresh — just cancel pending saves
+      Object.values(pendingSavesRef.current).forEach(({ timerId }) => clearTimeout(timerId));
+    }
+    pendingSavesRef.current = {};
 
     if (isAuthenticated) {
       loadFromBackend();
@@ -179,33 +192,45 @@ export function WorkspaceProvider({ children }) {
     return tempId;
   }, []);
 
-  /** Update one or more fields. Debounced DB write (immediate=true to skip debounce). */
+  /** Update one or more fields. Debounced DB write (immediate=true to skip debounce).
+   *  Multiple rapid calls for the same workspace are MERGED into a single PUT so no
+   *  field is lost when the timer is rescheduled (e.g. slots then hiddenSlots). */
   const updateWorkspace = useCallback((id, updates, immediate = false) => {
     setWorkspaces((prev) => prev.map((w) => w.id === id ? { ...w, ...updates } : w));
 
     if (!isAuthRef.current) return;
 
-    const persist = () => {
-      const payload = {};
-      if (updates.name       !== undefined) payload.name        = updates.name;
-      if (updates.mode       !== undefined) payload.mode        = updates.mode;
-      if (updates.slots      !== undefined) payload.slots       = updates.slots;
-      if (updates.layout     !== undefined) payload.layout      = updates.layout;
-      if (updates.hiddenSlots !== undefined) payload.hidden_slots = updates.hiddenSlots;
-      if (updates.sortOrder  !== undefined) payload.sort_order  = updates.sortOrder;
-      if (Object.keys(payload).length === 0) return;
-      axios.put(`/workspaces/${id}`, payload).catch((err) => console.error('[WorkspaceContext] Save error:', err));
+    // Build the DB-column fragment for this update
+    const fragment = {};
+    if (updates.name        !== undefined) fragment.name         = updates.name;
+    if (updates.mode        !== undefined) fragment.mode         = updates.mode;
+    if (updates.slots       !== undefined) fragment.slots        = updates.slots;
+    if (updates.layout      !== undefined) fragment.layout       = updates.layout;
+    if (updates.hiddenSlots !== undefined) fragment.hidden_slots = updates.hiddenSlots;
+    if (updates.sortOrder   !== undefined) fragment.sort_order   = updates.sortOrder;
+    if (Object.keys(fragment).length === 0) return;
+
+    // Merge with any already-queued payload for this workspace (so no prior
+    // fields are lost when the timer is rescheduled)
+    const existing = pendingSavesRef.current[id];
+    const mergedPayload = { ...(existing?.payload ?? {}), ...fragment };
+    // Always capture the freshest token
+    const capturedToken = tokenRef.current;
+
+    if (existing?.timerId) clearTimeout(existing.timerId);
+
+    const flush = () => {
+      delete pendingSavesRef.current[id];
+      axios.put(`/workspaces/${id}`, mergedPayload, {
+        headers: { Authorization: `Bearer ${capturedToken}` },
+      }).catch((err) => console.error('[WorkspaceContext] Save error:', err));
     };
 
-    if (saveTimersRef.current[id]) clearTimeout(saveTimersRef.current[id]);
     if (immediate) {
-      delete saveTimersRef.current[id];
-      persist();
+      flush();
     } else {
-      saveTimersRef.current[id] = setTimeout(() => {
-        delete saveTimersRef.current[id];
-        persist();
-      }, 1500);
+      const timerId = setTimeout(flush, 1500);
+      pendingSavesRef.current[id] = { timerId, payload: mergedPayload, capturedToken };
     }
   }, []);
 
@@ -226,7 +251,7 @@ export function WorkspaceProvider({ children }) {
 
   /** Delete a workspace (removes from list and DB). */
   const deleteWorkspace = useCallback(async (id) => {
-    if (saveTimersRef.current[id]) { clearTimeout(saveTimersRef.current[id]); delete saveTimersRef.current[id]; }
+    if (pendingSavesRef.current[id]) { clearTimeout(pendingSavesRef.current[id].timerId); delete pendingSavesRef.current[id]; }
     if (isAuthRef.current) {
       try { await axios.delete(`/workspaces/${id}`); } catch (err) { console.error('[WorkspaceContext] Delete error:', err); }
     }

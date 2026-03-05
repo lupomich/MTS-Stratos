@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import './UserSettings.css';
 
 const UserSettings = ({ onClose }) => {
-    const { preferences, setRfqOpenInPopup, setRfqOpenInTab, setRfqAlwaysOnTop, setRfqMaxDealers } = usePreferences();
+    const { preferences, setRfqOpenInPopup, setRfqOpenInTab, setRfqAlwaysOnTop, setRfqMaxDealers, setHideLegacyWorkspace } = usePreferences();
     const { t } = useLanguage();
     const isPopupOptionDisabled = Boolean(preferences.rfqOpenInTab);
     const isTabOptionDisabled = Boolean(preferences.rfqOpenInPopup);
@@ -110,6 +110,20 @@ const UserSettings = ({ onClose }) => {
                                         onChange={(e) => handleMaxDealersChange(e.target.value)}
                                         className="setting-number-input"
                                     />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="settings-section settings-section-card" style={{ marginTop: '18px' }}>
+                            <h3>{t('userSettings.workspacesSection')}</h3>
+                            <div className="setting-group" style={{ marginTop: '12px' }}>
+                                <label className="checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(preferences.hideLegacyWorkspace)}
+                                        onChange={(e) => setHideLegacyWorkspace(e.target.checked)}
+                                    />
+                                    <span>{t('userSettings.hideLegacyWorkspace')}</span>
                                 </label>
                             </div>
                         </div>

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspace, DEFAULT_WORKSPACE_LAYOUT, EMPTY_WORKSPACE_SLOTS } from '../context/WorkspaceContext';
 import { useLanguage } from '../context/LanguageContext';
+import { usePreferences } from '../context/PreferencesContext';
 import './WorkspaceTabs.css';
 
 export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditEnd }) {
@@ -15,6 +16,25 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
   } = useWorkspace();
 
   const { t } = useLanguage();
+  const { preferences } = usePreferences();
+  const hideLegacy = Boolean(preferences?.hideLegacyWorkspace);
+
+  // Compute visible workspaces: hide legacy ones when the preference is on,
+  // but always show all if filtering would leave nothing.
+  const visibleWorkspaces = useMemo(() => {
+    if (!hideLegacy) return workspaces;
+    const nonLegacy = workspaces.filter((w) => w.mode !== 'legacy');
+    return nonLegacy.length > 0 ? nonLegacy : workspaces;
+  }, [hideLegacy, workspaces]);
+
+  // If the active workspace is hidden by the filter, auto-switch to the first visible one.
+  useEffect(() => {
+    if (!hideLegacy) return;
+    const isVisible = visibleWorkspaces.some((w) => w.id === activeWorkspaceId);
+    if (!isVisible && visibleWorkspaces.length > 0) {
+      setActiveWorkspaceId(visibleWorkspaces[0].id);
+    }
+  }, [hideLegacy, visibleWorkspaces, activeWorkspaceId, setActiveWorkspaceId]);
 
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
@@ -101,7 +121,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
 
   const handleNewBlank = async () => {
     const tempId = await addWorkspace({
-      name: `Blank Workspace ${workspaces.length + 1}`,
+      name: `Workspace ${workspaces.length + 1}`,
       mode: 'blank',
       slots: [...EMPTY_WORKSPACE_SLOTS],
       layout: { ...DEFAULT_WORKSPACE_LAYOUT },
@@ -148,7 +168,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
     <div className="workspace-tabs-bar">
       <span className="workspace-tabs-label">{t('workspace.label')}</span>
       <div className="workspace-tabs-list">
-        {workspaces.map((ws) => {
+        {visibleWorkspaces.map((ws) => {
           const isActive   = ws.id === activeWorkspaceId;
           const isEditMode = ws.id === editingWorkspaceId;
           const isRenaming = renamingId === ws.id;

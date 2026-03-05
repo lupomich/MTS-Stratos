@@ -58,7 +58,9 @@ export const translations = {
       openRfqInPopup: 'Open RFQ in separate window',
       openRfqInTab: 'Open RFQ in separate tab',
       rfqAlwaysOnTop: 'RFQ Always On Top (best effort)',
-      maxNoDealersRfq: 'Max No. of Dealers in the RFQ'
+      maxNoDealersRfq: 'Max No. of Dealers in the RFQ',
+      workspacesSection: 'Workspaces',
+      hideLegacyWorkspace: 'Hide legacy default workspace'
     },
     mainContent: {
       openRfq: 'OPEN RFQ',
@@ -258,7 +260,9 @@ export const translations = {
       openRfqInPopup: 'Apri RFQ in finestra separata',
       openRfqInTab: 'Apri RFQ in scheda separata',
       rfqAlwaysOnTop: 'RFQ sempre in primo piano (best effort)',
-      maxNoDealersRfq: 'N. max di dealer nella RFQ'
+      maxNoDealersRfq: 'N. max di dealer nella RFQ',
+      workspacesSection: 'Workspace',
+      hideLegacyWorkspace: 'Nascondi workspace legacy predefinito'
     },
     mainContent: {
       openRfq: 'APRI RFQ',
