@@ -136,12 +136,9 @@
 }
 .workspace-tab-menu-trigger:hover { color: var(--text-light); }
 
-/* Dropdown menu */
+/* Dropdown menu — positioned via inline style (position:fixed) in JSX */
 .workspace-tab-menu {
-  position: absolute;
-  top: calc(100% + 1px);
-  right: 0;
-  z-index: 500;
+  z-index: 9999;
   background: var(--dark-bg-secondary, #132126);
   border: 1px solid var(--dark-border);
   min-width: 148px;
@@ -187,3 +184,20 @@
   transition: opacity 0.15s, background 0.15s;
 }
 .workspace-tab-new:hover { opacity: 1; background: var(--dark-hover); }
+/* ── Drag & Drop ─────────────────────────────────────────────────────────────── */
+
+.workspace-tab[draggable="true"] { cursor: grab; }
+.workspace-tab[draggable="true"]:active { cursor: grabbing; }
+
+.workspace-tab.dragging {
+  opacity: 0.4;
+  background: var(--dark-hover);
+}
+
+.workspace-tab.drag-over-before {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.workspace-tab.drag-over-after {
+  box-shadow: inset -3px 0 0 var(--color-primary);
+}

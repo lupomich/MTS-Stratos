@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useMemo, useState } from 'react'
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { PreferencesProvider } from './context/PreferencesContext'
 import { LanguageProvider } from './context/LanguageContext'
@@ -39,6 +39,15 @@ function AppContent() {
     () => workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0],
     [workspaces, activeWorkspaceId]
   )
+
+  // When a temp ID (workspace-local-*) is replaced by a real UUID from the DB,
+  // keep editingWorkspaceId in sync so edit mode stays active on the new tab.
+  useEffect(() => {
+    if (!editingWorkspaceId?.startsWith('workspace-local-')) return;
+    if (activeWorkspaceId && activeWorkspaceId !== editingWorkspaceId) {
+      setEditingWorkspaceId(activeWorkspaceId);
+    }
+  }, [activeWorkspaceId, editingWorkspaceId]);
 
   const handleWorkspaceLayoutChange = useCallback((nextLayout) => {
     if (!nextLayout || !activeWorkspaceId) return

@@ -1253,13 +1253,80 @@ const MainContent = ({
   const renderBlankPanelContent = useCallback((panelKey) => {
     if (panelKey === 'trading') {
       return (
-        <BondTable
-          onSelectBond={setSelectedBond}
-          onDoubleClickBond={handleBondDoubleClick}
-          countryBonds={dataTableRows}
-          searchTerm={searchTerm}
-          columnSearchTerm={columnSearchTerm}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          {/* Top tabs row: All / Axed / BV + Search Column (no maximize — DockablePanelShell provides it) */}
+          <div className="top-tabs" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            {topTabs.map((tab, i) => (
+              <button
+                key={`top-${tab.code}-${i}`}
+                className={`country-tab ${selectedTopTab === tab.code ? 'active' : ''}`}
+                onClick={() => setSelectedTopTab(tab.code)}
+                title={tab.name}
+              >
+                <span className="flag">{tab.flag}</span>
+                <span className="code">{getTopTabLabel(tab.code, tab.name)}</span>
+              </button>
+            ))}
+            <div style={{ flex: 1 }} />
+            <div className="column-search-wrap" style={{ width: 220, minWidth: 220 }}>
+              <input
+                type="text"
+                className="column-search-input"
+                placeholder="Search Column"
+                value={columnSearchTerm}
+                onChange={(e) => setColumnSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Country tabs row: Gov selector + flag buttons */}
+          <div className="country-tabs" style={{ flexShrink: 0 }}>
+            <div className="gov-selector-container">
+              <select id="gov-selector" className="gov-selector">
+                <option>{t('mainContent.govOptions.govCountry')}</option>
+                <option>{t('mainContent.govOptions.govMaturity')}</option>
+                <option>{t('mainContent.govOptions.govSwitches')}</option>
+                <option>{t('mainContent.govOptions.govGtdSsa')}</option>
+                <option>{t('mainContent.govOptions.coveredMaturity')}</option>
+                <option>{t('mainContent.govOptions.ssasMaturity')}</option>
+                <option>{t('mainContent.govOptions.corporateIndustry')}</option>
+                <option>{t('mainContent.govOptions.banksFinancials')}</option>
+              </select>
+            </div>
+            {countries.map((country, idx) => (
+              <button
+                key={`${country.code}-${idx}`}
+                className={`country-tab ${country.code === '+' ? 'country-add' : ''} ${selectedCountry === country.code ? 'active' : ''}`}
+                onClick={() => setSelectedCountry(country.code)}
+                title={country.name}
+              >
+                {country.flag && (
+                  <img src={country.flag} alt={country.code} className="country-flag-img" />
+                )}
+                {!country.flag && country.code !== '+' && (
+                  <span className="flag-placeholder">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </span>
+                )}
+                <span className="code">{country.code}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Bond table */}
+          <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            <BondTable
+              onSelectBond={setSelectedBond}
+              onDoubleClickBond={handleBondDoubleClick}
+              countryBonds={dataTableRows}
+              searchTerm={searchTerm}
+              columnSearchTerm={columnSearchTerm}
+            />
+          </div>
+        </div>
       )
     }
 
@@ -1317,9 +1384,17 @@ const MainContent = ({
     dataColumnDefs,
     dataDefaultColDef,
     dataTableRows,
+    getTopTabLabel,
     handleBondDoubleClick,
     searchTerm,
-    selectedBond
+    selectedBond,
+    selectedCountry,
+    selectedTopTab,
+    setColumnSearchTerm,
+    setSelectedBond,
+    setSelectedCountry,
+    setSelectedTopTab,
+    t,
   ])
 
   // Handle RFQ submission
@@ -1393,6 +1468,47 @@ const MainContent = ({
 
     return (
       <div className="main-content blank-workspace-content">
+        {/* ── RFQ toolbar (same as legacy workspace) ─────────────────────── */}
+        <div className="rfq-toolbar">
+          <div className="toolbar-left">
+            <div className="rfq-dropdown">
+              <button
+                className={`rfq-button ${expandedRFQ ? 'expanded' : ''}`}
+                onClick={() => setExpandedRFQ(!expandedRFQ)}
+              >
+                {t('mainContent.openRfq')} ▼
+              </button>
+              {expandedRFQ && (
+                <div className="rfq-menu">
+                  {rfqTypes.map(type => (
+                    <div
+                      key={type}
+                      className={`rfq-option ${selectedRFQ === type ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedRFQ(type)
+                        if (type === 'RFQ OUTRIGHT') handleOpenRfqOutright()
+                        setExpandedRFQ(false)
+                      }}
+                    >
+                      {getRfqTypeLabel(type)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder={t('mainContent.searchBondsPlaceholder')}
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="toolbar-right">
+            <button className="rfq-toolbar-button">{t('mainContent.rfqToolbar')}</button>
+          </div>
+        </div>
+
         <div
           ref={blankGridRef}
           className="blank-grid-container"
@@ -1719,41 +1835,6 @@ const MainContent = ({
               onChange={(e) => setColumnSearchTerm(e.target.value)}
             />
           </div>
-
-          <button
-            className="fullscreen-toggle-button fullscreen-toggle-edge"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-            }}
-            onClick={toggleBondTableFullScreen}
-            aria-label={isBondTableFullScreen ? t('mainContent.closeFullScreen') : t('mainContent.fullScreen')}
-            title={isBondTableFullScreen ? t('mainContent.closeFullScreen') : t('mainContent.fullScreen')}
-          >
-            {isBondTableFullScreen ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 3 9 9 3 9" />
-                <line x1="9" y1="9" x2="3" y2="3" />
-                <polyline points="15 3 15 9 21 9" />
-                <line x1="15" y1="9" x2="21" y2="3" />
-                <polyline points="9 21 9 15 3 15" />
-                <line x1="9" y1="15" x2="3" y2="21" />
-                <polyline points="15 21 15 15 21 15" />
-                <line x1="15" y1="15" x2="21" y2="21" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="14" y1="10" x2="21" y2="3" />
-                <polyline points="9 21 3 21 3 15" />
-                <line x1="10" y1="14" x2="3" y2="21" />
-                <polyline points="3 9 3 3 9 3" />
-                <line x1="3" y1="3" x2="10" y2="10" />
-                <polyline points="21 15 21 21 15 21" />
-                <line x1="14" y1="14" x2="21" y2="21" />
-              </svg>
-            )}
-          </button>
 
           <button
             className="panel-split-toggle"

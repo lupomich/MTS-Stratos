@@ -175,6 +175,8 @@ export function WorkspaceProvider({ children }) {
         console.error('[WorkspaceContext] Failed to persist new workspace:', err);
       }
     }
+
+    return tempId;
   }, []);
 
   /** Update one or more fields. Debounced DB write (immediate=true to skip debounce). */
@@ -207,6 +209,21 @@ export function WorkspaceProvider({ children }) {
     }
   }, []);
 
+  /** Reorder workspaces given an array of ids in the new order. */
+  const reorderWorkspaces = useCallback((orderedIds) => {
+    setWorkspaces((prev) => {
+      const map = Object.fromEntries(prev.map((w) => [w.id, w]));
+      return orderedIds.map((id, i) => ({ ...map[id], sortOrder: i }));
+    });
+    if (isAuthRef.current) {
+      orderedIds.forEach((id, i) => {
+        axios.put(`/workspaces/${id}`, { sort_order: i }).catch((err) =>
+          console.error('[WorkspaceContext] Reorder error:', err)
+        );
+      });
+    }
+  }, []);
+
   /** Delete a workspace (removes from list and DB). */
   const deleteWorkspace = useCallback(async (id) => {
     if (saveTimersRef.current[id]) { clearTimeout(saveTimersRef.current[id]); delete saveTimersRef.current[id]; }
@@ -236,6 +253,7 @@ export function WorkspaceProvider({ children }) {
       addWorkspace,
       updateWorkspace,
       deleteWorkspace,
+      reorderWorkspaces,
     }}>
       {children}
     </WorkspaceContext.Provider>

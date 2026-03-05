@@ -10,23 +10,70 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
     addWorkspace,
     updateWorkspace,
     deleteWorkspace,
+    reorderWorkspaces,
   } = useWorkspace();
 
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  const [dragInsertBefore, setDragInsertBefore] = useState(true);
   const renameInputRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Close menu on outside click
+  // ── Drag & Drop handlers ─────────────────────────────────────────────────
+  const handleDragStart = (e, id) => {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e, id) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id === dragId) { setDragOverId(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragInsertBefore(e.clientX < rect.left + rect.width / 2);
+    setDragOverId(id);
+  };
+
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!dragId || dragId === targetId) { clearDrag(); return; }
+    const ids = workspaces.map((w) => w.id);
+    const fromIdx = ids.indexOf(dragId);
+    const toIdx   = ids.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) { clearDrag(); return; }
+    const reordered = ids.filter((id) => id !== dragId);
+    const insertAt = dragInsertBefore ? toIdx : toIdx + 1;
+    // Recalculate insertAt after removal
+    const toIdxAfterRemoval = reordered.indexOf(targetId);
+    const finalInsert = dragInsertBefore ? toIdxAfterRemoval : toIdxAfterRemoval + 1;
+    reordered.splice(finalInsert, 0, dragId);
+    reorderWorkspaces(reordered);
+    clearDrag();
+  };
+
+  const clearDrag = () => { setDragId(null); setDragOverId(null); };
+
+  // Close menu on outside click or scroll
   useEffect(() => {
     if (!menuOpenId) return;
     const handler = (e) => {
       if (!menuRef.current?.contains(e.target)) setMenuOpenId(null);
     };
     document.addEventListener('mousedown', handler);
+    document.addEventListener('scroll', () => setMenuOpenId(null), { once: true });
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpenId]);
+
+  const openMenu = (id, triggerBtn) => {
+    const rect = triggerBtn.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 2, left: rect.right });
+    setMenuOpenId(id);
+  };
 
   const handleTabClick = (id) => {
     if (renamingId === id) return;
@@ -50,7 +97,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
   };
 
   const handleNewBlank = async () => {
-    await addWorkspace({
+    const tempId = await addWorkspace({
       name: `Blank Workspace ${workspaces.length + 1}`,
       mode: 'blank',
       slots: [...EMPTY_WORKSPACE_SLOTS],
@@ -58,6 +105,8 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
       hiddenSlots: [],
       sortOrder: workspaces.length,
     });
+    // Enter edit mode immediately so the user can place panels and click Done
+    if (tempId) onEditStart(tempId);
   };
 
   const handleMenuEdit = (id, wsMode) => {
@@ -102,10 +151,24 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
           const isRenaming = renamingId === ws.id;
           const isMenuOpen = menuOpenId === ws.id;
 
+          const isDragging = dragId === ws.id;
+          const isDragOver = dragOverId === ws.id;
+
           return (
             <div
               key={ws.id}
-              className={['workspace-tab', isActive ? 'active' : '', isEditMode ? 'edit-mode' : ''].filter(Boolean).join(' ')}
+              className={[
+                'workspace-tab',
+                isActive   ? 'active'    : '',
+                isEditMode ? 'edit-mode' : '',
+                isDragging ? 'dragging'  : '',
+                isDragOver ? (dragInsertBefore ? 'drag-over-before' : 'drag-over-after') : '',
+              ].filter(Boolean).join(' ')}
+              draggable={!isRenaming}
+              onDragStart={(e) => handleDragStart(e, ws.id)}
+              onDragOver={(e) => handleDragOver(e, ws.id)}
+              onDrop={(e) => handleDrop(e, ws.id)}
+              onDragEnd={clearDrag}
               onClick={() => handleTabClick(ws.id)}
             >
               {isRenaming ? (
@@ -141,7 +204,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
 
               <button
                 className="workspace-tab-menu-trigger"
-                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isMenuOpen ? null : ws.id); }}
+                onClick={(e) => { e.stopPropagation(); menuOpenId === ws.id ? setMenuOpenId(null) : openMenu(ws.id, e.currentTarget); }}
                 title="Workspace options"
               >
                 ⋮
@@ -151,6 +214,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
                 <div
                   className="workspace-tab-menu"
                   ref={menuRef}
+                  style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, transform: 'translateX(-100%)' }}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
                   <button onClick={(e) => startRename(ws.id, ws.name, e)}>Rename</button>
