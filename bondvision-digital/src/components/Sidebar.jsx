@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import { useAuth } from '../context/AuthContext'
+import { SIDEBAR_PANEL_DRAG_MIME } from '../constants/workspaceConstants'
 import './Sidebar.css'
-
-const SIDEBAR_PANEL_DRAG_MIME = 'application/x-mts-panel'
 
 const Sidebar = ({ onAdminClick, onOpenSettings, activePanel = 'trading', onPanelSelect, workspaceMode = 'legacy' }) => {
   const { t } = useLanguage()

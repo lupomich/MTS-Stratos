@@ -1,3 +1,33 @@
+/**
+ * WorkspaceContext — Workspace state management and persistence layer.
+ *
+ * Responsibilities:
+ *   - Load and normalise workspace definitions from the DB (authenticated) or
+ *     localStorage (unauthenticated / offline fallback).
+ *   - Provide CRUD actions: create, update, delete, reorder.
+ *   - Debounce DB writes with a 1 500 ms timer; merge multiple rapid updates for
+ *     the same workspace to avoid partial overwrites.
+ *   - Flush all pending debounced saves immediately on logout so no data is lost.
+ *
+ * Workspace shape:
+ * ```
+ * {
+ *   id:            string          UUID from DB, or temp 'workspace-local-*'
+ *   name:          string
+ *   mode:          'legacy'|'blank'
+ *   slots:         (string|null)[] 6-element array of panel keys for blank mode
+ *   layout:        object          Numeric layout values (widths, heights, collapse flags)
+ *   hiddenSlots:   number[]        Encoded hidden-slot indices (see VSPAN_ENCODING_OFFSET)
+ *   sortOrder:     number
+ *   lastActiveAt:  string|null     ISO timestamp; used to restore the last active tab
+ * }
+ * ```
+ *
+ * pendingSavesRef shape:  { [wsId]: { timerId, payload, capturedToken } }
+ *   - payload:        Merged DB-column fragment accumulated across rapid calls.
+ *   - capturedToken:  The auth token at scheduling time; re-captured on each call
+ *                     so token refresh is picked up by the latest timer.
+ */
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
@@ -55,6 +85,14 @@ export function WorkspaceProvider({ children }) {
 
   // ── Load on auth state change ────────────────────────────────────────────
   useEffect(() => {
+  /**
+   * Flush-on-logout: before the session is invalidated, fire all pending PUT
+   * requests immediately so no data is lost. Each entry has its own captured
+   * auth token so the requests succeed even after the auth state clears.
+   *
+   * On token-refresh / account switch: simply cancel all timers (the new token
+   * will be captured by the next write).
+   */
     if (!isAuthenticated) {
       // Flush any pending debounced saves before the session is invalidated
       Object.entries(pendingSavesRef.current).forEach(([wsId, { timerId, payload, capturedToken }]) => {
@@ -86,6 +124,12 @@ export function WorkspaceProvider({ children }) {
 
   // ── Loaders ──────────────────────────────────────────────────────────────
 
+  /**
+   * loadFromBackend — fetch all workspaces from the REST API.
+   * Activates the workspace with the most recent `last_active_at` timestamp.
+   * Falls back to loadFromLocalStorage on network or server errors.
+   * On first login (empty DB response), creates a default workspace.
+   */
   const loadFromBackend = async () => {
     setLoading(true);
     try {
@@ -124,6 +168,11 @@ export function WorkspaceProvider({ children }) {
     }
   };
 
+  /**
+   * loadFromLocalStorage — restore workspaces persisted in browser storage.
+   * Used when unauthenticated or as a fallback after a failed backend load.
+   * Resets to a single default workspace if storage is empty or corrupt.
+   */
   const loadFromLocalStorage = () => {
     try {
       const saved = localStorage.getItem('mts-bv-workspaces');
@@ -147,6 +196,11 @@ export function WorkspaceProvider({ children }) {
 
   // ── CRUD actions ─────────────────────────────────────────────────────────
 
+  /**
+   * setActiveWorkspaceId — switch the active tab and, when authenticated,
+   * fire a best-effort PUT /workspaces/:id/activate so the server records
+   * the most-recently-used workspace for the next session load.
+   */
   const setActiveWorkspaceId = useCallback(async (id) => {
     setActiveWorkspaceIdRaw(id);
     if (isAuthRef.current) {
@@ -192,9 +246,19 @@ export function WorkspaceProvider({ children }) {
     return tempId;
   }, []);
 
-  /** Update one or more fields. Debounced DB write (immediate=true to skip debounce).
-   *  Multiple rapid calls for the same workspace are MERGED into a single PUT so no
-   *  field is lost when the timer is rescheduled (e.g. slots then hiddenSlots). */
+  /**
+   * updateWorkspace — patch one or more workspace fields.
+   *
+   * @param {string}  id        Workspace ID.
+   * @param {object}  updates   Partial workspace object (any combination of
+   *                            name, mode, slots, layout, hiddenSlots, sortOrder).
+   * @param {boolean} immediate When true, skip the debounce and write to DB now.
+   *
+   * Debounce behaviour:
+   *   Multiple rapid calls for the same `id` are merged into a single PUT.
+   *   The timer is reset on each call so the final request always carries the
+   *   full accumulated payload, preventing partial writes.
+   */
   const updateWorkspace = useCallback((id, updates, immediate = false) => {
     setWorkspaces((prev) => prev.map((w) => w.id === id ? { ...w, ...updates } : w));
 
@@ -234,7 +298,11 @@ export function WorkspaceProvider({ children }) {
     }
   }, []);
 
-  /** Reorder workspaces given an array of ids in the new order. */
+  /**
+   * reorderWorkspaces — apply a new display order to all workspaces.
+   * @param {string[]} orderedIds  All workspace IDs in the desired order.
+   * Updates sortOrder locally and fires individual PUT requests for each item.
+   */
   const reorderWorkspaces = useCallback((orderedIds) => {
     setWorkspaces((prev) => {
       const map = Object.fromEntries(prev.map((w) => [w.id, w]));
@@ -249,7 +317,12 @@ export function WorkspaceProvider({ children }) {
     }
   }, []);
 
-  /** Delete a workspace (removes from list and DB). */
+  /**
+   * deleteWorkspace — remove a workspace from local state and the DB.
+   * Cancels any pending debounced save first. Safeguard: if this was
+   * the last workspace, a fresh default workspace is created in its place.
+   * Always switches away from the deleted workspace before state updates.
+   */
   const deleteWorkspace = useCallback(async (id) => {
     if (pendingSavesRef.current[id]) { clearTimeout(pendingSavesRef.current[id].timerId); delete pendingSavesRef.current[id]; }
     if (isAuthRef.current) {

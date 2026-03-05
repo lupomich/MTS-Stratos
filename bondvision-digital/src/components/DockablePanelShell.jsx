@@ -1,3 +1,20 @@
+/**
+ * DockablePanelShell — Chrome wrapper for a single dockable panel.
+ *
+ * Renders a title bar with optional action buttons (full-screen toggle, close)
+ * above the panel's content area. It is purely presentational — no state, no
+ * layout logic. Used by DockableWorkspaceGrid for every occupied grid slot.
+ *
+ * @param {string}        title              Displayed in the header.
+ * @param {string}        [className='']     Extra CSS class on the root element.
+ * @param {boolean}       [isFullScreen=false]  When true, the full-screen icon shows
+ *                                              the "exit full-screen" variant.
+ * @param {function}      [onToggleFullScreen]  Called when the full-screen button is
+ *                                              clicked. Omit to hide the button.
+ * @param {function}      [onClose]             Called when the close (×) button is
+ *                                              clicked. Omit to hide the button.
+ * @param {React.ReactNode} children           Panel content.
+ */
 import React from 'react'
 import { useLanguage } from '../context/LanguageContext'
 

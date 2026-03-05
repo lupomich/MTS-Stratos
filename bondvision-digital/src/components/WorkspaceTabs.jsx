@@ -1,3 +1,18 @@
+/**
+ * WorkspaceTabs — Horizontal tab bar for switching between workspaces.
+ *
+ * Features:
+ *   - Click to activate, double-click to rename.
+ *   - Drag-and-drop reordering (pointer-based insertion indicator).
+ *   - Per-tab context menu: rename, edit layout, duplicate, delete.
+ *   - Edit-mode badge and “Done” button for blank workspaces.
+ *   - Optional legacy-workspace filter ("hideLegacyWorkspace" preference).
+ *   - “+” button to create a new blank workspace and enter edit mode immediately.
+ *
+ * @param {string|null}  editingWorkspaceId  ID of the workspace currently in edit mode.
+ * @param {function}     onEditStart         Called with wsId when edit mode should begin.
+ * @param {function}     onEditEnd           Called when the user clicks “Done”.
+ */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspace, DEFAULT_WORKSPACE_LAYOUT, EMPTY_WORKSPACE_SLOTS } from '../context/WorkspaceContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -21,6 +36,11 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
 
   // Compute visible workspaces: hide legacy ones when the preference is on,
   // but always show all if filtering would leave nothing.
+  // ══ Legacy-workspace filter ═══════════════════════════════════════════════════════════════════════════════════
+  // When the 'hideLegacyWorkspace' preference is on, legacy-mode tabs are hidden.
+  // Safety: if filtering would leave no tabs visible, all tabs are shown instead.
+  // An auto-switch effect fires when the currently-active workspace becomes hidden.
+  // (SCHEDULED FOR REMOVAL once the legacy mode is deleted)
   const visibleWorkspaces = useMemo(() => {
     if (!hideLegacy) return workspaces;
     const nonLegacy = workspaces.filter((w) => w.mode !== 'legacy');
@@ -47,6 +67,10 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
   const menuRef = useRef(null);
 
   // ── Drag & Drop handlers ─────────────────────────────────────────────────
+  // ══ Drag-and-drop tab reordering ══════════════════════════════════════════════════════════════════════════════
+  // dragId: the tab being dragged
+  // dragOverId: the tab currently hovered over (determines insertion point indicator)
+  // dragInsertBefore: true = insert before hovered tab, false = insert after
   const handleDragStart = (e, id) => {
     setDragId(id);
     e.dataTransfer.effectAllowed = 'move';
@@ -81,7 +105,10 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
 
   const clearDrag = () => { setDragId(null); setDragOverId(null); };
 
-  // Close menu on outside click or scroll
+  // ══ Context menu ═══════════════════════════════════════════════════════════════════════════════════════════
+  // Opens on ⋮ trigger button. Positioned with fixed coordinates to escape any
+  // overflow:hidden container (e.g. the tab bar itself). Closed on outside-click
+  // or on any scroll event.
   useEffect(() => {
     if (!menuOpenId) return;
     const handler = (e) => {
@@ -98,6 +125,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
     setMenuOpenId(id);
   };
 
+  // ══ Workspace actions ═════════════════════════════════════════════════════════════════════════════════════════
   const handleTabClick = (id) => {
     if (renamingId === id) return;
     setActiveWorkspaceId(id);
