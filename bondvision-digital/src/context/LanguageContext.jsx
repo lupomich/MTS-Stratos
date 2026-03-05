@@ -193,6 +193,22 @@ export const translations = {
       bondvisionDealerPricing: 'BondVision Dealer Pricing',
       collapsePanel: 'Collapse panel',
       expandPanel: 'Expand panel'
+    },
+    workspace: {
+      label: 'WORKSPACE',
+      newBlank: 'New blank workspace',
+      options: 'Workspace options',
+      rename: 'Rename',
+      editLayout: 'Edit layout',
+      duplicate: 'Duplicate',
+      delete: 'Delete',
+      done: 'Done',
+      exitEditMode: 'Exit edit mode',
+      dropPanelHere: 'Drop panel here',
+      removeEmptySlot: 'Remove this empty slot',
+      fullScreen: 'Full Screen',
+      closeFullScreen: 'Close Full Screen',
+      close: 'Close'
     }
   },
   it: {
@@ -377,6 +393,22 @@ export const translations = {
       bondvisionDealerPricing: 'BondVision Dealer Pricing',
       collapsePanel: 'Collassa pannello',
       expandPanel: 'Espandi pannello'
+    },
+    workspace: {
+      label: 'WORKSPACE',
+      newBlank: 'Nuovo workspace vuoto',
+      options: 'Opzioni workspace',
+      rename: 'Rinomina',
+      editLayout: 'Modifica layout',
+      duplicate: 'Duplica',
+      delete: 'Elimina',
+      done: 'Fine',
+      exitEditMode: 'Esci dalla modalità modifica',
+      dropPanelHere: 'Trascina un pannello qui',
+      removeEmptySlot: 'Rimuovi slot vuoto',
+      fullScreen: 'Schermo intero',
+      closeFullScreen: 'Chiudi schermo intero',
+      close: 'Chiudi'
     }
   }
 }

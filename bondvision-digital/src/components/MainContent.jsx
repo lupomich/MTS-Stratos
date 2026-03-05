@@ -1602,10 +1602,10 @@ const MainContent = ({
                   </DockablePanelShell>
                 ) : (
                   <div className="blank-slot-drop-zone">
-                    <span className="blank-slot-drop-label">Drop panel here</span>
+                    <span className="blank-slot-drop-label">{t('workspace.dropPanelHere')}</span>
                     <button
                       className="blank-slot-collapse-btn"
-                      title="Remove this empty slot"
+                      title={t('workspace.removeEmptySlot')}
                       onClick={() => handleBlankSlotCollapse(slotIndex)}
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useLanguage } from '../context/LanguageContext'
 
 const DockablePanelShell = ({
   title,
@@ -8,6 +9,7 @@ const DockablePanelShell = ({
   onClose,
   children
 }) => {
+  const { t } = useLanguage()
   return (
     <div className={`dockable-panel-shell ${className}`.trim()}>
       <div className="dockable-panel-header">
@@ -18,9 +20,10 @@ const DockablePanelShell = ({
               type="button"
               className="dockable-panel-action"
               onClick={onToggleFullScreen}
-              aria-label={isFullScreen ? 'Close Full Screen' : 'Full Screen'}
-              title={isFullScreen ? 'Close Full Screen' : 'Full Screen'}
+              aria-label={isFullScreen ? t('workspace.closeFullScreen') : t('workspace.fullScreen')}
+              title={isFullScreen ? t('workspace.closeFullScreen') : t('workspace.fullScreen')}
             >
+
               {isFullScreen ? (
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 3 9 9 3 9" />
@@ -51,8 +54,8 @@ const DockablePanelShell = ({
               type="button"
               className="dockable-panel-action"
               onClick={onClose}
-              aria-label="Close"
-              title="Close"
+              aria-label={t('workspace.close')}
+              title={t('workspace.close')}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />

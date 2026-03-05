@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useWorkspace, DEFAULT_WORKSPACE_LAYOUT, EMPTY_WORKSPACE_SLOTS } from '../context/WorkspaceContext';
+import { useLanguage } from '../context/LanguageContext';
 import './WorkspaceTabs.css';
 
 export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditEnd }) {
@@ -12,6 +13,8 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
     deleteWorkspace,
     reorderWorkspaces,
   } = useWorkspace();
+
+  const { t } = useLanguage();
 
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
@@ -143,7 +146,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
 
   return (
     <div className="workspace-tabs-bar">
-      <span className="workspace-tabs-label">WORKSPACE</span>
+      <span className="workspace-tabs-label">{t('workspace.label')}</span>
       <div className="workspace-tabs-list">
         {workspaces.map((ws) => {
           const isActive   = ws.id === activeWorkspaceId;
@@ -196,16 +199,16 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
                 <button
                   className="workspace-tab-done"
                   onClick={(e) => { e.stopPropagation(); onEditEnd(); }}
-                  title="Exit edit mode"
+                  title={t('workspace.exitEditMode')}
                 >
-                  Done
+                  {t('workspace.done')}
                 </button>
               )}
 
               <button
                 className="workspace-tab-menu-trigger"
                 onClick={(e) => { e.stopPropagation(); menuOpenId === ws.id ? setMenuOpenId(null) : openMenu(ws.id, e.currentTarget); }}
-                title="Workspace options"
+                title={t('workspace.options')}
               >
                 ⋮
               </button>
@@ -217,17 +220,17 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
                   style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, transform: 'translateX(-100%)' }}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  <button onClick={(e) => startRename(ws.id, ws.name, e)}>Rename</button>
+                  <button onClick={(e) => startRename(ws.id, ws.name, e)}>{t('workspace.rename')}</button>
                   {ws.mode === 'blank' && (
-                    <button onClick={() => handleMenuEdit(ws.id, ws.mode)}>Edit layout</button>
+                    <button onClick={() => handleMenuEdit(ws.id, ws.mode)}>{t('workspace.editLayout')}</button>
                   )}
-                  <button onClick={() => handleMenuDuplicate(ws.id)}>Duplicate</button>
+                  <button onClick={() => handleMenuDuplicate(ws.id)}>{t('workspace.duplicate')}</button>
                   <button
                     className="workspace-tab-menu-delete"
                     onClick={() => handleMenuDelete(ws.id)}
                     disabled={workspaces.length <= 1}
                   >
-                    Delete
+                    {t('workspace.delete')}
                   </button>
                 </div>
               )}
@@ -238,7 +241,7 @@ export default function WorkspaceTabs({ editingWorkspaceId, onEditStart, onEditE
         <button
           className="workspace-tab-new"
           onClick={handleNewBlank}
-          title="New blank workspace"
+          title={t('workspace.newBlank')}
         >
           +
         </button>
