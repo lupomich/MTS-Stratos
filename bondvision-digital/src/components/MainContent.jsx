@@ -6,6 +6,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css'
 import BondTable from './BondTable'
 import MarketDepth from './MarketDepth'
 import RfqOutright from './RfqOutright'
+import DockablePanelShell from './DockablePanelShell'
 import { getBondsByCountry, generatePriceData, getCountryName } from '../data/governmentBonds'
 import { usePreferences } from '../context/PreferencesContext'
 import { useLanguage } from '../context/LanguageContext'
@@ -170,7 +171,32 @@ const dataTableRows = [
   }
 ]
 
-const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange }) => {
+const blotterColumnDefs = [
+  { headerName: 'TIME', field: 'time', flex: 1 },
+  { headerName: 'EVENT', field: 'event', flex: 2 },
+  { headerName: 'STATUS', field: 'status', flex: 1 }
+]
+
+const alertsColumnDefs = [
+  { headerName: 'TIME', field: 'time', flex: 1 },
+  { headerName: 'TYPE', field: 'type', flex: 1 },
+  { headerName: 'MESSAGE', field: 'message', flex: 2 }
+]
+
+const BLANK_WORKSPACE_SLOT_COUNT = 6
+const SIDEBAR_PANEL_DRAG_MIME = 'application/x-mts-panel'
+const BLANK_WORKSPACE_PANEL_KEYS = new Set(['trading', 'data', 'depth', 'blotter', 'alerts'])
+
+const MainContent = ({
+  panelCommand,
+  workspaceLayout,
+  onWorkspaceLayoutChange,
+  workspaceMode = 'legacy',
+  workspaceSlots = [],
+  onWorkspaceSlotChange,
+  workspaceHiddenSlots = [],
+  onWorkspaceHiddenSlotsChange
+}) => {
   const { preferences, loading: preferencesLoading, setSelectedCountryTab } = usePreferences()
   const { t } = useLanguage()
   const [selectedBond, setSelectedBond] = useState(null)
@@ -183,7 +209,16 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
   const [searchTerm, setSearchTerm] = useState('')
   const [columnSearchTerm, setColumnSearchTerm] = useState('')
   const [dataTableRows, setDataTableRows] = useState([])
-  
+  const [activeBottomPanel, setActiveBottomPanel] = useState('data')
+  const [isBottomPanelFullScreen, setIsBottomPanelFullScreen] = useState(false)
+  const [blankFullScreenSlotIndex, setBlankFullScreenSlotIndex] = useState(null)
+  const [dragOverSlotIndex, setDragOverSlotIndex] = useState(null)
+  const [colWidths, setColWidths] = useState([1, 1, 1])
+  const [rowHeights, setRowHeights] = useState([1, 1])
+  const [isGridDragging, setIsGridDragging] = useState(false)
+  const blankGridRef = useRef(null)
+  const gridDragRef = useRef(null)
+
   // Multiple RFQ modals support
   const [rfqModals, setRfqModals] = useState([]) // Array of {id, bond, pricingData, window, container}
   const rfqWindowsRef = useRef(new Map()) // Map id -> {window, container}
@@ -219,12 +254,39 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
   }, [])
   const previousMarketWidthRef = useRef(40)
   const previousDataHeightRef = useRef(35)
+  const previousBottomPanelDepthCollapsedRef = useRef(false)
   const lastProcessedPanelCommandAtRef = useRef(null)
   const [isDraggingVertical, setIsDraggingVertical] = useState(false)
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const contentBodyRef = useRef(null)
   const mainContentRef = useRef(null)
+  // Keep callback in a ref so it never triggers re-renders or effect deps
+  const onWorkspaceLayoutChangeRef = useRef(onWorkspaceLayoutChange)
+  useEffect(() => { onWorkspaceLayoutChangeRef.current = onWorkspaceLayoutChange }, [onWorkspaceLayoutChange])
   const isBondTableFullScreen = isMarketDepthCollapsed && isDataPanelCollapsed
+  const isBlankWorkspace = workspaceMode === 'blank'
+  const normalizedWorkspaceSlots = useMemo(() => {
+    const normalizedSlots = Array.from({ length: BLANK_WORKSPACE_SLOT_COUNT }, (_, index) => workspaceSlots?.[index] || null)
+    return normalizedSlots
+  }, [workspaceSlots])
+  const blankOccupiedSlots = useMemo(() => normalizedWorkspaceSlots
+    .map((panelKey, index) => ({ panelKey, slotIndex: index }))
+    .filter((item) => Boolean(item.panelKey)), [normalizedWorkspaceSlots])
+  const blankPanelKeys = useMemo(() => blankOccupiedSlots.map((item) => item.panelKey), [blankOccupiedSlots])
+  const canUseDefaultReplicaLayout = useMemo(() => {
+    if (blankPanelKeys.length !== 3) return false
+    const uniquePanels = new Set(blankPanelKeys)
+    return uniquePanels.size === 3
+      && uniquePanels.has('trading')
+      && uniquePanels.has('data')
+      && uniquePanels.has('depth')
+  }, [blankPanelKeys])
+
+  useEffect(() => {
+    if (workspaceMode !== 'blank' && blankFullScreenSlotIndex !== null) {
+      setBlankFullScreenSlotIndex(null)
+    }
+  }, [workspaceMode, blankFullScreenSlotIndex])
 
   useEffect(() => {
     if (!workspaceLayout) return
@@ -238,10 +300,9 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
     })
   }, [workspaceLayout])
 
-  useEffect(() => {
-    if (!onWorkspaceLayoutChange) return
-    onWorkspaceLayoutChange(layoutState)
-  }, [layoutState, onWorkspaceLayoutChange])
+  // Removed the layoutState→parent sync useEffect.
+  // The parent is notified directly at drag-end (see handleMouseUpVertical / handleMouseUpHorizontal)
+  // to avoid the workspace-switch feedback loop.
 
   const getRfqTypeLabel = useCallback((type) => {
     switch (type) {
@@ -308,6 +369,11 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
 
   const handleMouseUpVertical = useCallback(() => {
     setIsDraggingVertical(false)
+    // Flush final layout to parent at drag-end only, avoiding mid-drag re-render cascade
+    setLayoutState((current) => {
+      onWorkspaceLayoutChangeRef.current?.(current)
+      return current
+    })
   }, [])
 
   const handleMouseMoveVertical = useCallback((e) => {
@@ -357,6 +423,10 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
 
   const handleMouseUpHorizontal = useCallback(() => {
     setIsDraggingHorizontal(false)
+    setLayoutState((current) => {
+      onWorkspaceLayoutChangeRef.current?.(current)
+      return current
+    })
   }, [])
 
   const handleMouseMoveHorizontal = useCallback((e) => {
@@ -377,6 +447,7 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
     previousDataHeightRef.current = dataHeight
     setDataHeight(0)
     setIsDataPanelCollapsed(true)
+    setIsBottomPanelFullScreen(false)
   }, [isDataPanelCollapsed, dataHeight])
 
   const expandDataPanel = useCallback(() => {
@@ -393,6 +464,76 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
     }
     collapseDataPanel()
   }, [isDataPanelCollapsed, collapseDataPanel, expandDataPanel])
+
+  const toggleBottomPanelFullScreen = useCallback(() => {
+    if (isBottomPanelFullScreen) {
+      setIsBottomPanelFullScreen(false)
+      if (!previousBottomPanelDepthCollapsedRef.current) {
+        expandMarketDepthPanel()
+      }
+      return
+    }
+
+    if (isDataPanelCollapsed) {
+      expandDataPanel()
+    }
+
+    previousBottomPanelDepthCollapsedRef.current = isMarketDepthCollapsed
+    collapseMarketDepthPanel()
+    setIsBottomPanelFullScreen(true)
+  }, [
+    isBottomPanelFullScreen,
+    isDataPanelCollapsed,
+    isMarketDepthCollapsed,
+    collapseMarketDepthPanel,
+    expandDataPanel,
+    expandMarketDepthPanel
+  ])
+
+  const toggleDataWorkspacePanel = useCallback(() => {
+    if (isDataPanelCollapsed) {
+      setActiveBottomPanel('data')
+      expandDataPanel()
+      return
+    }
+
+    if (activeBottomPanel === 'data') {
+      collapseDataPanel()
+      return
+    }
+
+    setActiveBottomPanel('data')
+  }, [isDataPanelCollapsed, activeBottomPanel, expandDataPanel, collapseDataPanel])
+
+  const toggleBlotterPanel = useCallback(() => {
+    if (isDataPanelCollapsed) {
+      setActiveBottomPanel('blotter')
+      expandDataPanel()
+      return
+    }
+
+    if (activeBottomPanel === 'blotter') {
+      collapseDataPanel()
+      return
+    }
+
+    setActiveBottomPanel('blotter')
+  }, [isDataPanelCollapsed, activeBottomPanel, expandDataPanel, collapseDataPanel])
+
+  const toggleAlertsPanel = useCallback(() => {
+    if (isDataPanelCollapsed) {
+      setActiveBottomPanel('alerts')
+      expandDataPanel()
+      return
+    }
+
+    if (activeBottomPanel === 'alerts') {
+      collapseDataPanel()
+      return
+    }
+
+    setActiveBottomPanel('alerts')
+  }, [isDataPanelCollapsed, activeBottomPanel, expandDataPanel, collapseDataPanel])
 
   const toggleBondTableFullScreen = useCallback(() => {
     if (isBondTableFullScreen) {
@@ -412,6 +553,7 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
   ])
 
   useEffect(() => {
+    if (workspaceMode === 'blank') return
     if (!panelCommand?.panelKey || !panelCommand?.requestedAt) return
     if (lastProcessedPanelCommandAtRef.current === panelCommand.requestedAt) return
 
@@ -423,14 +565,165 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
     }
 
     if (panelCommand.panelKey === 'data') {
-      toggleDataPanelCollapse()
+      toggleDataWorkspacePanel()
+      return
+    }
+
+    if (panelCommand.panelKey === 'blotter') {
+      toggleBlotterPanel()
+      return
+    }
+
+    if (panelCommand.panelKey === 'alerts') {
+      toggleAlertsPanel()
       return
     }
 
     if (panelCommand.panelKey === 'depth') {
       toggleMarketDepthCollapse()
     }
-  }, [panelCommand, toggleBondTableFullScreen, toggleDataPanelCollapse, toggleMarketDepthCollapse])
+  }, [
+    panelCommand,
+    toggleBondTableFullScreen,
+    toggleDataWorkspacePanel,
+    toggleBlotterPanel,
+    toggleAlertsPanel,
+    toggleMarketDepthCollapse,
+    workspaceMode
+  ])
+
+  const getBlankPanelTitle = useCallback((panelKey) => {
+    switch (panelKey) {
+      case 'trading':
+        return t('sidebar.trading')
+      case 'data':
+        return t('sidebar.data')
+      case 'depth':
+        return t('sidebar.depth')
+      case 'blotter':
+        return t('sidebar.blotter')
+      case 'alerts':
+        return t('sidebar.alerts')
+      default:
+        return panelKey
+    }
+  }, [t])
+
+  const handleBlankSlotDrop = useCallback((slotIndex, event) => {
+    event.preventDefault()
+    setDragOverSlotIndex(null)
+
+    // Only allow dropping on empty slots — never replace an occupied panel
+    if (normalizedWorkspaceSlots[slotIndex]) return
+
+    const droppedPanelKey = event.dataTransfer.getData(SIDEBAR_PANEL_DRAG_MIME)
+      || event.dataTransfer.getData('text/plain')
+    if (!BLANK_WORKSPACE_PANEL_KEYS.has(droppedPanelKey)) return
+
+    if (onWorkspaceSlotChange) {
+      onWorkspaceSlotChange(slotIndex, droppedPanelKey)
+    }
+  }, [onWorkspaceSlotChange, normalizedWorkspaceSlots])
+
+  const handleBlankSlotDragOver = useCallback((slotIndex, event) => {
+    // Occupied slots do not accept drops — they absorb the event but refuse it
+    if (normalizedWorkspaceSlots[slotIndex]) {
+      event.dataTransfer.dropEffect = 'none'
+      return
+    }
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setDragOverSlotIndex(slotIndex)
+  }, [normalizedWorkspaceSlots])
+
+  const handleBlankSlotDragLeave = useCallback((slotIndex) => {
+    setDragOverSlotIndex((previous) => (previous === slotIndex ? null : previous))
+  }, [])
+
+  const handleBlankSlotClear = useCallback((slotIndex) => {
+    if (onWorkspaceSlotChange) {
+      onWorkspaceSlotChange(slotIndex, null)
+    }
+    if (blankFullScreenSlotIndex === slotIndex) {
+      setBlankFullScreenSlotIndex(null)
+    }
+    // When a panel is removed the slot becomes an empty drop zone again — un-collapse it
+    if (onWorkspaceHiddenSlotsChange) {
+      onWorkspaceHiddenSlotsChange((workspaceHiddenSlots || []).filter((i) => i !== slotIndex))
+    }
+  }, [onWorkspaceSlotChange, blankFullScreenSlotIndex, workspaceHiddenSlots, onWorkspaceHiddenSlotsChange])
+
+  const handleBlankSlotCollapse = useCallback((slotIndex) => {
+    if (onWorkspaceHiddenSlotsChange) {
+      const current = workspaceHiddenSlots || []
+      if (!current.includes(slotIndex)) {
+        onWorkspaceHiddenSlotsChange([...current, slotIndex])
+      }
+    }
+  }, [workspaceHiddenSlots, onWorkspaceHiddenSlotsChange])
+
+  const toggleBlankSlotFullScreen = useCallback((slotIndex) => {
+    setBlankFullScreenSlotIndex((previous) => (previous === slotIndex ? null : slotIndex))
+  }, [])
+
+  const findBlankSlotIndexByPanel = useCallback((panelKey) => {
+    return normalizedWorkspaceSlots.findIndex((slotPanelKey) => slotPanelKey === panelKey)
+  }, [normalizedWorkspaceSlots])
+
+  const handleGridResizeStart = useCallback((type, index, e) => {
+    e.preventDefault()
+    const rect = blankGridRef.current?.getBoundingClientRect()
+    if (!rect) return
+    gridDragRef.current = {
+      type, index,
+      startX: e.clientX, startY: e.clientY,
+      containerWidth: rect.width,
+      containerHeight: rect.height,
+      startColWidths: [...colWidths],
+      startRowHeights: [...rowHeights],
+    }
+    setIsGridDragging(true)
+  }, [colWidths, rowHeights])
+
+  const handleGridResizeMove = useCallback((e) => {
+    const drag = gridDragRef.current
+    if (!drag) return
+    if (drag.type === 'col') {
+      const totalFr = drag.startColWidths.reduce((a, b) => a + b, 0)
+      const deltaFr = ((e.clientX - drag.startX) / drag.containerWidth) * totalFr
+      const i = drag.index
+      const combined = drag.startColWidths[i] + drag.startColWidths[i + 1]
+      const newLeft = Math.max(0.1, Math.min(combined - 0.1, drag.startColWidths[i] + deltaFr))
+      setColWidths((prev) => {
+        const next = [...prev]
+        next[i] = newLeft
+        next[i + 1] = combined - newLeft
+        return next
+      })
+    } else {
+      const totalFr = drag.startRowHeights.reduce((a, b) => a + b, 0)
+      const deltaFr = ((e.clientY - drag.startY) / drag.containerHeight) * totalFr
+      const combined = drag.startRowHeights[0] + drag.startRowHeights[1]
+      const newTop = Math.max(0.1, Math.min(combined - 0.1, drag.startRowHeights[0] + deltaFr))
+      setRowHeights([newTop, combined - newTop])
+    }
+  }, [])
+
+  const handleGridResizeEnd = useCallback(() => {
+    if (gridDragRef.current) {
+      gridDragRef.current = null
+      setIsGridDragging(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    document.addEventListener('mousemove', handleGridResizeMove)
+    document.addEventListener('mouseup', handleGridResizeEnd)
+    return () => {
+      document.removeEventListener('mousemove', handleGridResizeMove)
+      document.removeEventListener('mouseup', handleGridResizeEnd)
+    }
+  }, [handleGridResizeMove, handleGridResizeEnd])
 
   React.useEffect(() => {
     document.addEventListener('mousemove', handleMouseMoveVertical)
@@ -956,6 +1249,78 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
       })
   }, [rfqModals.length, preferences?.rfqOpenInPopup, preferences?.rfqOpenInTab, createRfqWindow, getInlineRfqPosition, t])
 
+  const renderBlankPanelContent = useCallback((panelKey) => {
+    if (panelKey === 'trading') {
+      return (
+        <BondTable
+          onSelectBond={setSelectedBond}
+          onDoubleClickBond={handleBondDoubleClick}
+          countryBonds={dataTableRows}
+          searchTerm={searchTerm}
+          columnSearchTerm={columnSearchTerm}
+        />
+      )
+    }
+
+    if (panelKey === 'data') {
+      return (
+        <div className="ag-theme-alpine-dark data-grid">
+          <AgGridReact
+            rowData={dataTableRows}
+            columnDefs={dataColumnDefs}
+            defaultColDef={dataDefaultColDef}
+            domLayout='normal'
+            suppressCellFocus={true}
+          />
+        </div>
+      )
+    }
+
+    if (panelKey === 'depth') {
+      return (
+        <MarketDepth
+          selectedBond={selectedBond}
+          collapsed={false}
+          onToggleCollapse={() => {}}
+        />
+      )
+    }
+
+    if (panelKey === 'blotter') {
+      return (
+        <div className="ag-theme-alpine-dark data-grid">
+          <AgGridReact
+            rowData={[]}
+            columnDefs={blotterColumnDefs}
+            defaultColDef={dataDefaultColDef}
+            domLayout='normal'
+            suppressCellFocus={true}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className="ag-theme-alpine-dark data-grid">
+        <AgGridReact
+          rowData={[]}
+          columnDefs={alertsColumnDefs}
+          defaultColDef={dataDefaultColDef}
+          domLayout='normal'
+          suppressCellFocus={true}
+        />
+      </div>
+    )
+  }, [
+    columnSearchTerm,
+    dataColumnDefs,
+    dataDefaultColDef,
+    dataTableRows,
+    handleBondDoubleClick,
+    searchTerm,
+    selectedBond
+  ])
+
   // Handle RFQ submission
   const handleRfqSubmit = useCallback((rfqData) => {
     // Send to backend
@@ -979,6 +1344,163 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
       }
     })
   }, [rfqModals, t])
+
+  if (isBlankWorkspace) {
+    const hasFullScreen = blankFullScreenSlotIndex !== null
+    const collapsedSet = new Set(workspaceHiddenSlots || [])
+
+    // A column collapses when BOTH its slots are empty AND both are explicitly hidden
+    const isColCollapsed = [0, 1, 2].map((col) =>
+      !normalizedWorkspaceSlots[col] && !normalizedWorkspaceSlots[col + 3]
+      && collapsedSet.has(col) && collapsedSet.has(col + 3)
+    )
+
+    // A row collapses when ALL 3 of its slots are empty AND all explicitly hidden
+    const isRowCollapsed = [0, 1].map((row) =>
+      [0, 1, 2].every((c) => {
+        const si = row * 3 + c
+        return !normalizedWorkspaceSlots[si] && collapsedSet.has(si)
+      })
+    )
+
+    // An occupied slot spans both rows when its column-partner is empty+collapsed
+    const slotSpansBothRows = (slotIndex) => {
+      const col = slotIndex % 3
+      if (isColCollapsed[col]) return false
+      const panelKey = normalizedWorkspaceSlots[slotIndex]
+      if (!panelKey) return false
+      const row = Math.floor(slotIndex / 3)
+      const partnerIndex = row === 0 ? slotIndex + 3 : slotIndex - 3
+      const partnerKey = normalizedWorkspaceSlots[partnerIndex]
+      return !partnerKey && collapsedSet.has(partnerIndex)
+    }
+
+    // Per-column h-handle: a column needs a handle only when both its slots are
+    // independently visible (neither is spanning the other's space)
+    const colNeedsHHandle = [0, 1, 2].map((col) => {
+      if (isColCollapsed[col]) return false
+      return !slotSpansBothRows(col) && !slotSpansBothRows(col + 3)
+    })
+    const needsHHandle = colNeedsHHandle.some(Boolean)
+
+    const colTemplate = isColCollapsed.map((collapsed, i) => collapsed ? '0px' : `${colWidths[i]}fr`)
+    const vHandle0 = (isColCollapsed[0] && isColCollapsed[1]) ? '0px' : '5px'
+    const vHandle1 = (isColCollapsed[1] && isColCollapsed[2]) ? '0px' : '5px'
+    const rowTemplate = isRowCollapsed.map((collapsed, i) => collapsed ? '0px' : `${rowHeights[i]}fr`)
+    const hHandle = needsHHandle ? '5px' : '0px'
+
+    return (
+      <div className="main-content blank-workspace-content">
+        <div
+          ref={blankGridRef}
+          className="blank-grid-container"
+          style={{
+            gridTemplateColumns: `${colTemplate[0]} ${vHandle0} ${colTemplate[1]} ${vHandle1} ${colTemplate[2]}`,
+            gridTemplateRows: `${rowTemplate[0]} ${hHandle} ${rowTemplate[1]}`,
+            userSelect: isGridDragging ? 'none' : 'auto',
+          }}
+        >
+          {/* Vertical handle between col 0 and col 1 */}
+          {!isColCollapsed[0] && !isColCollapsed[1] && (
+            <div
+              className="blank-grid-vhandle"
+              style={{ gridColumn: '2', gridRow: '1 / 4' }}
+              onMouseDown={(e) => handleGridResizeStart('col', 0, e)}
+            />
+          )}
+          {/* Vertical handle between col 1 and col 2 */}
+          {!isColCollapsed[1] && !isColCollapsed[2] && (
+            <div
+              className="blank-grid-vhandle"
+              style={{ gridColumn: '4', gridRow: '1 / 4' }}
+              onMouseDown={(e) => handleGridResizeStart('col', 1, e)}
+            />
+          )}
+          {/* Per-column horizontal handles between row 0 and row 1 */}
+          {colNeedsHHandle[0] && (
+            <div
+              className="blank-grid-hhandle"
+              style={{ gridColumn: '1', gridRow: '2' }}
+              onMouseDown={(e) => handleGridResizeStart('row', 0, e)}
+            />
+          )}
+          {colNeedsHHandle[1] && (
+            <div
+              className="blank-grid-hhandle"
+              style={{ gridColumn: '3', gridRow: '2' }}
+              onMouseDown={(e) => handleGridResizeStart('row', 0, e)}
+            />
+          )}
+          {colNeedsHHandle[2] && (
+            <div
+              className="blank-grid-hhandle"
+              style={{ gridColumn: '5', gridRow: '2' }}
+              onMouseDown={(e) => handleGridResizeStart('row', 0, e)}
+            />
+          )}
+          {/* 6 slots: 0-2 top row, 3-5 bottom row */}
+          {[0, 1, 2, 3, 4, 5].map((slotIndex) => {
+            const col = slotIndex % 3
+            const row = Math.floor(slotIndex / 3)
+            const gridCol = col * 2 + 1
+            const gridRow = row * 2 + 1
+            const panelKey = normalizedWorkspaceSlots[slotIndex]
+            const isCollapsed = !panelKey && collapsedSet.has(slotIndex)
+            const isFullScreen = blankFullScreenSlotIndex === slotIndex
+            const isHidden = (hasFullScreen && !isFullScreen) || isCollapsed
+            const isDragTarget = dragOverSlotIndex === slotIndex && !panelKey
+            // Span both grid rows when the partner slot in this column is empty+collapsed
+            const spansRows = !isFullScreen && slotSpansBothRows(slotIndex)
+            const effectiveGridRow = spansRows ? '1 / 4' : String(gridRow)
+
+            return (
+              <div
+                key={`blank-slot-${slotIndex}`}
+                className={[
+                  'blank-grid-slot',
+                  panelKey ? 'occupied' : 'empty',
+                  isFullScreen ? 'fullscreen' : '',
+                  isHidden ? 'hidden' : '',
+                  isDragTarget ? 'drag-over' : '',
+                ].filter(Boolean).join(' ')}
+                style={isFullScreen
+                  ? { gridColumn: '1 / 6', gridRow: '1 / 4', zIndex: 10 }
+                  : { gridColumn: String(gridCol), gridRow: effectiveGridRow }}
+                onDragOver={(event) => handleBlankSlotDragOver(slotIndex, event)}
+                onDragLeave={() => handleBlankSlotDragLeave(slotIndex)}
+                onDrop={(event) => handleBlankSlotDrop(slotIndex, event)}
+              >
+                {panelKey ? (
+                  <DockablePanelShell
+                    title={getBlankPanelTitle(panelKey)}
+                    isFullScreen={isFullScreen}
+                    onToggleFullScreen={() => toggleBlankSlotFullScreen(slotIndex)}
+                    onClose={() => handleBlankSlotClear(slotIndex)}
+                  >
+                    {renderBlankPanelContent(panelKey)}
+                  </DockablePanelShell>
+                ) : (
+                  <div className="blank-slot-drop-zone">
+                    <span className="blank-slot-drop-label">Drop panel here</span>
+                    <button
+                      className="blank-slot-collapse-btn"
+                      title="Remove this empty slot"
+                      onClick={() => handleBlankSlotCollapse(slotIndex)}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="main-content" ref={mainContentRef}>
@@ -1078,52 +1600,96 @@ const MainContent = ({ panelCommand, workspaceLayout, onWorkspaceLayoutChange })
 
           <div className="content-body">
             <div className="trading-area-container">
-              <BondTable 
-                onSelectBond={setSelectedBond} 
-                onDoubleClickBond={handleBondDoubleClick}
-                countryBonds={dataTableRows} 
-                searchTerm={searchTerm}
-                columnSearchTerm={columnSearchTerm}
-              />
+              {!isBottomPanelFullScreen && (
+                <BondTable 
+                  onSelectBond={setSelectedBond} 
+                  onDoubleClickBond={handleBondDoubleClick}
+                  countryBonds={dataTableRows} 
+                  searchTerm={searchTerm}
+                  columnSearchTerm={columnSearchTerm}
+                />
+              )}
 
-              <div
-                className={`resize-handle-horizontal ${isDataPanelCollapsed ? 'collapsed' : ''}`}
-                onMouseDown={handleMouseDownHorizontal}
-              >
-                <button
-                  className="panel-split-toggle panel-split-toggle-horizontal"
-                  onMouseDown={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                  }}
-                  onClick={toggleDataPanelCollapse}
-                  aria-label={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
-                  title={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+              {!isBottomPanelFullScreen && (
+                <div
+                  className={`resize-handle-horizontal ${isDataPanelCollapsed ? 'collapsed' : ''}`}
+                  onMouseDown={handleMouseDownHorizontal}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {isDataPanelCollapsed ? (
-                      <polyline points="18 15 12 9 6 15"/>
-                    ) : (
-                      <polyline points="6 9 12 15 18 9"/>
-                    )}
-                  </svg>
-                </button>
-              </div>
+                  <button
+                    className="panel-split-toggle panel-split-toggle-horizontal"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onClick={toggleDataPanelCollapse}
+                    aria-label={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+                    title={isDataPanelCollapsed ? t('mainContent.expandDataPanel') : t('mainContent.collapseDataPanel')}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {isDataPanelCollapsed ? (
+                        <polyline points="18 15 12 9 6 15"/>
+                      ) : (
+                        <polyline points="6 9 12 15 18 9"/>
+                      )}
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               {!isDataPanelCollapsed && (
-                <div className="data-section" style={{ flex: `0 0 ${dataHeight}%` }}>
-                  <div className="data-header">
-                    <span className="data-title">{t('mainContent.dataTitle')}</span>
-                  </div>
-                  <div className="ag-theme-alpine-dark data-grid">
-                    <AgGridReact
-                      rowData={dataTableRows}
-                      columnDefs={dataColumnDefs}
-                      defaultColDef={dataDefaultColDef}
-                      domLayout='normal'
-                      suppressCellFocus={true}
-                    />
-                  </div>
+                <div className="data-section" style={{ flex: isBottomPanelFullScreen ? '1 1 auto' : `0 0 ${dataHeight}%` }}>
+                  {activeBottomPanel === 'blotter' ? (
+                    <DockablePanelShell
+                      title={t('sidebar.blotter')}
+                      isFullScreen={isBottomPanelFullScreen}
+                      onToggleFullScreen={toggleBottomPanelFullScreen}
+                      onClose={toggleBlotterPanel}
+                    >
+                      <div className="ag-theme-alpine-dark data-grid">
+                        <AgGridReact
+                          rowData={[]}
+                          columnDefs={blotterColumnDefs}
+                          defaultColDef={dataDefaultColDef}
+                          domLayout='normal'
+                          suppressCellFocus={true}
+                        />
+                      </div>
+                    </DockablePanelShell>
+                  ) : activeBottomPanel === 'alerts' ? (
+                    <DockablePanelShell
+                      title={t('sidebar.alerts')}
+                      isFullScreen={isBottomPanelFullScreen}
+                      onToggleFullScreen={toggleBottomPanelFullScreen}
+                      onClose={toggleAlertsPanel}
+                    >
+                      <div className="ag-theme-alpine-dark data-grid">
+                        <AgGridReact
+                          rowData={[]}
+                          columnDefs={alertsColumnDefs}
+                          defaultColDef={dataDefaultColDef}
+                          domLayout='normal'
+                          suppressCellFocus={true}
+                        />
+                      </div>
+                    </DockablePanelShell>
+                  ) : (
+                    <DockablePanelShell
+                      title={t('mainContent.dataTitle')}
+                      isFullScreen={isBottomPanelFullScreen}
+                      onToggleFullScreen={toggleBottomPanelFullScreen}
+                      onClose={toggleDataWorkspacePanel}
+                    >
+                      <div className="ag-theme-alpine-dark data-grid">
+                        <AgGridReact
+                          rowData={dataTableRows}
+                          columnDefs={dataColumnDefs}
+                          defaultColDef={dataDefaultColDef}
+                          domLayout='normal'
+                          suppressCellFocus={true}
+                        />
+                      </div>
+                    </DockablePanelShell>
+                  )}
                 </div>
               )}
             </div>

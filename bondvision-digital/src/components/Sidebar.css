@@ -47,6 +47,14 @@
   background-color: var(--dark-hover);
 }
 
+.sidebar-item[draggable='true'] {
+  cursor: grab;
+}
+
+.sidebar-item[draggable='true']:active {
+  cursor: grabbing;
+}
+
 .sidebar-icon {
   font-size: 20px;
   margin-bottom: 4px;

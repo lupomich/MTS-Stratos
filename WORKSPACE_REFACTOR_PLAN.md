@@ -49,7 +49,7 @@ Verification:
 - Can switch between at least two workspace definitions.
 
 ### Step 4 — Dockable panel shell
-Status: ☐ Not started
+Status: ☑ Done
 Goal:
 - Build reusable panel shell with standard header actions:
   - Full screen toggle
@@ -58,7 +58,7 @@ Verification:
 - Existing panels can render inside shell without style breakage.
 
 ### Step 5 — Mock BLOTTER panel
-Status: ☐ Not started
+Status: ☑ Done
 Goal:
 - Add BLOTTER panel mock with:
   - Title bar
@@ -67,7 +67,7 @@ Verification:
 - BLOTTER can be opened/closed/fullscreen like other panels.
 
 ### Step 6 — Mock ALERTS panel
-Status: ☐ Not started
+Status: ☑ Done
 Goal:
 - Add ALERTS panel mock with:
   - Title bar
@@ -76,7 +76,7 @@ Verification:
 - ALERTS can be opened/closed/fullscreen like other panels.
 
 ### Step 7 — 6-slot blank workspace + drag & drop
-Status: ☐ Not started
+Status: ☑ Done
 Goal:
 - Implement blank canvas with 6 virtual slots (3 top, 3 bottom).
 - Enable dragging panel icons from left sidebar into free slots.
@@ -105,10 +105,10 @@ Verification:
 - [x] Step 1 — Baseline layout abstraction
 - [x] Step 2 — Workspace state model
 - [x] Step 3 — Workspace selector UI
-- [ ] Step 4 — Dockable panel shell
-- [ ] Step 5 — Mock BLOTTER panel
-- [ ] Step 6 — Mock ALERTS panel
-- [ ] Step 7 — 6-slot blank workspace + drag & drop
+- [x] Step 4 — Dockable panel shell
+- [x] Step 5 — Mock BLOTTER panel
+- [x] Step 6 — Mock ALERTS panel
+- [x] Step 7 — 6-slot blank workspace + drag & drop
 - [ ] Step 8 — Persist and load workspaces
 - [ ] Step 9 — Interaction polish and QA
 
@@ -141,6 +141,11 @@ Verification:
 - 2026-03-04: Step 1 completed — centralized layout UI state in MainContent without UX changes.
 - 2026-03-04: Step 2 completed — introduced default workspace model and bound active workspace layout to MainContent state.
 - 2026-03-04: Step 3 completed — added workspace selector and “Save as New” controls in App toolbar.
+- 2026-03-04: Step 4 completed — introduced reusable DockablePanelShell and integrated DATA panel with shell header/actions.
+- 2026-03-04: Step 5 completed — added mock BLOTTER panel (empty grid), dockable actions, and sidebar toggle wiring.
+- 2026-03-04: Step 6 completed — added mock ALERTS panel (empty grid), dockable actions, and sidebar toggle wiring.
+- 2026-03-04: Step 7 completed — added blank workspace creation and 2x3 drag-and-drop slot canvas from sidebar panel icons.
+- 2026-03-04: Working agreement — after every UI/code change, always run verification (error check + frontend restart + container Up status confirmation).
 
 ---
 
