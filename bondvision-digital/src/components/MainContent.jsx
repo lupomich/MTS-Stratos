@@ -1253,7 +1253,7 @@ const MainContent = ({
   const renderBlankPanelContent = useCallback((panelKey) => {
     if (panelKey === 'trading') {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           {/* Top tabs row: All / Axed / BV + Search Column (no maximize — DockablePanelShell provides it) */}
           <div className="top-tabs" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             {topTabs.map((tab, i) => (
@@ -1423,8 +1423,11 @@ const MainContent = ({
 
   if (isBlankWorkspace) {
     const hasFullScreen = blankFullScreenSlotIndex !== null
-    // In edit mode every slot is visible (ignore hidden/collapsed state)
-    const collapsedSet = new Set(isWorkspaceEditMode ? [] : (workspaceHiddenSlots || []))
+    // In edit mode: occupied slots are always visible, but empty slots the user
+    // explicitly closed (hiddenSlots) are respected so the X button actually works.
+    const collapsedSet = isWorkspaceEditMode
+      ? new Set((workspaceHiddenSlots || []).filter((i) => !normalizedWorkspaceSlots[i]))
+      : new Set(workspaceHiddenSlots || [])
 
     // A column collapses when BOTH its slots are empty AND both are explicitly hidden
     const isColCollapsed = [0, 1, 2].map((col) =>
