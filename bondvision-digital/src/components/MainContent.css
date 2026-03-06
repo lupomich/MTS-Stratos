@@ -127,6 +127,25 @@
   background-color: rgba(0, 141, 127, 0.25);
 }
 
+.blank-grid-right-column-separator {
+  position: relative;
+  cursor: row-resize;
+  height: 5px;
+  border-top: 1px solid var(--dark-border);
+  border-bottom: 1px solid var(--dark-border);
+  background: transparent;
+  transform: translateY(-50%);
+  z-index: 8;
+}
+
+.blank-grid-right-column-separator:hover {
+  background-color: rgba(0, 141, 127, 0.25);
+}
+
+.blank-grid-right-independent {
+  z-index: 6;
+}
+
 /* RESIZE HANDLES */
 .resize-handle-vertical {
   width: 4px;

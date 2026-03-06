@@ -263,10 +263,13 @@ const MainContent = ({
   // drag-end handlers can read them synchronously (React 18 async batching).
   const [colWidths, setColWidths] = useState(() => workspaceLayout?.colWidths ?? [1, 1, 1])
   const [rowHeights, setRowHeights] = useState(() => workspaceLayout?.rowHeights ?? [1, 1])
+  const [rightColumnRowHeights, setRightColumnRowHeights] = useState(() => workspaceLayout?.rightColumnRowHeights ?? [1, 1])
   /** Sync ref — always equals the latest colWidths state value. */
   const colWidthsRef  = useRef(workspaceLayout?.colWidths  ?? [1, 1, 1])
   /** Sync ref — always equals the latest rowHeights state value. */
   const rowHeightsRef = useRef(workspaceLayout?.rowHeights ?? [1, 1])
+  /** Sync ref — always equals the latest right-column row proportions. */
+  const rightColumnRowHeightsRef = useRef(workspaceLayout?.rightColumnRowHeights ?? [1, 1])
   // Note: blankFullScreenSlotIndex, dragOverSlotIndex, isGridDragging, blankGridRef,
   // and gridDragRef have been moved into DockableWorkspaceGrid (internal state).
 
@@ -304,6 +307,7 @@ const MainContent = ({
   // handleGridResize for immediate reads inside zero-dep callbacks).
   useEffect(() => { colWidthsRef.current  = colWidths  }, [colWidths])
   useEffect(() => { rowHeightsRef.current = rowHeights }, [rowHeights])
+  useEffect(() => { rightColumnRowHeightsRef.current = rightColumnRowHeights }, [rightColumnRowHeights])
 
   const setTradingWidth = useCallback((value) => {
     setLayoutState((prev) => ({ ...prev, tradingWidth: value }))
@@ -384,10 +388,13 @@ const MainContent = ({
     // Always reset — if colWidths/rowHeights are absent (new workspace) fall back to [1,1,1]/[1,1]
     const nextCols = Array.isArray(workspaceLayout.colWidths)  ? workspaceLayout.colWidths  : [1, 1, 1]
     const nextRows = Array.isArray(workspaceLayout.rowHeights) ? workspaceLayout.rowHeights : [1, 1]
+    const nextRightRows = Array.isArray(workspaceLayout.rightColumnRowHeights) ? workspaceLayout.rightColumnRowHeights : [1, 1]
     setColWidths(nextCols)
     colWidthsRef.current  = nextCols
     setRowHeights(nextRows)
     rowHeightsRef.current = nextRows
+    setRightColumnRowHeights(nextRightRows)
+    rightColumnRowHeightsRef.current = nextRightRows
   }, [workspaceLayout])
 
   // Removed the layoutState→parent sync useEffect.
@@ -476,7 +483,27 @@ const MainContent = ({
   const handleGridResizeCommit = useCallback((cw, rh) => {
     colWidthsRef.current = cw
     rowHeightsRef.current = rh
-    onWorkspaceLayoutChangeRef.current?.({ ...layoutStateRef.current, colWidths: cw, rowHeights: rh })
+    onWorkspaceLayoutChangeRef.current?.({
+      ...layoutStateRef.current,
+      colWidths: cw,
+      rowHeights: rh,
+      rightColumnRowHeights: rightColumnRowHeightsRef.current,
+    })
+  }, [])
+
+  const handleRightColumnResize = useCallback((rh) => {
+    setRightColumnRowHeights(rh)
+    rightColumnRowHeightsRef.current = rh
+  }, [])
+
+  const handleRightColumnResizeCommit = useCallback((rh) => {
+    rightColumnRowHeightsRef.current = rh
+    onWorkspaceLayoutChangeRef.current?.({
+      ...layoutStateRef.current,
+      colWidths: colWidthsRef.current,
+      rowHeights: rowHeightsRef.current,
+      rightColumnRowHeights: rh,
+    })
   }, [])
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -500,7 +527,12 @@ const MainContent = ({
     setIsDraggingVertical(false)
     // Persist layout at drag end only — avoids a re-render cascade during the drag.
     setLayoutState((current) => {
-      onWorkspaceLayoutChangeRef.current?.({ ...current, colWidths: colWidthsRef.current, rowHeights: rowHeightsRef.current })
+      onWorkspaceLayoutChangeRef.current?.({
+        ...current,
+        colWidths: colWidthsRef.current,
+        rowHeights: rowHeightsRef.current,
+        rightColumnRowHeights: rightColumnRowHeightsRef.current,
+      })
       return current
     })
   }, [])
@@ -554,7 +586,12 @@ const MainContent = ({
   const handleMouseUpHorizontal = useCallback(() => {
     setIsDraggingHorizontal(false)
     setLayoutState((current) => {
-      onWorkspaceLayoutChangeRef.current?.({ ...current, colWidths: colWidthsRef.current, rowHeights: rowHeightsRef.current })
+      onWorkspaceLayoutChangeRef.current?.({
+        ...current,
+        colWidths: colWidthsRef.current,
+        rowHeights: rowHeightsRef.current,
+        rightColumnRowHeights: rightColumnRowHeightsRef.current,
+      })
       return current
     })
   }, [])
@@ -1549,8 +1586,11 @@ const MainContent = ({
           isEditMode={isWorkspaceEditMode}
           colWidths={colWidths}
           rowHeights={rowHeights}
+          rightColumnRowHeights={rightColumnRowHeights}
           onResize={handleGridResize}
           onResizeCommit={handleGridResizeCommit}
+          onRightColumnResize={handleRightColumnResize}
+          onRightColumnResizeCommit={handleRightColumnResizeCommit}
           onSlotChange={onWorkspaceSlotChange}
           onHiddenSlotsChange={onWorkspaceHiddenSlotsChange}
           renderPanelContent={renderBlankPanelContent}

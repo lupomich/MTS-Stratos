@@ -88,8 +88,11 @@ const DockableWorkspaceGrid = ({
   isEditMode,
   colWidths,
   rowHeights,
+  rightColumnRowHeights,
   onResize,
   onResizeCommit,
+  onRightColumnResize,
+  onRightColumnResizeCommit,
   onSlotChange,
   onHiddenSlotsChange,
   renderPanelContent,
@@ -125,7 +128,7 @@ const DockableWorkspaceGrid = ({
    * every pointer event.
    *
    * @typedef {Object} GridDragState
-   * @property {'col'|'row'} type             Dimension being resized.
+  * @property {'col'|'row'|'row-right'} type Dimension being resized.
    * @property {number}      index            Handle index (0 = left, 1 = right for vHandles; 0 for hHandle).
    * @property {number}      startX           clientX at drag start.
    * @property {number}      startY           clientY at drag start.
@@ -133,10 +136,19 @@ const DockableWorkspaceGrid = ({
    * @property {number}      containerHeight  Grid container height in px at drag start.
    * @property {number[]}    startColWidths   Column proportions at drag start.
    * @property {number[]}    startRowHeights  Row proportions at drag start.
+   * @property {number[]}    [startRightRowHeights] Right-column row proportions at drag start.
    * @property {number[]}    [lastColWidths]  Most recent column proportions during drag.
    * @property {number[]}    [lastRowHeights] Most recent row proportions during drag.
+   * @property {number[]}    [lastRightRowHeights] Most recent right-column row proportions during drag.
    */
   const gridDragRef = useRef(/** @type {GridDragState|null} */ (null))
+
+  const normalizedRightColumnRowHeights =
+    Array.isArray(rightColumnRowHeights)
+    && rightColumnRowHeights.length === 2
+    && rightColumnRowHeights.every((value) => Number.isFinite(value) && value > 0)
+      ? rightColumnRowHeights
+      : [1, 1]
 
   // ── Input normalisation ─────────────────────────────────────────────────────
 
@@ -303,11 +315,27 @@ const DockableWorkspaceGrid = ({
    *      content tracks are needed, keeping the bar visually connected.
    *   3. Merge consecutive needed tracks into single gridColumn span strings.
    */
+  const hasFullScreen = fullScreenSlotIndex !== null
+  const hasIndependentRightColumnResize =
+    !hasFullScreen
+    && Boolean(S[2])
+    && Boolean(S[5])
+    && !collapsedSet.has(2)
+    && !collapsedSet.has(5)
+    && !spansRowsOf(2)
+    && !spansRowsOf(5)
+    && !horizontalSpanOf(2)
+    && !horizontalSpanOf(5)
+
   const _hNeed = new Array(5).fill(false)
   for (let c = 0; c < 3; c++) {
     if (!isColDead[c] && !spansRowsOf(c) && !spansRowsOf(c + 3)) {
       _hNeed[c * 2] = true // content tracks: c=0→idx0, c=1→idx2, c=2→idx4
     }
+  }
+  if (hasIndependentRightColumnResize) {
+    // Keep right-column splitter independent from the global row splitter.
+    _hNeed[4] = false
   }
   if (_hNeed[0] && _hNeed[2]) _hNeed[1] = true // vHandle-0 track (gridCol 2)
   if (_hNeed[2] && _hNeed[4]) _hNeed[3] = true // vHandle-1 track (gridCol 4)
@@ -344,8 +372,6 @@ const DockableWorkspaceGrid = ({
       return !S[si] && !collapsedSet.has(si) ? si : null
     }, null),
   )
-
-  const hasFullScreen = fullScreenSlotIndex !== null
 
   // ── Slot drag-and-drop handlers ─────────────────────────────────────────────
 
@@ -476,13 +502,13 @@ const DockableWorkspaceGrid = ({
   // ── Grid resize handlers ────────────────────────────────────────────────────
 
   /**
-   * Begins a column ('col') or row ('row') resize drag.
+  * Begins a column ('col') or row ('row') resize drag.
    *
    * All drag-start state is captured synchronously in `gridDragRef` so
    * subsequent mousemove callbacks can compute delta-based proportions without
    * stale closures on `colWidths` or `rowHeights`.
    *
-   * @param {'col'|'row'} type  Dimension being resized.
+  * @param {'col'|'row'|'row-right'} type Dimension being resized.
    * @param {number}      index Handle index (0 = left vHandle, 1 = right vHandle; 0 for hHandle).
    * @param {MouseEvent}  e     The initiating mousedown event.
    */
@@ -500,10 +526,11 @@ const DockableWorkspaceGrid = ({
         containerHeight: rect.height,
         startColWidths: [...colWidths],
         startRowHeights: [...rowHeights],
+        startRightRowHeights: [...normalizedRightColumnRowHeights],
       }
       setIsGridDragging(true)
     },
-    [colWidths, rowHeights],
+    [colWidths, rowHeights, normalizedRightColumnRowHeights],
   )
 
   /**
@@ -528,6 +555,7 @@ const DockableWorkspaceGrid = ({
 
       let nextCols = drag.lastColWidths ?? drag.startColWidths
       let nextRows = drag.lastRowHeights ?? drag.startRowHeights
+      let nextRightRows = drag.lastRightRowHeights ?? drag.startRightRowHeights ?? normalizedRightColumnRowHeights
 
       if (drag.type === 'col') {
         const totalFr = drag.startColWidths.reduce((a, b) => a + b, 0)
@@ -539,19 +567,31 @@ const DockableWorkspaceGrid = ({
         nextCols[i] = newLeft
         nextCols[i + 1] = combined - newLeft
         drag.lastColWidths = nextCols // Cache for handleGridResizeEnd.
-      } else {
+      } else if (drag.type === 'row') {
         const totalFr = drag.startRowHeights.reduce((a, b) => a + b, 0)
         const deltaFr = ((e.clientY - drag.startY) / drag.containerHeight) * totalFr
         const combined = drag.startRowHeights[0] + drag.startRowHeights[1]
         const newTop = Math.max(0.1, Math.min(combined - 0.1, drag.startRowHeights[0] + deltaFr))
         nextRows = [newTop, combined - newTop]
         drag.lastRowHeights = nextRows // Cache for handleGridResizeEnd.
+      } else {
+        const startRight = drag.startRightRowHeights ?? normalizedRightColumnRowHeights
+        const totalFr = startRight.reduce((a, b) => a + b, 0)
+        const deltaFr = ((e.clientY - drag.startY) / drag.containerHeight) * totalFr
+        const combined = startRight[0] + startRight[1]
+        const newTop = Math.max(0.1, Math.min(combined - 0.1, startRight[0] + deltaFr))
+        nextRightRows = [newTop, combined - newTop]
+        drag.lastRightRowHeights = nextRightRows
       }
 
       // Push live values to parent → parent updates controlled props → grid re-renders.
-      onResize?.(nextCols, nextRows)
+      if (drag.type === 'row-right') {
+        onRightColumnResize?.(nextRightRows)
+      } else {
+        onResize?.(nextCols, nextRows)
+      }
     },
-    [onResize],
+    [onResize, onRightColumnResize, normalizedRightColumnRowHeights],
   )
 
   /**
@@ -572,10 +612,15 @@ const DockableWorkspaceGrid = ({
     if (!drag) return
     const cw = drag.lastColWidths ?? drag.startColWidths
     const rh = drag.lastRowHeights ?? drag.startRowHeights
+    const rrh = drag.lastRightRowHeights ?? drag.startRightRowHeights ?? normalizedRightColumnRowHeights
     gridDragRef.current = null
     setIsGridDragging(false)
-    onResizeCommit?.(cw, rh)
-  }, [onResizeCommit])
+    if (drag.type === 'row-right') {
+      onRightColumnResizeCommit?.(rrh)
+    } else {
+      onResizeCommit?.(cw, rh)
+    }
+  }, [onResizeCommit, onRightColumnResizeCommit, normalizedRightColumnRowHeights])
 
   // Attach/detach global pointer listeners so resize drags track the pointer
   // even when it moves outside the grid container element.
@@ -632,8 +677,25 @@ const DockableWorkspaceGrid = ({
         />
       ))}
 
+      {/* ── Independent right-column horizontal handle (slot 2 ↕ slot 5) ───── */}
+      {hasIndependentRightColumnResize && (
+        <div
+          className="blank-grid-right-column-separator"
+          style={{
+            gridColumn: '5',
+            gridRow: '1 / 4',
+            top: `${(normalizedRightColumnRowHeights[0] / (normalizedRightColumnRowHeights[0] + normalizedRightColumnRowHeights[1])) * 100}%`,
+          }}
+          onMouseDown={(e) => handleGridResizeStart('row-right', 0, e)}
+        />
+      )}
+
       {/* ── Slot cells (indices 0–5: row 0 = 0–2, row 1 = 3–5) ─────────── */}
       {[0, 1, 2, 3, 4, 5].map((slotIndex) => {
+        if (hasIndependentRightColumnResize && (slotIndex === 2 || slotIndex === 5)) {
+          return null
+        }
+
         const col = slotIndex % 3
         const row = Math.floor(slotIndex / 3)
         const panelKey = S[slotIndex]
@@ -734,6 +796,49 @@ const DockableWorkspaceGrid = ({
           </div>
         )
       })}
+
+      {/* ── Independent right-column panels (slot 2 + slot 5) ─────────────── */}
+      {hasIndependentRightColumnResize && (
+        <>
+          <div
+            className="blank-grid-slot occupied blank-grid-right-independent"
+            style={{
+              gridColumn: '5',
+              gridRow: '1 / 4',
+              height: `${(normalizedRightColumnRowHeights[0] / (normalizedRightColumnRowHeights[0] + normalizedRightColumnRowHeights[1])) * 100}%`,
+              alignSelf: 'start',
+            }}
+          >
+            <DockablePanelShell
+              title={getPanelTitle(S[2])}
+              isFullScreen={false}
+              onToggleFullScreen={() => toggleSlotFullScreen(2)}
+              onClose={() => handleSlotClear(2)}
+            >
+              {renderPanelContent(S[2])}
+            </DockablePanelShell>
+          </div>
+
+          <div
+            className="blank-grid-slot occupied blank-grid-right-independent"
+            style={{
+              gridColumn: '5',
+              gridRow: '1 / 4',
+              height: `${(normalizedRightColumnRowHeights[1] / (normalizedRightColumnRowHeights[0] + normalizedRightColumnRowHeights[1])) * 100}%`,
+              alignSelf: 'end',
+            }}
+          >
+            <DockablePanelShell
+              title={getPanelTitle(S[5])}
+              isFullScreen={false}
+              onToggleFullScreen={() => toggleSlotFullScreen(5)}
+              onClose={() => handleSlotClear(5)}
+            >
+              {renderPanelContent(S[5])}
+            </DockablePanelShell>
+          </div>
+        </>
+      )}
     </div>
   )
 }

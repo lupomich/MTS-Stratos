@@ -39,6 +39,7 @@ const areWorkspaceLayoutsEqual = (first, second) => {
       && first.isDataPanelCollapsed   === second.isDataPanelCollapsed
       && arrEq(first.colWidths,  second.colWidths)
       && arrEq(first.rowHeights, second.rowHeights)
+      && arrEq(first.rightColumnRowHeights, second.rightColumnRowHeights)
 }
 
 // Inner app (needs WorkspaceProvider above it)
