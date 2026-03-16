@@ -1,194 +1,90 @@
-# 🚀 Docker Deployment Guide - MTS-Stratos
+# Docker Deployment Guide — MTS-Stratos
 
-## ✅ System Status
+## Current Runtime Topology
 
-All containers have been tested and are fully working on Windows!
+| Layer | Service | Container | Host URL | Ports |
+|---|---|---|---|---|
+| Frontend | BondVision Digital (Node target) | `mts-stratos-bondvision-digital` | http://localhost:3001 | `3001:3001` |
+| Frontend | BondVision Digital (Java target) | `mts-stratos-bondvision-digital-java` | http://localhost:3002 | `3002:3002` |
+| Backend | Node.js API | `mts-stratos-backend` | http://localhost:3000 | `3000:3000` |
+| Backend | Java API (Micronaut) | `mts-stratos-backend-java` | http://localhost:3003 | `3003:3001` |
+| Database | PostgreSQL | `mts-stratos-postgres` | localhost:5432 | `5432:5432` |
+| Cache | Redis | `mts-stratos-redis` | localhost:6379 | `6379:6379` |
+| Admin | pgAdmin | `mts-stratos-pgadmin` | http://localhost:5050 | `5050:80` |
 
-## 📦 Available Services
+## Compose Files
 
-| Service | Port | URL | Description |
-|---------|------|-----|-------------|
-| **Hello App** | 3000 | http://localhost:3000 | Node.js Express Server |
-| **BondVision Mockup** | 3001 | http://localhost:3001 | React App (prototype) |
-| **BondVision Digital** | 3002 | http://localhost:3002 | React App (full version) |
+- `docker-compose.master.yml`: Node backend + Node-target frontend + DB + Redis + pgAdmin + E2E
+- `docker-compose.java-backend.yml`: Java backend + Java-target frontend overlay
 
-## 🎯 Main Commands
+## Start Commands
 
-### ✅ Start all services together (recommended)
-Use **docker-compose.master.yml** to manage all services with a single command:
+### Start Node-only stack
+
 ```bash
-docker-compose -f docker-compose.master.yml up -d
+docker compose -f docker-compose.master.yml up -d --build
 ```
 
-### Start with full rebuild
+### Start dual stack (Node + Java + both frontends)
+
 ```bash
-docker-compose -f docker-compose.master.yml up --build -d
+docker compose -f docker-compose.master.yml -f docker-compose.java-backend.yml up -d --build
 ```
 
-### 🎨 Start a single service
-Each service has its own docker-compose.yml to work in isolation:
+### Stop stack
 
-### View container status
 ```bash
-docker ps
+docker compose -f docker-compose.master.yml -f docker-compose.java-backend.yml down
 ```
 
-### View service logs
-```bash
-# Hello App
-docker logs mts-stratos-hello-app
+## Frontend ↔ Backend Routing
 
-# BondVision Mockup
-docker logs mts-stratos-bondvision-mockup -f
+- `http://localhost:3001` uses `/api` proxy to `http://bondvision-backend:3000` (Node.js)
+- `http://localhost:3002` uses `/api` proxy to `http://bondvision-backend-java:3001` (Java)
 
-# BondVision Digital
-docker logs mts-stratos-bondvision-digital -f
-```
+This is controlled by frontend environment variables:
 
-### Stop all services
-```bash
-docker-compose -f docker-compose.master.yml down
-```
+- `VITE_PORT`
+- `VITE_BACKEND_TARGET`
+- `VITE_BACKEND_URL=/api`
 
-### Stop and remove volumes
-```bash
-docker-compose -f docker-compose.master.yml down -v
-```
-
-### Restart a single service
-```bash
-# Restart only BondVision Digital
-docker-compose -f docker-compose.master.yml restart bondvision-digital
-```
-
-## 🔧 Working on a Single Service
-
-Each service keeps its own `docker-compose.yml` for maximum flexibility.
-Useful when working on a specific application without starting the others.
-
-### Hello App (port 3000)
-```bash
-# From project root
-docker-compose up -d
-
-# Stop
-docker-compose down
-```
-
-### BondVision Mockup (port 3001)
-```bash
-cd bondvision-mockup
-docker-compose up -d
-
-# Stop
-docker-compose down
-cd ..
-```
-
-### BondVision Digital (port 3002)
-```bash
-cd bondvision-digital
-docker-compose up -d
-
-# Stop
-docker-compose down
-cd ..
-```
-
-**💡 Note**: You can run concurrently:
-- All services via master: `docker-compose -f docker-compose.master.yml up -d`
-- OR individual services: `cd bondvision-digital && docker-compose up -d`
-- But don’t mix both! Always use either the master or the individual ones to avoid network conflicts.
-
-## 🛠️ Troubleshooting
-
-### Port already in use
-If you get errors like "port is already allocated":
-```bash
-# Check which processes are using the port (e.g. port 3000)
-netstat -ano | findstr :3000
-
-# Stop all containers
-docker-compose -f docker-compose.master.yml down
-```
-
-### Rebuild from scratch
-```bash
-# Stop everything and remove containers
-docker-compose -f docker-compose.master.yml down
-
-# Remove old images
-docker rmi mts-stratos-hello-app mts-stratos-bondvision-mockup mts-stratos-bondvision-digital
-
-# Rebuild and start
-docker-compose -f docker-compose.master.yml up --build -d
-```
-
-### Full Docker cleanup
-```bash
-# ⚠️ WARNING: This removes ALL containers and images
-docker system prune -a
-```
-
-## 📊 Monitoring
-
-### View resource usage
-```bash
-docker stats
-```
-
-### Inspect a container
-```bash
-docker inspect mts-stratos-hello-app
-```
-
-### Access a container shell
-```bash
-# Access the BondVision Digital container
-docker exec -it mts-stratos-bondvision-digital /bin/sh
-```
-
-## 🌐 Docker Network
-
-All services are connected to the `mts-stratos_mts-network` network. Containers can communicate with each other using service names:
-- `hello-app`
-- `bondvision-mockup`
-- `bondvision-digital`
-
-## 📝 Hot Reload
-
-BondVision Mockup and Digital have mounted volumes for hot reload:
-- Changes in `/src` are reflected automatically
-- Changes in `/public` are reflected automatically
-- Changes in `index.html` are reflected automatically
-
-## 🚨 Important Notes
-
-1. **SSL Configuration**: Dockerfiles include `npm config set strict-ssl false` for environments with corporate proxies/firewalls
-2. **Restart Policy**: All containers have `restart: unless-stopped` to restart automatically
-3. **Windows Path**: Windows paths with spaces (e.g. "OneDrive - Euronext") are handled correctly by Docker
-
-## 🎉 Quick Verification
+## Verification
 
 ```bash
-# Verify all services are active
+# Container status
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-# Test endpoints
-curl.exe http://localhost:3000
+# Frontend reachability
 curl.exe http://localhost:3001
 curl.exe http://localhost:3002
+
+# Backend direct health
+curl.exe http://localhost:3000/api/health
+curl.exe http://localhost:3003/api/health
+
+# Health through each frontend proxy
+curl.exe http://localhost:3001/api/health
+curl.exe http://localhost:3002/api/health
 ```
 
-## 📚 Configuration Files
+## Logs
 
-- **docker-compose.master.yml**: Orchestration of all services
-- **docker-compose.yml** (root): Hello App only
-- **bondvision-mockup/docker-compose.yml**: Mockup only
-- **bondvision-digital/docker-compose.yml**: Digital only
+```bash
+# Frontend (Node target)
+docker logs -f mts-stratos-bondvision-digital
 
-## 🔄 Migration from WSL
+# Frontend (Java target)
+docker logs -f mts-stratos-bondvision-digital-java
 
-✅ Project successfully migrated from WSL to Windows  
-✅ All containers tested and working correctly  
-✅ No changes required to Dockerfiles or docker-compose.yml
+# Node backend
+docker logs -f mts-stratos-backend
+
+# Java backend
+docker logs -f mts-stratos-backend-java
+```
+
+## Notes
+
+1. The Java backend is exposed on host port `3003` to keep host port `3001` available for the Node-target frontend.
+2. The Java backend still listens on container port `3001`; only host mapping differs.
+3. Use `docker compose` (space) for all new commands.

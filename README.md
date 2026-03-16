@@ -6,7 +6,7 @@ Fully containerized full-stack workspace for the MTS BondVision trading platform
 
 ### Technology Stack
 - **Frontend:** React 18 + Vite
-- **Backend:** Node.js/Express
+- **Backend:** Node.js/Express + Micronaut (Java)
 - **Database:** PostgreSQL
 - **Cache:** Redis
 - **Testing:** Playwright E2E
@@ -14,17 +14,27 @@ Fully containerized full-stack workspace for the MTS BondVision trading platform
 
 ### Services
 
-#### BondVision Digital - Frontend (port 3002)
-MTS BondVision trading application with a modern interface.
-- **URL:** http://localhost:3002
+#### BondVision Digital - Frontend (Node target, port 3001)
+Primary BondVision frontend targeting the Node.js backend.
+- **URL:** http://localhost:3001
 - **Technology:** React 18 + Vite
 - **Documentation:** [bondvision-digital/README.md](bondvision-digital/README.md)
 
-#### BondVision Backend - API (port 5000)
+#### BondVision Digital - Frontend (Java target, port 3002)
+Second frontend instance targeting the Java backend.
+- **URL:** http://localhost:3002
+- **Technology:** React 18 + Vite
+
+#### BondVision Backend (Node.js API, port 3000)
 RESTful API server for the BondVision platform.
-- **URL:** http://localhost:5000
+- **URL:** http://localhost:3000
 - **Technology:** Express.js
 - **Database:** PostgreSQL (Docker connection)
+
+#### BondVision Backend (Java API, host port 3003)
+Micronaut API service for Java migration and SDK integration.
+- **URL:** http://localhost:3003
+- **Technology:** Micronaut + Java 21
 
 #### PostgreSQL (port 5432)
 Relational database for the platform.
@@ -83,13 +93,13 @@ All workspace strings are localized in `src/context/LanguageContext.jsx` under t
 
 ```
 .
-├── bondvision-digital/       # React Frontend (port 3002)
+├── bondvision-digital/       # React Frontend source (runtime ports 3001 and 3002)
 │   ├── src/
 │   ├── scripts/              # E2E tests (Playwright)
 │   ├── package.json
 │   ├── vite.config.js
 │   └── Dockerfile
-├── bondvision-backend/       # Express Backend (port 5000)
+├── bondvision-backend/       # Express Backend (port 3000)
 │   ├── routes/
 │   ├── server.js
 │   ├── package.json
@@ -112,8 +122,11 @@ All workspace strings are localized in `src/context/LanguageContext.jsx` under t
 ### With Docker Compose (recommended)
 
 ```bash
-# Start all services
+# Start Node backend + Node frontend
 docker-compose -f docker-compose.master.yml up -d
+
+# Start full dual setup (Node + Java backends and both frontends)
+docker-compose -f docker-compose.master.yml -f docker-compose.java-backend.yml up -d
 
 # Stop all services
 docker-compose -f docker-compose.master.yml down
@@ -123,13 +136,15 @@ docker-compose -f docker-compose.master.yml down
 
 | Service | Port | URL |
 |---------|------|-----|
-| BondVision Frontend | 3002 | http://localhost:3002 |
-| BondVision Backend | 5000 | http://localhost:5000 |
+| BondVision Frontend (Node target) | 3001 | http://localhost:3001 |
+| BondVision Frontend (Java target) | 3002 | http://localhost:3002 |
+| BondVision Backend (Node.js) | 3000 | http://localhost:3000 |
+| BondVision Backend (Java) | 3003 | http://localhost:3003 |
 | PostgreSQL | 5432 | localhost:5432 |
 | Redis | 6379 | localhost:6379 |
 | pgAdmin | 5050 | http://localhost:5050 |
 
-### BondVision Digital (port 3002)
+### BondVision Digital (standalone dev default: port 3002)
 
 ```bash
 cd bondvision-digital
@@ -139,7 +154,7 @@ npm run dev
 
 See [bondvision-digital/README.md](bondvision-digital/README.md) for more details.
 
-### BondVision Backend (port 5000)
+### BondVision Backend (port 3000)
 
 ```bash
 cd bondvision-backend
@@ -150,7 +165,7 @@ npm start
 ## Platform Usage
 
 ### Platform Login
-1. Navigate to http://localhost:3002
+1. Navigate to http://localhost:3001 (Node target) or http://localhost:3002 (Java target)
 2. Default credentials:
    - **Admin:** username: `admin`, password: `admin123`
    - **Demo User:** username: `demo`, password: `demo123`
@@ -165,9 +180,10 @@ npm start
 
 | Application | Port | URL |
 |-------------|------|-----|
-| Hello App | 3000 | http://localhost:3000 |
-| BondVision Mockup | 3001 | http://localhost:3001 |
-| BondVision Digital | 3002 | http://localhost:3002 |
+| BondVision Backend (Node.js) | 3000 | http://localhost:3000 |
+| BondVision Digital (Node target) | 3001 | http://localhost:3001 |
+| BondVision Digital (Java target) | 3002 | http://localhost:3002 |
+| BondVision Backend (Java) | 3003 | http://localhost:3003 |
 
 ## E2E Testing - Operational Conventions
 
@@ -197,6 +213,6 @@ powershell -ExecutionPolicy Bypass -File .\Testing\run-e2e-full.ps1 -SkipDbBacku
 1. Use `-KeepPostTestDbOnFailure` during testing
 2. On FAIL, the `post-e2e-<runId>.dump` in `Testing/db-snapshots/` is preserved
 3. Restore snapshot to an isolated debug DB (`stratos_debug`) for investigation
-4. L'ambiente principale è già tornato allo stato pre-test
+4. The main environment has already been restored to the pre-test state
 
 **Runbook dettagliato**: `Testing/E2E_DB_SNAPSHOT_RUNBOOK.md`

@@ -1,0 +1,26 @@
+micronaut:
+  application:
+    name: bondvision-backend-java
+  server:
+    port: ${PORT:3001}
+    cors:
+      enabled: false  # Handled by CorsFilter to mirror Node.js behavior exactly
+
+datasources:
+  default:
+    url: ${DATASOURCES_DEFAULT_URL:jdbc:postgresql://localhost:5432/stratos_db}
+    username: ${DATASOURCES_DEFAULT_USERNAME:stratos}
+    password: ${DATASOURCES_DEFAULT_PASSWORD:stratos2026}
+    driver-class-name: org.postgresql.Driver
+    connection-timeout: 10000
+    maximum-pool-size: 10
+    minimum-idle: 2
+
+redis:
+  uri: ${REDIS_URL:redis://localhost:6379}
+
+app:
+  jwt-secret: ${JWT_SECRET:stratos-secret-key-2026}
+  session-idle-timeout-seconds: ${SESSION_IDLE_TIMEOUT_SECONDS:300}
+  session-online-ttl-seconds: ${SESSION_ONLINE_TTL_SECONDS:315}
+  cors-origin: ${CORS_ORIGIN:}

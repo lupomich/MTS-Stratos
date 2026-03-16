@@ -5,6 +5,11 @@ const AuthContext = createContext(null);
 
 // Detect API URL based on environment
 const getAPIUrl = () => {
+    // Explicit override injected by Vite from VITE_BACKEND_URL env var.
+    // Set in docker-compose.java-backend.yml to switch the frontend to the Java backend.
+    if (import.meta.env.VITE_BACKEND_URL) {
+        return import.meta.env.VITE_BACKEND_URL;
+    }
     if (typeof window !== 'undefined') {
         const host = window.location.hostname;
         if (host !== 'localhost' && host !== '127.0.0.1') {

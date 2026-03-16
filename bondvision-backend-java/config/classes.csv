@@ -1,0 +1,10 @@
+# SDP Classes Configuration
+# Format: ClassName,ClassId,ServiceId,Description
+# ServiceId: INFO_BRT (broadcast), TXN_INFO_PRIV (transaction), QUERY (query)
+
+# Example classes (replace with your actual classes)
+com.mtsmarkets.sdp.smp.bvf.BV_MARKET,100001,INFO_BRT,Market information
+com.mtsmarkets.sdp.smp.bvf.BV_QUOTE,100002,INFO_BRT,Quote information
+com.mtsmarkets.sdp.smp.bvf.BV_TRADE,100003,TXN_INFO_PRIV,Trade transaction
+com.mtsmarkets.sdp.smp.bvf.BV_ORDER,100004,TXN_INFO_PRIV,Order transaction
+com.mtsmarkets.sdp.smp.bvf.BV_MEMBER,100005,QUERY,Member query

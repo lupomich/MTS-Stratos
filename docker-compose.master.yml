@@ -25,20 +25,23 @@ services:
     restart: unless-stopped
     networks:
       - mts-network
-  # BondVision Digital - React + Vite (porta 3002)
+  # BondVision Digital - React + Vite (Node.js target on host port 3001)
   bondvision-digital:
     build:
       context: ./bondvision-digital
       dockerfile: Dockerfile.dev
     container_name: mts-stratos-bondvision-digital
     ports:
-      - "3002:3002"
+      - "3001:3001"
     volumes:
       - ./bondvision-digital/src:/app/src
       - ./bondvision-digital/public:/app/public
       - ./bondvision-digital/index.html:/app/index.html
     environment:
       - NODE_ENV=development
+      - VITE_PORT=3001
+      - VITE_BACKEND_TARGET=http://bondvision-backend:3000
+      - VITE_BACKEND_URL=/api
     restart: unless-stopped
     depends_on:
       - postgres
@@ -100,7 +103,7 @@ services:
     command: sh -lc "tail -f /dev/null"
     environment:
       - API_BASE=http://bondvision-backend:3000/api
-      - BASE_URL=http://bondvision-digital:3002
+      - BASE_URL=http://bondvision-digital:3001
       - START_FROM=${START_FROM:-22}
     ports:
       - "9323:9323"

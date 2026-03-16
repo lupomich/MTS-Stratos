@@ -27,7 +27,9 @@ console.log('ENV:', process.env);
 const app = express();
 app.use(express.json());
 const allowedOrigins = [
+  'http://localhost:3001',
   'http://localhost:3002',
+  'http://bondvision-digital:3001',
   'http://bondvision-digital:3002',
   process.env.CORS_ORIGIN
 ].filter(Boolean);

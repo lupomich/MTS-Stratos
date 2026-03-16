@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: 3002,
+    port: Number(process.env.VITE_PORT || 3002),
+    strictPort: true,
     watch: {
       usePolling: true,
       interval: 300,
@@ -14,11 +15,15 @@ export default defineConfig({
       'localhost',
       '127.0.0.1',
       'bondvision-digital',
+      'bondvision-digital-java',
       'host.docker.internal'
     ],
     proxy: {
       '/api': {
-        target: 'http://bondvision-backend:3000',
+        // VITE_BACKEND_TARGET env var lets docker-compose select the active backend:
+        //   default (Node.js):  http://bondvision-backend:3000
+        //   Java backend:       http://bondvision-backend-java:3001  (set via docker-compose.java-backend.yml)
+        target: process.env.VITE_BACKEND_TARGET || 'http://bondvision-backend:3000',
         changeOrigin: true,
         rewrite: (path) => path
       }
