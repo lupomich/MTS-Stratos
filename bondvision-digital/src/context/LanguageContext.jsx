@@ -186,7 +186,17 @@ export const translations = {
       usernamePlaceholder: 'Enter username',
       emailPlaceholder: 'Enter email',
       passwordPlaceholder: 'At least 8 chars, 1 letter, 1 number, 1 symbol',
-      creating: 'Creating...'
+      creating: 'Creating...',
+      colUsername: 'Username',
+      colEmail: 'Email',
+      colRole: 'Role',
+      colStatus: 'Status',
+      colLastLogin: 'Last Login',
+      colCreatedBy: 'Created By',
+      colActions: 'Actions',
+      roleViewer: 'Viewer',
+      roleTrader: 'Trader',
+      roleAdmin: 'Admin'
     },
     marketDepth: {
       mtsCashOrderBook: 'MTS Cash Order Book',
@@ -388,7 +398,17 @@ export const translations = {
       usernamePlaceholder: 'Inserisci username',
       emailPlaceholder: 'Inserisci email',
       passwordPlaceholder: 'Almeno 8 caratteri, 1 lettera, 1 numero, 1 simbolo',
-      creating: 'Creazione...'
+      creating: 'Creazione...',
+      colUsername: 'Username',
+      colEmail: 'Email',
+      colRole: 'Ruolo',
+      colStatus: 'Stato',
+      colLastLogin: 'Ultimo Accesso',
+      colCreatedBy: 'Creato Da',
+      colActions: 'Azioni',
+      roleViewer: 'Visualizzatore',
+      roleTrader: 'Trader',
+      roleAdmin: 'Amministratore'
     },
     marketDepth: {
       mtsCashOrderBook: 'MTS Cash Order Book',

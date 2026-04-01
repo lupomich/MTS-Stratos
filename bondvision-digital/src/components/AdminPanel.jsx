@@ -156,13 +156,13 @@ const AdminPanel = ({ onClose }) => {
                             <table className="users-table">
                                 <thead>
                                     <tr>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Last Login</th>
-                                        <th>Created By</th>
-                                        <th>Actions</th>
+                                        <th>{t('admin.colUsername')}</th>
+                                        <th>{t('admin.colEmail')}</th>
+                                        <th>{t('admin.colRole')}</th>
+                                        <th>{t('admin.colStatus')}</th>
+                                        <th>{t('admin.colLastLogin')}</th>
+                                        <th>{t('admin.colCreatedBy')}</th>
+                                        <th>{t('admin.colActions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -176,9 +176,9 @@ const AdminPanel = ({ onClose }) => {
                                                     onChange={(e) => handleChangeRole(user.id, e.target.value)}
                                                     className="role-select"
                                                 >
-                                                    <option value="viewer">Viewer</option>
-                                                    <option value="trader">Trader</option>
-                                                    <option value="admin">Admin</option>
+                                                    <option value="viewer">{t('admin.roleViewer')}</option>
+                                                    <option value="trader">{t('admin.roleTrader')}</option>
+                                                    <option value="admin">{t('admin.roleAdmin')}</option>
                                                 </select>
                                             </td>
                                             <td>

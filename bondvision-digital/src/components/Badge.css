@@ -8,34 +8,34 @@
   border-radius: 12px;
   font-family: var(--font-family-sans);
   font-weight: 700;
-  font-size: 12pt;
+  font-size: 12px;
   height: 24px;
   white-space: nowrap;
 }
 
 .badge-status.success {
-  background-color: #009639;
+  background-color: var(--color-secondary-kelly);
   color: #FFFFFF;
 }
 
 .badge-status.warning {
-  background-color: #FF9500;
+  background-color: var(--color-warning);
   color: #FFFFFF;
 }
 
 .badge-status.error {
-  background-color: #E74C3C;
+  background-color: var(--color-error);
   color: #FFFFFF;
 }
 
 .badge-status.info {
-  background-color: #41B6E6;
+  background-color: var(--color-info);
   color: #FFFFFF;
 }
 
 .badge-status.disabled {
-  background-color: #D9D9D9;
-  color: #333333;
+  background-color: var(--color-grey-20);
+  color: var(--color-grey-60);
 }
 
 /* Category Badges - Rounded */
@@ -46,34 +46,34 @@
   border-radius: 4px;
   font-family: var(--font-family-sans);
   font-weight: 500;
-  font-size: 12pt;
+  font-size: 12px;
   height: 24px;
   border: 1px solid;
   white-space: nowrap;
 }
 
 .badge-category.primary {
-  background-color: #E0F5F3;
-  color: #008D7F;
-  border-color: #008D7F;
+  background-color: var(--color-teal-10);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .badge-category.secondary {
-  background-color: #F5F5F5;
-  color: #333333;
-  border-color: #EBEBEB;
+  background-color: var(--color-grey-10);
+  color: var(--color-grey-60);
+  border-color: var(--color-grey-20);
 }
 
 .badge-category.success {
-  background-color: #E8F7E8;
-  color: #008000;
-  border-color: #008000;
+  background-color: var(--color-success-bg);
+  color: var(--color-secondary-kelly);
+  border-color: var(--color-secondary-kelly);
 }
 
 .badge-category.warning {
-  background-color: #FFE8CC;
-  color: #FF9500;
-  border-color: #FF9500;
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-color: var(--color-warning);
 }
 
 /* Count Badges - Circular */
@@ -85,41 +85,41 @@
   height: 20px;
   min-width: 20px;
   border-radius: 50%;
-  background-color: #008D7F;
+  background-color: var(--color-primary);
   color: #FFFFFF;
   font-family: var(--font-family-sans);
   font-weight: 700;
-  font-size: 10pt;
+  font-size: 10px;
   line-height: 1;
 }
 
 .badge-count.danger {
-  background-color: #E74C3C;
+  background-color: var(--color-error);
 }
 
 /* Badge Sizes */
 .badge-large {
   height: 28px;
   padding: 6px 14px;
-  font-size: 14pt;
+  font-size: 14px;
 }
 
 .badge-medium {
   height: 24px;
   padding: 4px 12px;
-  font-size: 12pt;
+  font-size: 12px;
 }
 
 .badge-small {
   height: 20px;
   padding: 2px 8px;
-  font-size: 10pt;
+  font-size: 10px;
 }
 
 .badge-xsmall {
   height: 16px;
   padding: 2px 6px;
-  font-size: 8pt;
+  font-size: 8px;
 }
 
 /* Badge with Icon */

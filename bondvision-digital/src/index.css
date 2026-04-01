@@ -19,6 +19,7 @@
   --color-secondary-kelly: #009639;
   --color-secondary-spring: #79D100;
   --color-secondary-blue: #41B6E6;
+  --color-secondary-yellow: #E26310; /* No Stratos yellow exists — mapped to warning/orange */
   
   /* Semantic Colors */
   --color-success: #79D100;
@@ -108,16 +109,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a3a3a;
+  background: var(--dark-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a5a5a;
+  background: var(--dark-border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a7a7a;
+  background: var(--color-primary-dark);
 }
 
 /* Typography Classes */

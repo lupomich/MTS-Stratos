@@ -1,5 +1,5 @@
 .sidebar {
-  width: 80px;
+  width: 256px;
   height: 100%;
   background-color: var(--dark-bg);
   border-right: 1px solid var(--dark-border);
@@ -14,7 +14,7 @@
 
 @media (max-width: 800px) {
   .sidebar {
-    width: 70px;
+    width: 80px;
   }
 }
 
@@ -40,6 +40,11 @@
 
 .sidebar-item:hover {
   background-color: var(--dark-hover);
+}
+
+.sidebar-item:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .sidebar-item.active {
@@ -145,10 +150,10 @@
 
 .sidebar-overlay-panel {
   position: fixed;
-  top: 48px;
-  left: 80px;
+  top: 56px;
+  left: 256px;
   width: 260px;
-  height: calc(100vh - 48px);
+  height: calc(100vh - 56px);
   background: var(--dark-bg);
   border-right: 1px solid var(--dark-border);
   box-shadow: 8px 0 20px rgba(0, 0, 0, 0.35);
