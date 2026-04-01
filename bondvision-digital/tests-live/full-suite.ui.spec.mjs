@@ -10,7 +10,7 @@ test('MTS-Stratos full suite live', async () => {
 
     const summary = await runE2ESuite({
         baseUrl: process.env.BASE_URL || 'http://localhost:3002',
-        apiBase: process.env.API_BASE || 'http://localhost:3000/api',
+        apiBase: process.env.API_BASE || 'http://localhost:3003/api',
         startFrom,
         stopOnFirstFail: false,
         headless,

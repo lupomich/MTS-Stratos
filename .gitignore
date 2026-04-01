@@ -53,6 +53,9 @@ bondvision-digital/test-results/
 bondvision-digital/test-report.html
 bondvision-digital/test-results.csv
 bondvision-digital/test-results.json
+test-report.html
+test-results.csv
+test-results.json
 Testing/e2e-full-live*.log
 Testing/db-snapshots/
 bondvision-digital/*.log

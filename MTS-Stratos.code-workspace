@@ -8,6 +8,15 @@
 		}
 	],
 	"settings": {
-		"python-envs.defaultEnvManager": "ms-python.python:system"
+		"python-envs.defaultEnvManager": "ms-python.python:system",
+		"playwright.env": {
+			"BASE_URL": "http://localhost:3002",
+			"API_BASE": "http://localhost:3003/api",
+			"HEADLESS": "false",
+			"LIVE_VIEW": "true",
+			"SLOW_MO": "150",
+			"START_FROM": "1",
+			"TEST_TIMEOUT": "30000"
+		}
 	}
 }

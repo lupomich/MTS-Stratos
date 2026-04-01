@@ -10,7 +10,6 @@ import './BondTable.css'
 class CustomHeaderWithMenu {
   init(params) {
     this.params = params
-    this.colId = params.column.getColId()
     this.menuOpen = false
     this.eGui = document.createElement('div')
     this.eGui.className = 'custom-header-wrapper'
@@ -52,17 +51,18 @@ class CustomHeaderWithMenu {
   
   updateIconsState() {
     if (!this.params || !this.params.api) return
+    const colId = this.params.column.getColId()
     
     // Aggiorna filtro icon
     const filterModel = this.params.api.getFilterModel()
-    const isFiltered = filterModel && filterModel[this.colId]
+    const isFiltered = filterModel && filterModel[colId]
     if (this.eFilterIcon) {
       this.eFilterIcon.style.display = isFiltered ? 'inline' : 'none'
     }
     
     // Aggiorna sort icons
     const columnState = this.params.columnApi.getColumnState()
-    const thiColState = columnState.find(cs => cs.colId === this.colId)
+    const thiColState = columnState.find(cs => cs.colId === colId)
     
     if (this.eSortIcon && this.eSortIconDesc) {
       if (thiColState && thiColState.sort) {
@@ -84,6 +84,10 @@ class CustomHeaderWithMenu {
   
   refresh(params) {
     this.params = params
+    const headerText = this.eGui?.querySelector('.header-text')
+    if (headerText) {
+      headerText.textContent = params.displayName
+    }
     this.updateIconsState()
     return true
   }
@@ -108,9 +112,10 @@ class CustomHeaderWithMenu {
     this.menu = document.createElement('div')
     this.menu.className = 'ag-custom-menu-popup'
     this.menuOpen = true
+    const colId = this.params.column.getColId()
     
-    const isVisible = this.params.columnApi.getColumn(this.colId).isVisible()
-    const isPinned = this.params.columnApi.getColumn(this.colId).getPinned()
+    const isVisible = this.params.columnApi.getColumn(colId).isVisible()
+    const isPinned = this.params.columnApi.getColumn(colId).getPinned()
     const t = this.params.context.t
     
     this.menu.innerHTML = `
@@ -212,6 +217,21 @@ class CustomHeaderWithMenu {
   
   handleAction(action) {
     const { api, columnApi, column } = this.params
+    const colId = column.getColId()
+
+    const persistSorts = () => {
+      if (typeof this.params.context?.setSorts !== 'function') {
+        return
+      }
+      const activeSorts = columnApi.getColumnState()
+        .filter(colState => colState.sort)
+        .map(colState => ({
+          colId: colState.colId,
+          sort: colState.sort,
+          sortIndex: colState.sortIndex
+        }))
+      this.params.context.setSorts(activeSorts)
+    }
     
     switch(action) {
       case 'filter':
@@ -225,54 +245,63 @@ class CustomHeaderWithMenu {
         break
       case 'sortAsc':
         columnApi.applyColumnState({
-          state: [{ colId: this.colId, sort: 'asc' }],
+          state: [{ colId, sort: 'asc' }],
           defaultState: { sort: null }
         })
+        persistSorts()
         // Forza refresh per mostrare l'icona sort
         api.refreshHeader()
         break
       case 'sortDesc':
         columnApi.applyColumnState({
-          state: [{ colId: this.colId, sort: 'desc' }],
+          state: [{ colId, sort: 'desc' }],
           defaultState: { sort: null }
         })
+        persistSorts()
         // Forza refresh per mostrare l'icona sort
         api.refreshHeader()
         break
       case 'sortNone':
         columnApi.applyColumnState({
-          state: [{ colId: this.colId, sort: null }]
+          state: [{ colId, sort: null }]
         })
+        persistSorts()
         // Forza refresh per nascondere l'icona sort
         api.refreshHeader()
         break
       case 'autosizeThis':
-        columnApi.autoSizeColumn(this.colId)
+        columnApi.autoSizeColumn(colId)
         break
       case 'autosizeAll':
         const allColumnIds = api.getColumns ? api.getColumns().map(col => col.getColId()) : columnApi.getAllColumns().map(col => col.getColId())
         columnApi.autoSizeColumns(allColumnIds)
         break
       case 'pinLeft':
-        columnApi.setColumnPinned(this.colId, 'left')
+        columnApi.setColumnPinned(colId, 'left')
         break
       case 'pinRight':
-        columnApi.setColumnPinned(this.colId, 'right')
+        columnApi.setColumnPinned(colId, 'right')
         break
       case 'unpin':
-        columnApi.setColumnPinned(this.colId, null)
+        columnApi.setColumnPinned(colId, null)
         break
       case 'resetColumn':
         columnApi.applyColumnState({
-          state: [{ colId: this.colId, sort: null }]
+          state: [{ colId, sort: null }]
         })
-        columnApi.setColumnPinned(this.colId, null)
-        api.destroyFilter(this.colId)
+        columnApi.setColumnPinned(colId, null)
+        api.destroyFilter(colId)
         api.refreshHeader()
         break
       case 'resetAll':
         const allColumns = api.getColumns ? api.getColumns() : columnApi.getAllColumns()
-        const defaultOrder = allColumns.map(col => col.getColId())
+        const defaultOrder = Array.isArray(this.params.context?.defaultColumnOrder) && this.params.context.defaultColumnOrder.length > 0
+          ? this.params.context.defaultColumnOrder
+          : allColumns.map(col => col.getColId())
+
+        if (this.params.context && typeof this.params.context.beginApplyingPreferences === 'function') {
+          this.params.context.beginApplyingPreferences()
+        }
 
         columnApi.resetColumnState()
         columnApi.applyColumnState({
@@ -318,6 +347,10 @@ class CustomHeaderWithMenu {
           } catch (err) {
             console.error('Error calling resetPreferences:', err)
           }
+        }
+
+        if (this.params.context && typeof this.params.context.endApplyingPreferences === 'function') {
+          this.params.context.endApplyingPreferences()
         }
         break
     }
@@ -496,6 +529,21 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
     headerClass: (params) => (params.column.getColId() === highlightedColumnId ? 'bond-column-header-match' : '')
   }), [highlightedColumnId])
 
+  const defaultColumnOrder = useMemo(
+    () => columnDefs.map((col) => col.field).filter(Boolean),
+    [columnDefs]
+  )
+
+  const beginApplyingPreferences = useCallback(() => {
+    applyingPreferencesRef.current = true
+  }, [])
+
+  const endApplyingPreferences = useCallback(() => {
+    setTimeout(() => {
+      applyingPreferencesRef.current = false
+    }, 0)
+  }, [])
+
   const onRowClicked = useCallback((event) => {
     const clickedIsin = event.data?.isin || null
     setSelectedBondIsin(clickedIsin)
@@ -632,6 +680,7 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
     if (!gridRef.current?.api || !gridRef.current?.columnApi) return
 
     const onColumnMoved = () => {
+      if (applyingPreferencesRef.current) return
       const columnState = gridRef.current.columnApi.getColumnState()
       const columnOrder = columnState.map(col => col.colId)
       setColumnOrder(columnOrder)
@@ -751,7 +800,7 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
           getRowId={(params) => params.data.isin}
           animateRows={true}
           suppressCellFocus={true}
-          context={{ t, language, resetPreferences, setColumnOrder, setSorts, setFilters, setDefaultColumns }}
+          context={{ t, language, resetPreferences, setColumnOrder, setSorts, setFilters, setDefaultColumns, defaultColumnOrder, beginApplyingPreferences, endApplyingPreferences }}
         />
       </div>
     </div>

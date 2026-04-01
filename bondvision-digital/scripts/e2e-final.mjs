@@ -192,14 +192,21 @@ async function runTest(testId, description, type, testFn) {
         console.log(`  ✅ PASS (${result.duration}ms)`);
     } catch (error) {
         result.duration = Date.now() - testStart;
+        const errorMessage = String(error?.message || '');
         if (error instanceof SkipTest) {
             result.status = 'SKIP';
             result.failReason = error.message;
             console.log(`  ⏭️ SKIP: ${error.message}`);
         } else {
             result.status = 'FAIL';
-            result.failReason = error.message;
-            console.log(`  ❌ FAIL: ${error.message}`);
+            result.failReason = errorMessage;
+            console.log(`  ❌ FAIL: ${errorMessage}`);
+
+            // Abort early on unexpected browser/page closure to avoid cascaded false failures.
+            if (/Target page, context or browser has been closed|Target closed|browser has been closed/i.test(errorMessage)) {
+                testResults.push(result);
+                throw new Error(`BROWSER_OR_PAGE_CLOSED_AT_${testId}: ${errorMessage}`);
+            }
         }
     }
 
@@ -684,21 +691,37 @@ async function getHeaderOrder(page) {
 }
 
 async function openHeaderMenu(page, headerText) {
-    const opened = await page.evaluate((headerTextValue) => {
-        const wrappers = Array.from(document.querySelectorAll('.bond-grid .custom-header-wrapper'));
-        const wrapper = wrappers.find(w => {
-            const text = w.querySelector('.header-text')?.textContent?.trim();
-            return text === headerTextValue;
-        });
-        if (!wrapper) return false;
-        wrapper.querySelector('.header-menu-icon')?.click();
-        return true;
-    }, headerText);
+    // Close any previous menu popup that can intercept clicks.
+    await page.keyboard.press('Escape').catch(() => {});
 
-    if (!opened) {
-        throw new Error(`Header menu not found for ${headerText}`);
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+            const opened = await page.evaluate((headerTextValue) => {
+                const wrappers = Array.from(document.querySelectorAll('.bond-grid .custom-header-wrapper'));
+                const wrapper = wrappers.find(w => {
+                    const text = w.querySelector('.header-text')?.textContent?.trim();
+                    return text === headerTextValue;
+                });
+                if (!wrapper) return false;
+                wrapper.querySelector('.header-menu-icon')?.click();
+                return true;
+            }, headerText);
+
+            if (!opened) {
+                throw new Error(`Header menu not found for ${headerText}`);
+            }
+
+            await page.locator('.ag-custom-menu-popup').waitFor({ state: 'visible', timeout: 3000 });
+            return;
+        } catch (error) {
+            lastError = error;
+            await page.keyboard.press('Escape').catch(() => {});
+            await page.waitForTimeout(200);
+        }
     }
-    await page.locator('.ag-custom-menu-popup').waitFor({ state: 'visible', timeout: 3000 });
+
+    throw lastError || new Error(`Unable to open header menu for ${headerText}`);
 }
 
 async function clickHeaderMenuAction(page, action) {
@@ -706,6 +729,38 @@ async function clickHeaderMenuAction(page, action) {
     await item.waitFor({ state: 'visible', timeout: 3000 });
     await item.click();
     await page.waitForTimeout(400);
+}
+
+async function resetAllColumnsViaMenu(page) {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+            await openHeaderMenu(page, 'ISIN');
+            await clickHeaderMenuAction(page, 'resetAll');
+
+            await page.waitForFunction(() => {
+                const headers = Array.from(document.querySelectorAll('.bond-grid .custom-header-wrapper .header-text'))
+                    .map((node) => (node.textContent || '').trim())
+                    .filter(Boolean);
+                return headers[0] === 'DESCRIPTION' && headers[1] === 'ISIN' && headers[2] === 'CCY';
+            }, { timeout: 5000 });
+
+            const state = await getGridState(page);
+            const ccy = state.columnState.find((c) => c.colId === 'ccy');
+            if (!ccy || ccy.hide === true) {
+                throw new Error('Reset all did not restore ccy visibility');
+            }
+
+            return state;
+        } catch (error) {
+            lastError = error;
+            await page.keyboard.press('Escape').catch(() => {});
+            await page.waitForTimeout(300);
+        }
+    }
+
+    throw lastError || new Error('Reset all columns failed');
 }
 
 async function getGridState(page) {
@@ -1279,19 +1334,10 @@ async function runSection2(page) {
     });
     
     await runTest('T28', 'Reset All Columns', 'GUI', async () => {
-        await openHeaderMenu(page, 'ISIN');
-        await clickHeaderMenuAction(page, 'resetAll');
-        await page.waitForTimeout(800);
-
+        const state = await resetAllColumnsViaMenu(page);
         const headers = await getHeaderOrder(page);
         if (!(headers[0] === 'DESCRIPTION' && headers[1] === 'ISIN' && headers[2] === 'CCY')) {
             throw new Error(`Unexpected default order after reset: ${headers.slice(0, 5).join(' | ')}`);
-        }
-
-        const state = await getGridState(page);
-        const ccy = state.columnState.find(c => c.colId === 'ccy');
-        if (!ccy || ccy.hide === true) {
-            throw new Error('Reset all did not restore ccy visibility');
         }
     });
     
@@ -1514,37 +1560,38 @@ async function runSection3(page) {
     console.log('SECTION 3: FULL PERSISTENCE & CLEANUP');
     console.log('========================================\n');
     
-    let section3SessionInitialized = false;
+    let section3SessionUser = null;
 
-    const ensureTraderLoggedIn = async () => {
+    const ensureSectionUserLoggedIn = async (username, password, label) => {
         for (let attempt = 1; attempt <= 3; attempt += 1) {
             try {
                 const mainVisible = await page.locator('.main-content').isVisible().catch(() => false);
-                if (!section3SessionInitialized) {
+                if (!section3SessionUser || section3SessionUser !== username) {
                     if (mainVisible) {
                         await logoutGUI(page);
                     }
 
-                    console.log(`[ensureTraderLoggedIn] Attempt ${attempt}: Logging in demo admin...`);
-                    await loginGUI(page, 'admin', 'admin123');
-                    section3SessionInitialized = true;
+                    console.log(`[ensureSectionUserLoggedIn:${label}] Attempt ${attempt}: Logging in ${username}...`);
+                    await loginGUI(page, username, password);
+                    section3SessionUser = username;
                 } else if (!mainVisible) {
-                    console.log(`[ensureTraderLoggedIn] Attempt ${attempt}: Restoring demo admin session...`);
-                    await loginGUI(page, 'admin', 'admin123');
+                    console.log(`[ensureSectionUserLoggedIn:${label}] Attempt ${attempt}: Restoring ${username} session...`);
+                    await loginGUI(page, username, password);
+                    section3SessionUser = username;
                 }
 
-                console.log(`[ensureTraderLoggedIn] Attempt ${attempt}: Waiting for .main-content (20s timeout)...`);
+                console.log(`[ensureSectionUserLoggedIn:${label}] Attempt ${attempt}: Waiting for .main-content (20s timeout)...`);
                 await page.locator('.main-content').waitFor({ state: 'visible', timeout: 20000 });
-                console.log(`[ensureTraderLoggedIn] .main-content appeared`);
+                console.log(`[ensureSectionUserLoggedIn:${label}] .main-content appeared`);
                 
                 await waitForBondGrid(page);
-                console.log(`[ensureTraderLoggedIn] Bond grid ready`);
+                console.log(`[ensureSectionUserLoggedIn:${label}] Bond grid ready`);
                 
                 await waitForGridApi(page);
-                console.log(`[ensureTraderLoggedIn] Grid API ready - returning`);
+                console.log(`[ensureSectionUserLoggedIn:${label}] Grid API ready - returning`);
                 return;
             } catch (error) {
-                console.log(`[ensureTraderLoggedIn] Attempt ${attempt} failed: ${error.message}`);
+                console.log(`[ensureSectionUserLoggedIn:${label}] Attempt ${attempt} failed: ${error.message}`);
                 if (attempt === 3) {
                     throw error;
                 }
@@ -1552,6 +1599,9 @@ async function runSection3(page) {
             }
         }
     };
+
+    const ensureTraderLoggedIn = () => ensureSectionUserLoggedIn('trader-final', 'Trader123!', 'trader');
+    const ensureAdminLoggedIn = () => ensureSectionUserLoggedIn('admin', 'admin123', 'admin');
     
     await runTest('T38', 'Mixed modifications', 'GUI', async () => {
         await ensureTraderLoggedIn();
@@ -1584,7 +1634,8 @@ async function runSection3(page) {
         await ensureTraderLoggedIn();
         await page.waitForTimeout(3000);
         await logoutGUI(page);
-        await loginGUI(page, 'admin', 'admin123');
+        await loginGUI(page, 'trader-final', 'Trader123!');
+        section3SessionUser = 'trader-final';
         await waitForBondGrid(page);
 
         const state = await waitForGridStateWithRows(page, 12000, 0);
@@ -1603,12 +1654,8 @@ async function runSection3(page) {
     
     await runTest('T40', 'Complete reset', 'GUI', async () => {
         await ensureTraderLoggedIn();
-        await openHeaderMenu(page, 'ISIN');
-        await clickHeaderMenuAction(page, 'resetAll');
-        await page.waitForTimeout(800);
-
+        const state = await resetAllColumnsViaMenu(page);
         const headers = await getHeaderOrder(page);
-        const state = await getGridState(page);
         const sortedCols = state.columnState.filter(c => c.sort);
 
         if (!(headers[0] === 'DESCRIPTION' && headers[1] === 'ISIN' && headers[2] === 'CCY')) {
@@ -1627,7 +1674,7 @@ async function runSection3(page) {
     
     // Ensure demo admin is logged in for RFQ tests
     await runTest('T42', 'Login admin for RFQ tests', 'GUI', async () => {
-        await ensureTraderLoggedIn();
+        await ensureAdminLoggedIn();
         console.log('  [T42] Admin logged in and grid visible');
     });
     
@@ -1679,7 +1726,7 @@ async function runSection3(page) {
     await runTest('T43', 'Double-click bond row opens RFQ window', 'GUI', async () => {
         try {
             console.log('[T43] Starting test...');
-            await ensureTraderLoggedIn();
+            await ensureAdminLoggedIn();
             console.log('[T43] Admin logged in successfully');
         } catch (err) {
             console.log(`[T43] ERROR during login: ${err.message}`);
@@ -1694,7 +1741,7 @@ async function runSection3(page) {
     });
     
     await runTest('T44', 'RFQ window displays pricing data', 'GUI', async () => {
-        await ensureTraderLoggedIn();
+        await ensureAdminLoggedIn();
         const rfqWindow = await openRfqViaGridApi('T44');
         const windowText = await rfqWindow.textContent();
 
@@ -1708,7 +1755,7 @@ async function runSection3(page) {
     });
     
     await runTest('T45', 'RFQ window draggable and closable', 'GUI', async () => {
-        await ensureTraderLoggedIn();
+        await ensureAdminLoggedIn();
         const rfqWindow = await openRfqViaGridApi('T45');
         console.log('  [T45] RFQ window ready, starting drag');
 
@@ -1771,7 +1818,7 @@ async function runSection3(page) {
     });
     
     await runTest('T46', 'Open RFQ from OPEN RFQ button', 'GUI', async () => {
-        await ensureTraderLoggedIn();
+        await ensureAdminLoggedIn();
 
         // Close any residual RFQ windows that can intercept toolbar clicks
         const residualBefore = await page.locator('.rfq-modal.rfq-floating-window').count();
@@ -2107,7 +2154,8 @@ function generateReports() {
         passed,
         failed,
         skipped,
-        passRate: `${passRate}%`
+        passRate: `${passRate}%`,
+        results: testResults.map((t) => ({ ...t }))
     };
 }
 
