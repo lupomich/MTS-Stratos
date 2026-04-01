@@ -1,5 +1,5 @@
 .sidebar {
-  width: 256px;
+  width: 80px;
   height: 100%;
   background-color: var(--dark-bg);
   border-right: 1px solid var(--dark-border);
@@ -14,7 +14,7 @@
 
 @media (max-width: 800px) {
   .sidebar {
-    width: 80px;
+    width: 70px;
   }
 }
 
@@ -151,7 +151,7 @@
 .sidebar-overlay-panel {
   position: fixed;
   top: 56px;
-  left: 256px;
+  left: 80px;
   width: 260px;
   height: calc(100vh - 56px);
   background: var(--dark-bg);
