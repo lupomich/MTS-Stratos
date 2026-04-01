@@ -13,7 +13,11 @@
 .workspace-tabs-label {
   display: flex;
   align-items: center;
-  padding: 0 10px 0 12px;
+  justify-content: center;
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  padding: 0;
   font-size: 9px;
   font-weight: var(--font-weight-bold, 700);
   color: var(--color-primary);
@@ -22,6 +26,15 @@
   white-space: nowrap;
   flex-shrink: 0;
   border-right: 1px solid var(--dark-border);
+  box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+  .workspace-tabs-label {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+  }
 }
 
 .workspace-tabs-list {

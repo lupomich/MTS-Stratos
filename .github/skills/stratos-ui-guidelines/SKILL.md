@@ -86,6 +86,7 @@ Grid and breakpoints:
 - Use Stratos responsive layout model from stratos-layout.md.
 - Keep 12-column behavior for desktop layouts.
 - Respect documented breakpoints and sidebar/header dimensions.
+- **Exception (approved):** BondVision Digital uses an 80px icon-only compact sidebar — do not flag as a Stratos violation.
 
 Spacing:
 - Use the defined spacing steps (4, 8, 12, 16, 24, 32, 48, 64, 128) as appropriate.
