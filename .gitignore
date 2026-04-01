@@ -55,3 +55,4 @@ bondvision-digital/test-results.csv
 bondvision-digital/test-results.json
 Testing/e2e-full-live*.log
 Testing/db-snapshots/
+bondvision-digital/*.log

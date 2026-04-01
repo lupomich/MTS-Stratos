@@ -94,28 +94,6 @@ services:
     networks:
       - mts-network
 
-  # E2E Tests with Playwright
-  e2e:
-    build:
-      context: ./bondvision-digital
-      dockerfile: Dockerfile.e2e
-    container_name: mts-stratos-e2e
-    command: sh -lc "tail -f /dev/null"
-    environment:
-      - API_BASE=http://bondvision-backend:3000/api
-      - BASE_URL=http://bondvision-digital:3001
-      - START_FROM=${START_FROM:-22}
-    ports:
-      - "9323:9323"
-    restart: unless-stopped
-    depends_on:
-      - bondvision-backend
-      - bondvision-digital
-      - postgres
-      - redis
-    networks:
-      - mts-network
-
 networks:
   mts-network:
     driver: bridge
