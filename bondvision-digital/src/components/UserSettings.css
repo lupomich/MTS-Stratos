@@ -34,7 +34,7 @@
 .settings-header h2 {
     margin: 0;
     font-size: 24px;
-    font-family: var(--font-family-sans);
+    font-family: var(--font-family-serif);
     color: var(--text-light);
 }
 
@@ -70,7 +70,7 @@
 .settings-section h3 {
     margin: 0 0 20px 0;
     font-size: 20px;
-    font-family: var(--font-family-sans);
+    font-family: var(--font-family-serif);
     color: var(--text-light);
 }
 

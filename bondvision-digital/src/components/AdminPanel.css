@@ -88,7 +88,7 @@
     margin: 0;
     color: var(--text-light);
     font-size: 20px;
-    font-family: var(--font-family-sans);
+    font-family: var(--font-family-serif);
 }
 .modal-form label {
     display: block;
@@ -147,7 +147,7 @@
 
 .admin-header h2 {
     margin: 0;
-    font-family: var(--font-family-sans);
+    font-family: var(--font-family-serif);
     font-size: 24px;
     font-weight: var(--font-weight-bold);
     color: var(--text-light);

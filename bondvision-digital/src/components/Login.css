@@ -43,7 +43,7 @@
 
 .login-header h1 {
     color: var(--text-light);
-    font-family: var(--font-family-sans);
+    font-family: var(--font-family-serif);
     font-size: 32px;
     font-weight: 700;
     margin: 0;
