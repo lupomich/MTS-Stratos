@@ -1,52 +1,65 @@
 # Docker Compose Master - MTS-Stratos Platform
-# Uso: docker-compose -f docker-compose.master.yml up --build -d
+# Usage: docker-compose -f docker-compose.master.yml up --build -d
 
 services:
-  # BondVision Backend API (porta 3000)
-  bondvision-backend:
+  # ── Java / Micronaut backend (host 3003 -> container 3001) ──────────────────
+  bondvision-backend-java:
     build:
-      context: ./bondvision-backend
+      context: ./bondvision-backend-java
       dockerfile: Dockerfile
-    container_name: mts-stratos-backend
+    container_name: mts-stratos-backend-java
     ports:
-      - "3000:3000"
+      - "3003:3001"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DATABASE_URL=postgresql://stratos:stratos2026@postgres:5432/stratos_db
+      - PORT=3001
+      - MICRONAUT_SERVER_PORT=3001
+      - DATASOURCES_DEFAULT_URL=jdbc:postgresql://postgres:5432/stratos_db
+      - DATASOURCES_DEFAULT_USERNAME=stratos
+      - DATASOURCES_DEFAULT_PASSWORD=stratos2026
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=stratos-secret-key-2026
+      - REDIS_URI=redis://redis:6379
+      - JWT_SECRET=stratos-secret-key-2026-java-backend-hs256-safe
+      - APP_JWT_SECRET=stratos-secret-key-2026-java-backend-hs256-safe
       - SESSION_IDLE_TIMEOUT_SECONDS=300
       - SESSION_ONLINE_TTL_SECONDS=315
       - CORS_ORIGIN=http://bondvision-digital:3002
+      # ── Phase 3.6b: SDP test environment (TEST ONLY — NEVER PRODUCTION) ──
+      - IPSP_HOST=212.107.69.163
+      - IPSP_PORT=443
+      - IPSP_SSL=true
+      - PLATFORM_ID=6
+      - SDP_LOGON_SIGNATURE=1296912470
+      - SDP_LOGON_SW_REVISION=180202001
+    volumes:
+      - ./bondvision-backend-java/certs:/app/certs:ro
     depends_on:
       - postgres
       - redis
     restart: unless-stopped
     networks:
       - mts-network
-  # BondVision Digital - React + Vite (Node.js target on host port 3001)
+
+  # ── BondVision Digital - React + Vite (host port 3002) ──────────────────────
   bondvision-digital:
     build:
       context: ./bondvision-digital
       dockerfile: Dockerfile.dev
     container_name: mts-stratos-bondvision-digital
     ports:
-      - "3001:3001"
+      - "3002:3002"
     volumes:
       - ./bondvision-digital/src:/app/src
       - ./bondvision-digital/public:/app/public
       - ./bondvision-digital/index.html:/app/index.html
+      - ./bondvision-digital/vite.config.js:/app/vite.config.js
     environment:
       - NODE_ENV=development
-      - VITE_PORT=3001
-      - VITE_BACKEND_TARGET=http://bondvision-backend:3000
+      - VITE_PORT=3002
+      - VITE_BACKEND_TARGET=http://bondvision-backend-java:3001
       - VITE_BACKEND_URL=/api
     restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
-      - pgadmin
+      - bondvision-backend-java
     networks:
       - mts-network
 

@@ -13,10 +13,10 @@ const getAPIUrl = () => {
     if (typeof window !== 'undefined') {
         const host = window.location.hostname;
         if (host !== 'localhost' && host !== '127.0.0.1') {
-            return 'http://bondvision-backend:3000/api';
+            return 'http://bondvision-backend-java:3001/api';
         }
     }
-    return 'http://localhost:3000/api';
+    return 'http://localhost:3003/api';
 };
 
 const API_URL = getAPIUrl();
