@@ -59,3 +59,5 @@ test-results.json
 Testing/e2e-full-live*.log
 Testing/db-snapshots/
 bondvision-digital/*.log
+
+e2e-run-output.txt
