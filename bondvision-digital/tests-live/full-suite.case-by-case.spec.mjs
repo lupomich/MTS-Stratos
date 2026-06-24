@@ -1,5 +1,6 @@
 import { test, expect } from 'playwright/test';
 import { runE2ESuite } from '../scripts/e2e-final.mjs';
+import { resetAuthState } from '../scripts/global-setup.mjs';
 
 const TEST_IDS = [
     'T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07', 'T08', 'T09', 'T10',
@@ -10,15 +11,14 @@ const TEST_IDS = [
 ];
 let suiteSummary = null;
 
-test.describe.configure({ mode: 'serial' });
-
 test.beforeAll(async () => {
+    resetAuthState();
     suiteSummary = await runE2ESuite({
         baseUrl: process.env.BASE_URL || 'http://localhost:3002',
         apiBase: process.env.API_BASE || 'http://localhost:3003/api',
         startFrom: Number.parseInt(process.env.START_FROM || '1', 10) || 1,
         stopOnFirstFail: false,
-        headless: process.env.HEADLESS ? process.env.HEADLESS !== 'false' : true,
+        headless: process.env.HEADLESS ? process.env.HEADLESS !== 'false' : false,
         liveView: process.env.LIVE_VIEW === 'true',
         slowMo: Number.parseInt(process.env.SLOW_MO || '0', 10) || 0,
         testTimeout: Number.parseInt(process.env.TEST_TIMEOUT || '30000', 10) || 30000

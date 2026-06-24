@@ -12,6 +12,7 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
+import { execFileSync } from 'child_process';
 
 // Configuration
 const ADMIN_USER = { username: 'admin', password: 'admin123' };
@@ -389,12 +390,22 @@ async function toggleUserActive(page, username) {
     await sleep(500); // Wait for API call
 }
 
+// Reads the user status badge state in a language-agnostic way.
+// The badge text is localized (Active/Attivo, Inactive/Inattivo), but the CSS
+// class (status-badge active | status-badge inactive) is stable across locales.
+async function getUserStatusState(row) {
+    const className = (await row.locator('.status-badge').getAttribute('class')) || '';
+    if (/\binactive\b/.test(className)) return 'Inactive';
+    if (/\bactive\b/.test(className)) return 'Active';
+    return null;
+}
+
 async function waitForUserStatus(page, username, expectedStatus, timeout = 5000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
         const row = await findUserRow(page, username, 1000);
-        const status = await row.locator('.status-badge').textContent();
-        if (status?.includes(expectedStatus)) {
+        const status = await getUserStatusState(row);
+        if (status === expectedStatus) {
             return;
         }
         await sleep(200);
@@ -468,6 +479,43 @@ async function withAdminApiToken(action) {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` }
         }, getApiTimeoutMs(), 'Admin API logout').catch(() => {});
+    }
+}
+
+// Utility: Reset admin RFQ-related preferences via direct DB write.
+// Cannot use withAdminApiToken() here because the admin is already logged in
+// via the GUI browser session and the backend rejects a second concurrent login.
+async function resetAdminPreferencesForRfq() {
+    const pgContainer = process.env.E2E_POSTGRES_CONTAINER || 'mts-stratos-postgres';
+    const pgUser = process.env.E2E_PG_USER || 'stratos';
+    const pgDb = process.env.E2E_PG_DB || 'stratos_db';
+
+    // Reset rfqOpenInPopup and rfqOpenInTab to false, and clear grid filters so rows are visible.
+    // rfqOpenInPopup=true causes window.open() after await fetch() which breaks the user-gesture
+    // context → Chromium silently blocks the popup and the modal never renders.
+    const sql = `
+UPDATE user_preferences
+SET preference_value = jsonb_set(
+    jsonb_set(
+        jsonb_set(preference_value, '{rfqOpenInPopup}', 'false'),
+        '{rfqOpenInTab}', 'false'
+    ),
+    '{filters}', '{}'
+)
+WHERE user_id = (SELECT id FROM users WHERE username = 'admin')
+  AND preference_key = 'ui_settings';
+`.trim();
+
+    try {
+        execFileSync(
+            'docker',
+            ['exec', pgContainer, 'psql', '-U', pgUser, '-d', pgDb, '-c', sql],
+            { stdio: 'pipe' }
+        );
+        console.log('  [RFQ Setup] Admin DB preferences reset: rfqOpenInPopup=false, rfqOpenInTab=false, filters={}');
+    } catch (err) {
+        const msg = err?.stderr?.toString?.().trim() || err?.message || 'unknown';
+        console.warn(`  [RFQ Setup] WARNING: could not reset admin preferences via psql: ${msg}`);
     }
 }
 
@@ -739,12 +787,24 @@ async function resetAllColumnsViaMenu(page) {
             await openHeaderMenu(page, 'ISIN');
             await clickHeaderMenuAction(page, 'resetAll');
 
+            // Verify via grid API column state (synchronous in-memory, not subject to
+            // React re-render timing). Falls back to DOM check in case __bondGridApi
+            // is not available. Timeout raised to 10s for headless mode.
             await page.waitForFunction(() => {
+                const api = window.__bondGridApi;
+                if (api && typeof api.getColumnState === 'function') {
+                    const cols = api.getColumnState();
+                    return Array.isArray(cols) && cols.length >= 3
+                        && cols[0]?.colId === 'description' && !cols[0]?.hide
+                        && cols[1]?.colId === 'isin' && !cols[1]?.hide
+                        && !cols.find((c) => c.colId === 'ccy')?.hide;
+                }
+                // DOM fallback
                 const headers = Array.from(document.querySelectorAll('.bond-grid .custom-header-wrapper .header-text'))
                     .map((node) => (node.textContent || '').trim())
                     .filter(Boolean);
                 return headers[0] === 'DESCRIPTION' && headers[1] === 'ISIN' && headers[2] === 'CCY';
-            }, { timeout: 5000 });
+            }, { timeout: 10000 });
 
             const state = await getGridState(page);
             const ccy = state.columnState.find((c) => c.colId === 'ccy');
@@ -956,11 +1016,11 @@ async function runSection1(page) {
         // Toggle admin-test to disabled
         await toggleUserActive(page, 'admin-test');
         
-        // Verify status badge shows "Inactive"
+        // Verify status badge shows "Inactive" (language-agnostic via CSS class)
         const row = await findUserRow(page, 'admin-test');
-        const statusBadge = await row.locator('.status-badge').textContent();
-        if (!statusBadge.includes('Inactive')) {
-            throw new Error(`Expected Inactive, got ${statusBadge}`);
+        const statusState = await getUserStatusState(row);
+        if (statusState !== 'Inactive') {
+            throw new Error(`Expected Inactive, got ${statusState}`);
         }
     });
     
@@ -994,11 +1054,11 @@ async function runSection1(page) {
         // Toggle admin-test to enabled
         await toggleUserActive(page, 'admin-test');
         
-        // Verify status badge shows "Active"
+        // Verify status badge shows "Active" (language-agnostic via CSS class)
         const row = await findUserRow(page, 'admin-test');
-        const statusBadge = await row.locator('.status-badge').textContent();
-        if (!statusBadge.includes('Active')) {
-            throw new Error(`Expected Active, got ${statusBadge}`);
+        const statusState = await getUserStatusState(row);
+        if (statusState !== 'Active') {
+            throw new Error(`Expected Active, got ${statusState}`);
         }
     });
     
@@ -1234,6 +1294,12 @@ async function runSection1(page) {
             await loginGUI(page, ADMIN_USER.username, ADMIN_USER.password);
             await openAdminPanel(page);
         }
+
+        // Wait for table to have rows before checking (avoids race condition with async load)
+        await page.waitForFunction(
+            () => document.querySelectorAll('.users-table tbody tr').length > 0,
+            { timeout: 8000 }
+        ).catch(() => {});
 
         const rows = await page.locator('.users-table tbody tr').all();
         if (rows.length !== 2) {
@@ -1675,50 +1741,60 @@ async function runSection3(page) {
     // Ensure demo admin is logged in for RFQ tests
     await runTest('T42', 'Login admin for RFQ tests', 'GUI', async () => {
         await ensureAdminLoggedIn();
-        console.log('  [T42] Admin logged in and grid visible');
+        // Reset rfqOpenInPopup to false so the RFQ modal renders inline (not as a popup
+        // window). When rfqOpenInPopup=true, window.open() is called after await fetch(),
+        // which breaks Chromium's user-gesture context and silently blocks the popup.
+        resetAdminPreferencesForRfq();
+        // Reload so the app re-reads the updated preferences from the backend.
+        await page.reload({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => page.reload());
+        await page.waitForSelector('.bond-grid .ag-root', { timeout: 15000 });
+        console.log('  [T42] Admin logged in, preferences reset (rfqOpenInPopup=false), page reloaded');
     });
     
     const openRfqViaGridApi = async (label) => {
         const gridCount = await page.locator('.ag-root').count();
-        const rowCount = await page.locator('.ag-center-cols-container .ag-row[row-index="0"]').count();
+        const rowCount = await page.locator('.bond-grid .ag-center-cols-container .ag-row[row-index="0"]').count();
 
         console.log(`[${label}] Grid count: ${gridCount}, Row count: ${rowCount}`);
 
         if (gridCount === 0) throw new Error('AG Grid not found on page');
         if (rowCount === 0) throw new Error('No rows found in grid');
 
-        console.log(`[${label}] Dispatching AG Grid rowDoubleClicked event via grid API...`);
-        const dispatchOk = await page.evaluate(() => {
-            const api = window.__bondGridApi;
-            if (!api) {
-                return { ok: false, reason: 'Grid API not available on window.__bondGridApi' };
-            }
-            const rowNode = api.getDisplayedRowAtIndex(0);
-            if (!rowNode) {
-                return { ok: false, reason: 'No displayed row at index 0' };
-            }
-            const event = new MouseEvent('dblclick', { bubbles: true, cancelable: true, view: window });
-            api.dispatchEvent({
-                type: 'rowDoubleClicked',
-                node: rowNode,
-                data: rowNode.data,
-                rowIndex: rowNode.rowIndex,
-                api,
-                event
+        // Close any residual RFQ window from a previous test so it doesn't interfere
+        const residual = await page.locator('.rfq-modal.rfq-floating-window').count();
+        if (residual > 0) {
+            await page.evaluate(() => {
+                document.querySelectorAll('.rfq-window-btn-close').forEach((btn) => btn.click());
             });
-            return { ok: true, rowId: rowNode.id || null };
-        });
-
-        if (!dispatchOk.ok) {
-            throw new Error(`Grid API dispatch failed: ${dispatchOk.reason}`);
+            await page.waitForFunction(
+                () => document.querySelectorAll('.rfq-modal.rfq-floating-window').length === 0,
+                { timeout: 4000 }
+            ).catch(() => {});
         }
 
-        console.log(`[${label}] rowDoubleClicked dispatched (rowId=${dispatchOk.rowId || 'n/a'}), waiting 1000ms for RFQ window...`);
-        await page.waitForTimeout(1000);
+        // AG Grid v31 listens for the native 'dblclick' DOM event on the .ag-row element
+        // via its RowComp listener. Playwright's two sequential page.click() calls do NOT
+        // produce a native 'dblclick' event because CDP Input.dispatchMouseEvent bypasses
+        // the browser's OS-level double-click detection. We must dispatch the event directly
+        // via page.evaluate() to guarantee AG Grid's listener fires.
+        console.log(`[${label}] Dispatching dblclick on first row via evaluate...`);
+        const firstRow = page.locator('.bond-grid .ag-center-cols-container .ag-row[row-index="0"]').first();
+        await firstRow.scrollIntoViewIfNeeded();
+        // Single click first to ensure the row is focused/selected
+        await firstRow.click({ timeout: 5000 });
+        await page.waitForTimeout(80);
+        // Dispatch native dblclick event — AG Grid v31 RowComp listens on this exact event
+        const dblclickFired = await page.evaluate(() => {
+            const row = document.querySelector('.bond-grid .ag-center-cols-container .ag-row[row-index="0"]');
+            if (!row) return false;
+            row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true, view: window }));
+            return true;
+        });
+        if (!dblclickFired) throw new Error('Could not dispatch dblclick: row not found in DOM');
 
         const rfqWindow = page.locator('.rfq-modal.rfq-floating-window').first();
-        console.log(`[${label}] Waiting for RFQ window visibility (5s timeout)...`);
-        await rfqWindow.waitFor({ state: 'visible', timeout: 5000 });
+        console.log(`[${label}] Waiting for RFQ window visibility (12s timeout)...`);
+        await rfqWindow.waitFor({ state: 'visible', timeout: 12000 });
         console.log(`[${label}] RFQ window visible`);
         return rfqWindow;
     };
@@ -1835,29 +1911,16 @@ async function runSection3(page) {
 
         // Ensure grid is ready
         await page.waitForTimeout(300);
-        console.log('  [T46] Grid ready, selecting first row');
-        
-        const rowSelected = await page.evaluate(() => {
-            const api = window.__bondGridApi;
-            if (!api) return false;
-            const rowNode = api.getDisplayedRowAtIndex(0);
-            if (!rowNode) return false;
-            rowNode.setSelected(true, true);
-            api.dispatchEvent({
-                type: 'rowClicked',
-                node: rowNode,
-                data: rowNode.data,
-                rowIndex: rowNode.rowIndex,
-                api
-            });
-            return true;
-        });
-        if (!rowSelected) {
-            throw new Error('Unable to select first row via grid API');
-        }
-        console.log('  [T46] Selected first row via grid API');
-        
+        console.log('  [T46] Grid ready, clicking first row to set selectedBond React state');
+
+        // A physical click on the AG Grid row fires the React onRowClicked prop callback
+        // which calls setSelectedBond(). api.dispatchEvent({ type: 'rowClicked' }) only
+        // fires AG Grid's internal EventService — it does NOT trigger React prop handlers.
+        const firstRow = page.locator('.bond-grid .ag-center-cols-container .ag-row[row-index="0"]').first();
+        await firstRow.scrollIntoViewIfNeeded();
+        await firstRow.click({ timeout: 5000 });
         await page.waitForTimeout(200);
+        console.log('  [T46] First row clicked (selectedBond state updated)');
         
         // Open RFQ dropdown from toolbar button
         const rfqBtn = page.locator('.rfq-button').first();
@@ -1920,7 +1983,7 @@ async function runSection3(page) {
         
         // Wait for RFQ window
         const rfqWindow = page.locator('.rfq-modal.rfq-floating-window').first();
-        await rfqWindow.waitFor({ state: 'visible', timeout: 5000 });
+        await rfqWindow.waitFor({ state: 'visible', timeout: 12000 });
         
         console.log('  [T46] RFQ window opened from button!');
         

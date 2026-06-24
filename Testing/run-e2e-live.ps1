@@ -119,7 +119,7 @@ Push-Location $root
 try {
     Write-Host '=== MTS-Stratos E2E Live View ===' -ForegroundColor Cyan
     Write-Host 'Ensuring required containers are running (postgres, redis, backend, frontend, pgadmin)...' -ForegroundColor Yellow
-    docker-compose -f docker-compose.master.yml up -d postgres redis pgadmin bondvision-backend bondvision-digital
+    docker-compose -f docker-compose.master.yml up -d postgres redis pgadmin bondvision-backend-java bondvision-digital
     if ($LASTEXITCODE -ne 0) {
         throw 'Unable to start required docker services.'
     }
@@ -187,7 +187,7 @@ try {
         }
 
         $env:BASE_URL = 'http://localhost:3002'
-        $env:API_BASE = 'http://localhost:3000/api'
+        $env:API_BASE = 'http://localhost:3003/api'
         $env:START_FROM = "$StartFromOverride"
         $env:HEADLESS = 'false'
         $env:LIVE_VIEW = 'true'

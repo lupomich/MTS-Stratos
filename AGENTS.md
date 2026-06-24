@@ -25,3 +25,37 @@
 - Immediate verification: run `docker ps --filter "name=mts-stratos-bondvision-digital" --format "table {{.Names}}\t{{.Status}}"` and confirm container is `Up`.
 - Only if startup problems are suspected, check logs with `docker logs --tail 30 mts-stratos-bondvision-digital`.
 - Do not ask the user to perform refresh/restart steps before the agent has executed this SOP.
+
+## E2E Test SOP
+
+### How to launch
+
+- Primary entry point: run `powershell -NoProfile -ExecutionPolicy Bypass -File .\run-live.ps1` from the repo root.
+- `run-live.ps1` delegates to `Testing/run-e2e-live.ps1 -NoOpenLiveBrowser`, which:
+  1. Ensures the required containers are up via `docker-compose -f docker-compose.master.yml up -d postgres redis pgadmin bondvision-backend-java bondvision-digital`.
+  2. Resets auth/session state in PostgreSQL and Redis for a deterministic run.
+  3. Installs the Playwright Chromium browser if missing.
+  4. Runs the live E2E suite (`npm run e2e:live` → `scripts/e2e-final.mjs`).
+  5. Refreshes reports (`test-results.json/csv`, `test-report.html`) and performs post-run cleanup.
+
+### Container / service names (must match `docker-compose.master.yml`)
+
+- Backend **service** name is `bondvision-backend-java` (not `bondvision-backend`).
+- Container names: `mts-stratos-bondvision-digital`, `mts-stratos-backend-java`, `mts-stratos-postgres`, `mts-stratos-redis`, `mts-stratos-pgadmin`.
+
+### Endpoints used by the suite
+
+- Frontend `BASE_URL`: `http://localhost:3002`.
+- Backend `API_BASE`: `http://localhost:3003/api` (host port 3003 maps to container port 3001).
+
+### Test specs (Test Explorer)
+
+- `tests-live/full-suite.case-by-case.spec.mjs`: runs the suite once in `beforeAll`, then reports PASS/FAIL per individual test case (`T01`…`T47`). Use for CI / precise diagnosis.
+- `tests-live/full-suite.ui.spec.mjs`: runs the suite as a single aggregated test with visible browser (`liveView=true`, `slowMo=250ms`). Use for visual / demo runs.
+- Both wrap the same underlying `runE2ESuite` from `scripts/e2e-final.mjs`.
+
+### Notes
+
+- If containers were deleted/renamed, align service names in `Testing/run-e2e-live.ps1` to the actual services in `docker-compose.master.yml` before running.
+- Excel report generation (`generate-excel-report.py`) requires Python with `openpyxl`; a missing module only warns and does not fail the run.
+
