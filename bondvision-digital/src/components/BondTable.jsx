@@ -61,7 +61,7 @@ class CustomHeaderWithMenu {
     }
     
     // Aggiorna sort icons
-    const columnState = this.params.columnApi.getColumnState()
+    const columnState = this.params.api.getColumnState()
     const thiColState = columnState.find(cs => cs.colId === colId)
     
     if (this.eSortIcon && this.eSortIconDesc) {
@@ -114,8 +114,9 @@ class CustomHeaderWithMenu {
     this.menuOpen = true
     const colId = this.params.column.getColId()
     
-    const isVisible = this.params.columnApi.getColumn(colId).isVisible()
-    const isPinned = this.params.columnApi.getColumn(colId).getPinned()
+    const col = this.params.api.getColumn(colId)
+    const isVisible = col ? col.isVisible() : true
+    const isPinned = col ? col.getPinned() : null
     const t = this.params.context.t
     
     this.menu.innerHTML = `
@@ -216,14 +217,14 @@ class CustomHeaderWithMenu {
   }
   
   handleAction(action) {
-    const { api, columnApi, column } = this.params
+    const { api, column } = this.params
     const colId = column.getColId()
 
     const persistSorts = () => {
       if (typeof this.params.context?.setSorts !== 'function') {
         return
       }
-      const activeSorts = columnApi.getColumnState()
+      const activeSorts = api.getColumnState()
         .filter(colState => colState.sort)
         .map(colState => ({
           colId: colState.colId,
@@ -244,7 +245,7 @@ class CustomHeaderWithMenu {
         api.refreshHeader()
         break
       case 'sortAsc':
-        columnApi.applyColumnState({
+        api.applyColumnState({
           state: [{ colId, sort: 'asc' }],
           defaultState: { sort: null }
         })
@@ -253,7 +254,7 @@ class CustomHeaderWithMenu {
         api.refreshHeader()
         break
       case 'sortDesc':
-        columnApi.applyColumnState({
+        api.applyColumnState({
           state: [{ colId, sort: 'desc' }],
           defaultState: { sort: null }
         })
@@ -262,7 +263,7 @@ class CustomHeaderWithMenu {
         api.refreshHeader()
         break
       case 'sortNone':
-        columnApi.applyColumnState({
+        api.applyColumnState({
           state: [{ colId, sort: null }]
         })
         persistSorts()
@@ -270,31 +271,31 @@ class CustomHeaderWithMenu {
         api.refreshHeader()
         break
       case 'autosizeThis':
-        columnApi.autoSizeColumn(colId)
+        api.autoSizeColumn(colId)
         break
       case 'autosizeAll':
-        const allColumnIds = api.getColumns ? api.getColumns().map(col => col.getColId()) : columnApi.getAllColumns().map(col => col.getColId())
-        columnApi.autoSizeColumns(allColumnIds)
+        const allColumnIds = api.getColumns().map(col => col.getColId())
+        api.autoSizeColumns(allColumnIds)
         break
       case 'pinLeft':
-        columnApi.setColumnPinned(colId, 'left')
+        api.setColumnPinned(colId, 'left')
         break
       case 'pinRight':
-        columnApi.setColumnPinned(colId, 'right')
+        api.setColumnPinned(colId, 'right')
         break
       case 'unpin':
-        columnApi.setColumnPinned(colId, null)
+        api.setColumnPinned(colId, null)
         break
       case 'resetColumn':
-        columnApi.applyColumnState({
+        api.applyColumnState({
           state: [{ colId, sort: null }]
         })
-        columnApi.setColumnPinned(colId, null)
+        api.setColumnPinned(colId, null)
         api.destroyFilter(colId)
         api.refreshHeader()
         break
       case 'resetAll':
-        const allColumns = api.getColumns ? api.getColumns() : columnApi.getAllColumns()
+        const allColumns = api.getColumns()
         const defaultOrder = Array.isArray(this.params.context?.defaultColumnOrder) && this.params.context.defaultColumnOrder.length > 0
           ? this.params.context.defaultColumnOrder
           : allColumns.map(col => col.getColId())
@@ -303,8 +304,7 @@ class CustomHeaderWithMenu {
           this.params.context.beginApplyingPreferences()
         }
 
-        columnApi.resetColumnState()
-        columnApi.applyColumnState({
+        api.applyColumnState({
           state: defaultOrder.map(colId => ({
             colId,
             hide: false,
@@ -377,8 +377,16 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
   const gridRef = useRef()
   const { t, language } = useLanguage()
   const applyingPreferencesRef = useRef(false)
-  const { preferences, setColumnOrder, setSorts, setFilters, setDefaultColumns, resetPreferences } = usePreferences()
+  const { preferences, loading, loadedAt, setColumnOrder, setSorts, setFilters, setDefaultColumns, resetPreferences } = usePreferences()
+  const loadingRef = useRef(loading)
+  useEffect(() => { loadingRef.current = loading }, [loading])
+  // Saves are BLOCKED until the saved layout has been restored for the current backend load.
+  // Without this, on login the grid is briefly in its default (all-visible) state and a grid
+  // event can save that default over the user's saved layout — wiping a hidden column.
+  // Reset to false on every real load (loadedAt), set true once restore completes.
+  const restoreDoneRef = useRef(false)
   const [rowData, setRowData] = useState(countryBonds.length > 0 ? countryBonds : [])
+  const [gridReady, setGridReady] = useState(false)
   const [selectedBondIsin, setSelectedBondIsin] = useState(null)
   const [highlightedColumnId, setHighlightedColumnId] = useState(null)
 
@@ -587,7 +595,7 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
   }, [language])
 
   useEffect(() => {
-    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
+    if (!gridRef.current?.api) return
 
     const query = columnSearchTerm.trim().toLowerCase()
     if (!query) {
@@ -675,61 +683,85 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
     return () => clearInterval(interval)
   }, [])
 
-  // Listener per salvataggio posizione colonne
-  useEffect(() => {
-    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
-
-    const onColumnMoved = () => {
-      if (applyingPreferencesRef.current) return
-      const columnState = gridRef.current.columnApi.getColumnState()
-      const columnOrder = columnState.map(col => col.colId)
+  // Callback per salvataggio stato colonne — cattura qualsiasi cambio (move, hide, pin, drag-out).
+  // IMPORTANTE: durante un drag reale, displayedColumnsChanged scatta PIÙ volte con stati
+  // intermedi (es. ccy hide:false mentre trascini, poi hide:true al rilascio). Ogni cambio
+  // viene salvato subito, ma PreferencesContext SERIALIZZA le scritture (coda con coalescing):
+  // i PUT partono in ordine e l'ultimo stato vince, quindi niente race condition. Non resta
+  // nulla "in sospeso" su timer, così il salvataggio non si perde per logout/chiusura tab.
+  const saveCurrentColumnState = useCallback(() => {
+    if (applyingPreferencesRef.current || loadingRef.current || !restoreDoneRef.current) return
+    setTimeout(() => {
+      if (!gridRef.current?.api || applyingPreferencesRef.current || !restoreDoneRef.current) return
+      const columnState = gridRef.current.api.getColumnState()
+      const columnOrder = columnState.map(col => ({ colId: col.colId, hide: !!col.hide }))
       setColumnOrder(columnOrder)
-      console.log('Column order saved:', columnOrder)
-    }
-
-    gridRef.current.api.addEventListener('columnMoved', onColumnMoved)
-
-    return () => {
-      if (gridRef.current?.api) {
-        gridRef.current.api.removeEventListener('columnMoved', onColumnMoved)
-      }
-    }
+      console.log('Column state saved:', columnOrder.map(c => `${c.colId}:${c.hide ? 'H' : 'V'}`).join(' '))
+    }, 0)
   }, [setColumnOrder])
 
-  // Applica l'ordine salvato delle colonne all'avvio
+  // Applica l'ordine salvato delle colonne dopo OGNI load reale dal backend (login).
+  // Keyed su loadedAt (non su columnOrder) così NON riparte a ogni salvataggio locale →
+  // niente loop save/apply. Blocca i salvataggi (restoreDoneRef=false) finché il ripristino
+  // non è completo, così il default della griglia non può sovrascrivere il layout salvato.
   useEffect(() => {
-    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
-    if (!preferences?.columnOrder || preferences.columnOrder.length === 0) return
+    if (loading) return
+    if (!gridReady || !gridRef.current?.api) return
+
+    // Nuovo load in corso: blocca i salvataggi finché non abbiamo ripristinato.
+    restoreDoneRef.current = false
+
+    const hasSaved = Array.isArray(preferences?.columnOrder) && preferences.columnOrder.length > 0
+    if (!hasSaved) {
+      // Nessun layout salvato: nulla da ripristinare, si può salvare.
+      restoreDoneRef.current = true
+      return
+    }
 
     // Piccola delay per assicurare che le colonne siano renderizzate
     const timer = setTimeout(() => {
       try {
+        if (!gridRef.current?.api) return
         // Ottieni tutte le colonne disponibili (ag-grid v31 compatibility)
         const allColumns = gridRef.current.api.getColumns ? gridRef.current.api.getColumns() : gridRef.current.api.getAllColumns()
         const allColIds = allColumns.map(col => col.getColId())
-        
-        // Riordina: metti columnOrder all'inizio, poi il resto
-        const columnOrderSet = new Set(preferences.columnOrder)
-        const reorderedColIds = [
-          ...preferences.columnOrder.filter(id => allColIds.includes(id)),
-          ...allColIds.filter(id => !columnOrderSet.has(id))
+
+        // Backward-compat: vecchi salvataggi contengono stringhe, nuovi contengono { colId, hide }
+        const savedItems = preferences.columnOrder.map(c =>
+          typeof c === 'string' ? { colId: c, hide: false } : c
+        )
+        const savedColIds = savedItems.map(c => c.colId)
+        const columnOrderSet = new Set(savedColIds)
+
+        const reorderedState = [
+          ...savedItems.filter(c => allColIds.includes(c.colId)),
+          ...allColIds
+            .filter(id => !columnOrderSet.has(id))
+            .map(id => ({ colId: id, hide: false }))
         ]
-        
+
+        applyingPreferencesRef.current = true
         gridRef.current.api.applyColumnState({
-          state: reorderedColIds.map(colId => ({ colId })),
+          state: reorderedState,
           applyOrder: true
         })
-        console.log('Column order applied:', reorderedColIds)
+        console.log('Column state applied:', reorderedState)
       } catch (error) {
         console.error('Failed to apply column order:', error)
+      } finally {
+        // Sblocca i salvataggi solo DOPO che l'apply è stato assorbito dagli eventi della griglia.
+        setTimeout(() => {
+          applyingPreferencesRef.current = false
+          restoreDoneRef.current = true
+        }, 0)
       }
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [preferences?.columnOrder])
+  }, [loadedAt, loading, gridReady])
 
   useEffect(() => {
-    if (!gridRef.current?.api || !gridRef.current?.columnApi) return
+    if (!gridRef.current?.api) return
 
     const hasSavedSorts = Array.isArray(preferences?.sorts) && preferences.sorts.length > 0
     const hasSavedFilters = preferences?.filters && Object.keys(preferences.filters).length > 0
@@ -777,6 +809,7 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
   const onGridReady = useCallback((params) => {
     // Registra l'API globalmente per i test Playwright
     window.__bondGridApi = params.api
+    setGridReady(true)
   }, [])
 
   return (
@@ -795,6 +828,7 @@ const BondTable = ({ onSelectBond, onDoubleClickBond, countryBonds = [], searchT
           onGridReady={onGridReady}
           onSortChanged={onSortChanged}
           onFilterChanged={onFilterChanged}
+          onDisplayedColumnsChanged={saveCurrentColumnState}
           rowClassRules={rowClassRules}
           getRowStyle={getRowStyle}
           getRowId={(params) => params.data.isin}

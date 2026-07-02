@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { registerPreferencesFlush } from './preferencesFlush';
 
 const PreferencesContext = createContext(null);
 
@@ -25,8 +26,23 @@ const defaultPreferences = {
 export const PreferencesProvider = ({ children }) => {
     const [preferences, setPreferences] = useState(defaultPreferences);
     const [loading, setLoading] = useState(true);
+    // Bumped ONLY when a fresh set of preferences is loaded from the backend (login).
+    // Consumers key their "restore saved layout" logic on this, so it fires on every real
+    // load but NEVER on a local update — that avoids the save->apply->save feedback loop.
+    const [loadedAt, setLoadedAt] = useState(0);
     const { isAuthenticated, token } = useAuth();
-    const saveTimeoutRef = useRef(null);
+    const preferencesRef = useRef(defaultPreferences);
+    // Serialized write queue. Every change is saved immediately, but writes are
+    // strictly ordered (no race) and coalesced (bursts collapse to the latest state).
+    // Nothing is ever left "pending" on a timer, so a change cannot be lost by a fast
+    // logout, tab close, or navigation.
+    //   dirtyRef    = { prefs, capturedToken } | null  -> latest state waiting to be written
+    //   drainingRef = Promise | null                    -> in-flight drain of the queue
+    const dirtyRef = useRef(null);
+    const drainingRef = useRef(null);
+
+    // Keep refs in sync
+    useEffect(() => { preferencesRef.current = preferences; }, [preferences]);
 
     // Load preferences on mount
     useEffect(() => {
@@ -45,6 +61,55 @@ export const PreferencesProvider = ({ children }) => {
             setLoading(false);
         }
     }, [isAuthenticated, token]);
+
+    // Drain the write queue: keep writing the latest dirty state until none remains.
+    // Serializes PUTs (last write wins) and coalesces bursts. Idempotent: if a drain
+    // is already running, returns the existing promise.
+    const drainSaveQueue = useCallback(() => {
+        if (drainingRef.current) return drainingRef.current;
+        const run = (async () => {
+            while (dirtyRef.current) {
+                const { prefs, capturedToken } = dirtyRef.current;
+                dirtyRef.current = null;
+                if (!isAuthenticated) {
+                    localStorage.setItem('preferences', JSON.stringify(prefs));
+                    continue;
+                }
+                try {
+                    await axios.put('/preferences/ui_settings', prefs, {
+                        headers: capturedToken ? { Authorization: `Bearer ${capturedToken}` } : {}
+                    });
+                } catch (err) {
+                    console.error('[PreferencesContext] Save error:', err);
+                }
+            }
+        })();
+        drainingRef.current = run;
+        run.finally(() => { if (drainingRef.current === run) drainingRef.current = null; });
+        return run;
+    }, [isAuthenticated]);
+
+    // Enqueue the latest full prefs for saving, capturing the token valid right now.
+    const enqueueSave = useCallback((prefs, capturedToken) => {
+        dirtyRef.current = { prefs, capturedToken };
+        drainSaveQueue();
+    }, [drainSaveQueue]);
+
+    // Flush the queue to completion NOW. Called by AuthContext.logout() BEFORE the
+    // backend invalidates the token, so any just-made change is persisted with a valid
+    // token. Guarantees no data loss on logout / tab close.
+    const flushPendingSave = useCallback(async () => {
+        if (dirtyRef.current) drainSaveQueue();
+        if (drainingRef.current) {
+            try { await drainingRef.current; } catch { /* logged inside drain */ }
+        }
+        console.log('[PreferencesContext] Save queue flushed before logout');
+    }, [drainSaveQueue]);
+
+    // Register the flush so logout can await it while the token is still valid
+    useEffect(() => {
+        registerPreferencesFlush(flushPendingSave);
+    }, [flushPendingSave]);
 
     const loadPreferencesFromBackend = async () => {
         try {
@@ -66,75 +131,34 @@ export const PreferencesProvider = ({ children }) => {
             
             console.log('Final preferences object:', uiSettings)
             setPreferences(uiSettings);
+            preferencesRef.current = uiSettings;
+            setLoadedAt(Date.now());
         } catch (error) {
             console.error('Failed to load preferences:', error);
             setPreferences(defaultPreferences);
+            preferencesRef.current = defaultPreferences;
+            setLoadedAt(Date.now());
         } finally {
             setLoading(false);
         }
     };
 
-    // Save preferences to backend (debounced)
-    const savePreferencesToBackend = useCallback(async (newPrefs) => {
-        if (!isAuthenticated) {
-            // Save to localStorage for non-authenticated users
-            localStorage.setItem('preferences', JSON.stringify(newPrefs));
-            return;
-        }
-
-        try {
-            const axiosConfig = {};
-            if (token) {
-                axiosConfig.headers = {
-                    'Authorization': `Bearer ${token}`
-                };
-            }
-            
-            await axios.put('/preferences/ui_settings', newPrefs, axiosConfig);
-        } catch (error) {
-            console.error('Failed to save preferences:', error);
-        }
-    }, [isAuthenticated, token]);
-
-    const updatePreference = useCallback((key, value, options = {}) => {
-        const { immediate = false } = options;
-
-        setPreferences(prev => {
-            const newPreferences = { ...prev, [key]: value };
-            
-            // Debounce the save operation
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-
-            if (immediate) {
-                savePreferencesToBackend(newPreferences);
-            } else {
-                saveTimeoutRef.current = setTimeout(() => {
-                    savePreferencesToBackend(newPreferences);
-                }, 1000);
-            }
-            
-            return newPreferences;
-        });
-    }, [savePreferencesToBackend]);
+    const updatePreference = useCallback((key, value) => {
+        // Compute from the ref (always current) and update state + enqueue the save
+        // OUTSIDE the state updater. Side effects inside a setState updater are a React
+        // anti-pattern (StrictMode double-invokes and may discard them → the PUT never fires).
+        const newPreferences = { ...preferencesRef.current, [key]: value };
+        preferencesRef.current = newPreferences;
+        setPreferences(newPreferences);
+        enqueueSave(newPreferences, token);
+    }, [enqueueSave, token]);
 
     const updatePreferences = useCallback((updates) => {
-        setPreferences(prev => {
-            const newPreferences = { ...prev, ...updates };
-            
-            // Debounce the save operation
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-            
-            saveTimeoutRef.current = setTimeout(() => {
-                savePreferencesToBackend(newPreferences);
-            }, 1000);
-            
-            return newPreferences;
-        });
-    }, [savePreferencesToBackend]);
+        const newPreferences = { ...preferencesRef.current, ...updates };
+        preferencesRef.current = newPreferences;
+        setPreferences(newPreferences);
+        enqueueSave(newPreferences, token);
+    }, [enqueueSave, token]);
 
     const resetPreferences = useCallback(async () => {
         setPreferences(defaultPreferences);
@@ -153,6 +177,7 @@ export const PreferencesProvider = ({ children }) => {
     const value = {
         preferences,
         loading,
+        loadedAt,
         updatePreference,
         updatePreferences,
         resetPreferences,
@@ -167,7 +192,7 @@ export const PreferencesProvider = ({ children }) => {
         setRfqAlwaysOnTop: (enabled) => updatePreference('rfqAlwaysOnTop', enabled, { immediate: true }),
         setRfqMaxDealers: (maxDealers) => updatePreference('rfqMaxDealers', maxDealers, { immediate: true }),
         setHideLegacyWorkspace: (enabled) => updatePreference('hideLegacyWorkspace', enabled, { immediate: true }),
-        setColumnOrder: (order) => updatePreference('columnOrder', order),
+        setColumnOrder: (order, opts) => updatePreference('columnOrder', order, opts),
         setColumnWidths: (widths) => updatePreference('columnWidths', widths),
         setFilters: (filters) => updatePreference('filters', filters),
         setSorts: (sorts) => updatePreference('sorts', sorts, { immediate: true }),

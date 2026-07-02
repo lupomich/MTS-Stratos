@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Leggi il CSV
-const csvFile = path.join(__dirname, 'BONDVISION TRADABLE INSTRUMENT 20260209 115928.csv');
+const csvFile = path.join(__dirname, 'data', 'BONDVISION TRADABLE INSTRUMENT 20260209 115928.csv');
 const csvContent = fs.readFileSync(csvFile, 'utf-8');
 
 // Parsa il CSV manualmente

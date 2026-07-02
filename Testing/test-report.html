@@ -16,11 +16,11 @@
 <body>
     <h1>MTS-Stratos E2E Test Report</h1>
     <div class="summary">
-        <p><strong>Execution Date:</strong> 2026-06-23T16:07:13.413Z</p>
-        <p><strong>Total Duration:</strong> 167.80s</p>
-        <p><strong>Total Tests:</strong> 46</p>
-        <p><strong>Pass:</strong> 46 (100.0%)</p>
-        <p><strong>Fail:</strong> 0</p>
+        <p><strong>Execution Date:</strong> 2026-06-24T13:26:43.142Z</p>
+        <p><strong>Total Duration:</strong> 425.79s</p>
+        <p><strong>Total Tests:</strong> 24</p>
+        <p><strong>Pass:</strong> 15 (62.5%)</p>
+        <p><strong>Fail:</strong> 9</p>
     </div>
     <table>
         <thead>
@@ -39,7 +39,7 @@
                 <td>T01</td>
                 <td>Login Admin (GUI)</td>
                 <td>GUI</td>
-                <td>5623</td>
+                <td>3928</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -48,7 +48,7 @@
                 <td>T02</td>
                 <td>Open Admin Panel</td>
                 <td>GUI</td>
-                <td>843</td>
+                <td>568</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -57,7 +57,7 @@
                 <td>T03</td>
                 <td>Create Admin user</td>
                 <td>GUI</td>
-                <td>1917</td>
+                <td>1188</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -66,7 +66,7 @@
                 <td>T04</td>
                 <td>Login nuovo Admin</td>
                 <td>GUI</td>
-                <td>4889</td>
+                <td>3131</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -75,43 +75,43 @@
                 <td>T05</td>
                 <td>Logout Admin-test</td>
                 <td>GUI</td>
-                <td>338</td>
+                <td>250</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T06</td>
                 <td>Disable Admin-test</td>
                 <td>GUI</td>
-                <td>4805</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>3670</td>
+                <td>FAIL</td>
+                <td>Expected Inactive, got Inattivo</td>
             </tr>
             
             <tr class="pass">
                 <td>T07</td>
                 <td>Login utente disabilitato</td>
                 <td>GUI</td>
-                <td>2984</td>
+                <td>2367</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T08</td>
                 <td>Riattivazione Admin-test</td>
                 <td>GUI</td>
-                <td>4858</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>4354</td>
+                <td>FAIL</td>
+                <td>Expected Active, got Attivo</td>
             </tr>
             
             <tr class="pass">
                 <td>T09</td>
                 <td>Login post-riattivazione</td>
                 <td>GUI</td>
-                <td>3477</td>
+                <td>3657</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -120,7 +120,7 @@
                 <td>T10</td>
                 <td>Delete Admin-test</td>
                 <td>GUI</td>
-                <td>5585</td>
+                <td>4672</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -129,7 +129,7 @@
                 <td>T11</td>
                 <td>Verify DB clean (API)</td>
                 <td>API</td>
-                <td>840</td>
+                <td>632</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -138,7 +138,7 @@
                 <td>T12</td>
                 <td>Create Trader user</td>
                 <td>GUI</td>
-                <td>5770</td>
+                <td>4383</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -147,7 +147,7 @@
                 <td>T13</td>
                 <td>Login Trader</td>
                 <td>GUI</td>
-                <td>4583</td>
+                <td>3701</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -156,34 +156,34 @@
                 <td>T14</td>
                 <td>Logout Trader</td>
                 <td>GUI</td>
-                <td>349</td>
+                <td>266</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T15</td>
                 <td>Disable/Enable Trader cycle</td>
                 <td>GUI</td>
-                <td>15930</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>10767</td>
+                <td>FAIL</td>
+                <td>Expected status Inactive for trader-test</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T16</td>
                 <td>Delete Trader</td>
                 <td>GUI</td>
-                <td>5450</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>30006</td>
+                <td>FAIL</td>
+                <td>Timeout 30s</td>
             </tr>
             
             <tr class="pass">
                 <td>T17</td>
                 <td>Create Viewer user</td>
                 <td>GUI</td>
-                <td>1834</td>
+                <td>1210</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -192,7 +192,7 @@
                 <td>T18</td>
                 <td>Login Viewer</td>
                 <td>GUI</td>
-                <td>4461</td>
+                <td>5595</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
@@ -201,252 +201,54 @@
                 <td>T19</td>
                 <td>Logout Viewer</td>
                 <td>GUI</td>
-                <td>336</td>
+                <td>289</td>
                 <td>PASS</td>
                 <td>-</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T20</td>
                 <td>Disable/Enable Viewer cycle</td>
                 <td>GUI</td>
-                <td>16869</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>10212</td>
+                <td>FAIL</td>
+                <td>Expected status Inactive for viewer-test</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T21</td>
                 <td>Delete Viewer</td>
                 <td>GUI</td>
-                <td>6226</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>30002</td>
+                <td>FAIL</td>
+                <td>Timeout 30s</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T22</td>
                 <td>Verify DB clean (API)</td>
                 <td>API</td>
-                <td>902</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>686</td>
+                <td>FAIL</td>
+                <td>Expected 2 users (admin + demo), got 4</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T23</td>
                 <td>Verify GUI clean</td>
                 <td>GUI</td>
-                <td>4881</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>3147</td>
+                <td>FAIL</td>
+                <td>Expected 2 user rows (admin + demo), got 4</td>
             </tr>
             
-            <tr class="pass">
+            <tr class="fail">
                 <td>T24</td>
                 <td>Create users for Section 2</td>
                 <td>GUI</td>
-                <td>3739</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T25</td>
-                <td>Drag & Drop column</td>
-                <td>GUI</td>
-                <td>650</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T26</td>
-                <td>Hide column</td>
-                <td>GUI</td>
-                <td>608</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T27</td>
-                <td>Show column</td>
-                <td>GUI</td>
-                <td>577</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T28</td>
-                <td>Reset All Columns</td>
-                <td>GUI</td>
-                <td>1283</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T29</td>
-                <td>Sort ascending</td>
-                <td>GUI</td>
-                <td>1417</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T30</td>
-                <td>Sort descending</td>
-                <td>GUI</td>
-                <td>1483</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T31</td>
-                <td>Sort different column</td>
-                <td>GUI</td>
-                <td>1356</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T32</td>
-                <td>Persist country tab after logout</td>
-                <td>GUI</td>
-                <td>7332</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T33</td>
-                <td>Persist sort after logout</td>
-                <td>GUI</td>
-                <td>5106</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T34</td>
-                <td>Single filter</td>
-                <td>GUI</td>
-                <td>492</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T35</td>
-                <td>Multiple filters</td>
-                <td>GUI</td>
-                <td>466</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T36</td>
-                <td>Remove one filter</td>
-                <td>GUI</td>
-                <td>484</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T37</td>
-                <td>Clear all filters</td>
-                <td>GUI</td>
-                <td>1255</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T38</td>
-                <td>Mixed modifications</td>
-                <td>GUI</td>
-                <td>6263</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T39</td>
-                <td>Persist all after reload</td>
-                <td>GUI</td>
-                <td>6804</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T40</td>
-                <td>Complete reset</td>
-                <td>GUI</td>
-                <td>1785</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T42</td>
-                <td>Login admin for RFQ tests</td>
-                <td>GUI</td>
-                <td>4086</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T43</td>
-                <td>Double-click bond row opens RFQ window</td>
-                <td>GUI</td>
-                <td>2382</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T44</td>
-                <td>RFQ window displays pricing data</td>
-                <td>GUI</td>
-                <td>1407</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T45</td>
-                <td>RFQ window draggable and closable</td>
-                <td>GUI</td>
-                <td>4922</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T46</td>
-                <td>Open RFQ from OPEN RFQ button</td>
-                <td>GUI</td>
-                <td>1687</td>
-                <td>PASS</td>
-                <td>-</td>
-            </tr>
-            
-            <tr class="pass">
-                <td>T47</td>
-                <td>Final cleanup</td>
-                <td>GUI</td>
-                <td>780</td>
-                <td>PASS</td>
-                <td>-</td>
+                <td>2379</td>
+                <td>FAIL</td>
+                <td>Expected 4 users, got 6</td>
             </tr>
             
         </tbody>

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { flushPendingPreferences } from './preferencesFlush';
 
 const AuthContext = createContext(null);
 
@@ -119,6 +120,9 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
+            // Persist any pending preference change (e.g. a just-removed column) while the
+            // token is still valid, BEFORE the backend invalidates the session.
+            await flushPendingPreferences();
             await axios.post('/auth/logout');
         } catch (error) {
             console.error('Logout error:', error);
