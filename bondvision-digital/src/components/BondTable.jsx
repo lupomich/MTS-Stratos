@@ -118,6 +118,12 @@ class CustomHeaderWithMenu {
     const isVisible = col ? col.isVisible() : true
     const isPinned = col ? col.getPinned() : null
     const t = this.params.context.t
+    const hiddenCols = this.params.api.getColumnState()
+      .filter(cs => cs.hide)
+      .map(cs => {
+        const c = this.params.api.getColumn(cs.colId)
+        return { colId: cs.colId, headerName: c?.getColDef()?.headerName || cs.colId }
+      })
     
     this.menu.innerHTML = `
       <div class="menu-item" data-action="filter">
@@ -191,6 +197,14 @@ class CustomHeaderWithMenu {
         </svg>
         <span>${t('columnMenu.resetAll')}</span>
       </div>
+      ${hiddenCols.length > 0 ? `
+      <div class="menu-separator"></div>
+      <div class="menu-item" data-action="showHidden">
+        <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>${t('columnMenu.showHidden')} (${hiddenCols.length})</span>
+      </div>` : ''}
     `
     
     // Event listeners per ogni menu item
@@ -294,6 +308,11 @@ class CustomHeaderWithMenu {
         api.destroyFilter(colId)
         api.refreshHeader()
         break
+      case 'showHidden': {
+        const rect = this.eMenuIcon.getBoundingClientRect()
+        setTimeout(() => this.createHiddenColumnsPanel(rect), 0)
+        break
+      }
       case 'resetAll':
         const allColumns = api.getColumns()
         const defaultOrder = Array.isArray(this.params.context?.defaultColumnOrder) && this.params.context.defaultColumnOrder.length > 0
@@ -365,6 +384,86 @@ class CustomHeaderWithMenu {
     }
   }
   
+  showColumn(colId) {
+    this.params.api.applyColumnState({ state: [{ colId, hide: false }] })
+  }
+
+  createHiddenColumnsPanel(anchorRect) {
+    const { api } = this.params
+    const t = this.params.context.t
+    const hiddenCols = api.getColumnState()
+      .filter(cs => cs.hide)
+      .map(cs => {
+        const c = api.getColumn(cs.colId)
+        return { colId: cs.colId, headerName: c?.getColDef()?.headerName || cs.colId }
+      })
+    if (hiddenCols.length === 0) return
+
+    const panel = document.createElement('div')
+    panel.className = 'ag-hidden-columns-panel'
+    panel.innerHTML = `
+      <div class="hidden-panel-header">
+        <span>${t('columnMenu.hiddenColumnsTitle')}</span>
+        <span class="hidden-panel-close">&#x2715;</span>
+      </div>
+      <div class="hidden-panel-list">
+        ${hiddenCols.map(col => `
+        <div class="hidden-panel-row" data-colid="${col.colId}">
+          <span class="hidden-panel-name">${col.headerName}</span>
+          <button class="hidden-panel-show-btn" data-colid="${col.colId}">${t('columnMenu.showColumn')}</button>
+        </div>`).join('')}
+      </div>
+      ${hiddenCols.length > 1 ? `
+      <div class="hidden-panel-footer">
+        <button class="hidden-panel-show-all-btn">${t('columnMenu.showAllColumns')}</button>
+      </div>` : ''}
+    `
+    document.body.appendChild(panel)
+    panel.style.left = anchorRect.left + 'px'
+    panel.style.top = (anchorRect.bottom + 2) + 'px'
+
+    const destroyPanel = () => {
+      document.removeEventListener('click', outsideClickListener)
+      if (panel.parentNode) panel.parentNode.removeChild(panel)
+    }
+
+    panel.querySelector('.hidden-panel-close').addEventListener('click', e => {
+      e.stopPropagation()
+      destroyPanel()
+    })
+
+    panel.querySelectorAll('.hidden-panel-show-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation()
+        const cId = btn.getAttribute('data-colid')
+        this.showColumn(cId)
+        const row = panel.querySelector(`.hidden-panel-row[data-colid="${cId}"]`)
+        if (row) row.remove()
+        const remaining = panel.querySelectorAll('.hidden-panel-row').length
+        if (remaining === 0) {
+          destroyPanel()
+        } else {
+          const footer = panel.querySelector('.hidden-panel-footer')
+          if (footer) footer.style.display = remaining > 1 ? '' : 'none'
+        }
+      })
+    })
+
+    const showAllBtn = panel.querySelector('.hidden-panel-show-all-btn')
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', e => {
+        e.stopPropagation()
+        hiddenCols.forEach(col => this.showColumn(col.colId))
+        destroyPanel()
+      })
+    }
+
+    const outsideClickListener = e => {
+      if (!panel.contains(e.target)) destroyPanel()
+    }
+    setTimeout(() => document.addEventListener('click', outsideClickListener), 0)
+  }
+
   destroy() {
     this.destroyMenu()
     if (this.eMenuIcon) {

@@ -312,3 +312,102 @@
   background-color: var(--dark-border);
   margin: 4px 0;
 }
+
+/* ── Hidden Columns Panel ─────────────────────────────────── */
+.ag-hidden-columns-panel {
+  position: fixed;
+  background-color: var(--dark-hover);
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  min-width: 200px;
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.hidden-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dark-border);
+  color: var(--color-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.hidden-panel-close {
+  cursor: pointer;
+  color: var(--text-light);
+  opacity: 0.7;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.hidden-panel-close:hover {
+  opacity: 1;
+  color: var(--color-bg-white);
+}
+
+.hidden-panel-list {
+  padding: 4px 0;
+}
+
+.hidden-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  gap: 12px;
+}
+
+.hidden-panel-name {
+  color: var(--text-light);
+  flex: 1;
+}
+
+.hidden-panel-show-btn {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font-family-sans);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.hidden-panel-show-btn:hover {
+  background: var(--color-primary);
+  color: var(--color-bg-dark);
+}
+
+.hidden-panel-footer {
+  border-top: 1px solid var(--dark-border);
+  padding: 6px 12px;
+}
+
+.hidden-panel-show-all-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font-family-sans);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.hidden-panel-show-all-btn:hover {
+  background: rgba(77, 184, 184, 0.15);
+  color: var(--color-bg-white);
+}

@@ -109,7 +109,11 @@ export const translations = {
       pinRight: 'Pin Right',
       unpin: 'Unpin',
       resetColumn: 'Reset Column',
-      resetAll: 'Reset All Columns'
+      resetAll: 'Reset All Columns',
+      showHidden: 'Show Hidden Columns',
+      hiddenColumnsTitle: 'Hidden Columns',
+      showColumn: 'Show',
+      showAllColumns: 'Show All'
     },
     // RFQ Modals
     rfq: {
@@ -321,7 +325,11 @@ export const translations = {
       pinRight: 'Blocca a Destra',
       unpin: 'Sblocca',
       resetColumn: 'Reset Colonna',
-      resetAll: 'Reset Tutte'
+      resetAll: 'Reset Tutte',
+      showHidden: 'Mostra Colonne Nascoste',
+      hiddenColumnsTitle: 'Colonne Nascoste',
+      showColumn: 'Mostra',
+      showAllColumns: 'Mostra Tutte'
     },
     // RFQ Modals
     rfq: {
