@@ -47,6 +47,10 @@ venv/
 *.pyc
 *.pyo
 
+# Java build output
+bondvision-backend-java/bin/
+bondvision-backend-java/build/
+
 # E2E / Playwright generated artifacts (do not version)
 bondvision-digital/playwright-report/
 bondvision-digital/test-results/
